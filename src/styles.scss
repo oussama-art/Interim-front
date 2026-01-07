@@ -1,1 +1,207 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* CSS Reset amélioré pour compatibilité cross-browser */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f7fa;
+  color: #1a1d2e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+
+/* Reset pour les boutons et inputs */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button;
+  appearance: button;
+  cursor: pointer;
+}
+
+/* Normalisation pour les images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Normalisation pour les listes */
+ul, ol {
+  list-style: none;
+}
+
+/* Normalisation pour les liens */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Fix pour Brave/Chrome spécifique */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+  box-shadow: 0 0 0px 1000px #fff inset;
+  -webkit-text-fill-color: #1a1d2e;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Material Design overrides */
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+// Force Material outline to render properly on all pages
+.mat-mdc-form-field-type-mat-input {
+  .mdc-notched-outline {
+    opacity: 1 !important;
+    visibility: visible !important;
+
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+  }
+}
+
+.mat-mdc-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Snackbar custom styles */
+.success-snackbar {
+  --mdc-snackbar-container-color: #4caf50 !important;
+  --mat-snack-bar-button-color: #ffffff !important;
+
+  .mdc-snackbar__surface {
+    background-color: #4caf50 !important;
+  }
+
+  .mdc-snackbar__label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffffff !important;
+  }
+}
+
+.error-snackbar {
+  --mdc-snackbar-container-color: #f44336 !important;
+  --mat-snack-bar-button-color: #ffffff !important;
+
+  .mdc-snackbar__surface {
+    background-color: #f44336 !important;
+  }
+
+  .mdc-snackbar__label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffffff !important;
+  }
+}
+
+/* Custom Dialog Styles */
+.demande-detail-dialog {
+  .mat-mdc-dialog-container {
+    padding: 0;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    padding: 0;
+  }
+}
+
+/* Fix pour autocomplete - panel reste attaché pendant scroll avec repositionnement forcé */
+.cdk-overlay-container {
+  .cdk-overlay-pane {
+    .mat-mdc-autocomplete-panel {
+      max-height: 256px !important;
+      overflow-y: auto !important;
+    }
+  }
+}
+
+/* Force le repositionnement automatique de l'overlay */
+.cdk-overlay-backdrop {
+  pointer-events: none !important;
+}
+
+/* Empêche le décalage visuel pendant le scroll */
+.mat-mdc-autocomplete-trigger {
+  cdk-overlay-origin: auto !important;
+}

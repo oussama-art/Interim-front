@@ -1,0 +1,52 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Gestion des Contrats</h1>
+    <button mat-raised-button color="primary">
+      <mat-icon>add</mat-icon>
+      Nouveau contrat
+    </button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Référence</th>
+        <th>Candidat</th>
+        <th>Client</th>
+        <th>Poste</th>
+        <th>Date début</th>
+        <th>Date fin</th>
+        <th>Salaire</th>
+        <th>Statut</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let contract of contracts">
+        <td>{{ contract.reference }}</td>
+        <td>{{ contract.candidateName }}</td>
+        <td>{{ contract.clientName }}</td>
+        <td>{{ contract.position }}</td>
+        <td>{{ contract.startDate }}</td>
+        <td>{{ contract.endDate }}</td>
+        <td>{{ contract.salary }}€</td>
+        <td>
+          <span class="status-badge" [ngClass]="getStatusClass(contract.status)">
+            {{ getStatusLabel(contract.status) }}
+          </span>
+        </td>
+        <td class="actions">
+          <button mat-icon-button color="primary" title="Voir">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button title="Modifier">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" title="Supprimer">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,21 @@
+# Browsers that we support
+
+# Production
+> 0.5%
+last 2 versions
+Firefox ESR
+not dead
+not IE 11
+
+# Chrome, Edge, Brave (Chromium-based)
+Chrome >= 90
+Edge >= 90
+
+# Firefox
+Firefox >= 78
+
+# Safari
+Safari >= 13
+
+# Opera
+Opera >= 76

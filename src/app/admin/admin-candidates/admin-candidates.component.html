@@ -1,0 +1,106 @@
+<div class="candidates-container">
+  <div class="header">
+    <h1>Gestion des Candidats</h1>
+    <p>Liste de tous les candidats enregistrés</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des candidats...</p>
+  </div>
+
+  <!-- Candidates Table -->
+  <mat-card *ngIf="!loading" class="table-card">
+    <div class="table-container">
+      <table mat-table [dataSource]="candidates" class="candidates-table">
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.id }}</td>
+        </ng-container>
+
+        <!-- First Name Column -->
+        <ng-container matColumnDef="firstName">
+          <th mat-header-cell *matHeaderCellDef>Prénom</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.firstName }}</td>
+        </ng-container>
+
+        <!-- Last Name Column -->
+        <ng-container matColumnDef="lastName">
+          <th mat-header-cell *matHeaderCellDef>Nom</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.lastName }}</td>
+        </ng-container>
+
+        <!-- Email Column -->
+        <ng-container matColumnDef="emailAddress">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.emailAddress }}</td>
+        </ng-container>
+
+        <!-- Phone Column -->
+        <ng-container matColumnDef="phoneNumber">
+          <th mat-header-cell *matHeaderCellDef>Téléphone</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.phoneNumber }}</td>
+        </ng-container>
+
+        <!-- Experience Column -->
+        <ng-container matColumnDef="experienceYear">
+          <th mat-header-cell *matHeaderCellDef>Expérience</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.experienceYear }} ans</td>
+        </ng-container>
+
+        <!-- Professional Column -->
+        <ng-container matColumnDef="professional">
+          <th mat-header-cell *matHeaderCellDef>Profession</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.professional }}</td>
+        </ng-container>
+
+        <!-- CIN Column -->
+        <ng-container matColumnDef="cin">
+          <th mat-header-cell *matHeaderCellDef>CIN</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.cin }}</td>
+        </ng-container>
+
+        <!-- CSS Number Column -->
+        <ng-container matColumnDef="cssNumber">
+          <th mat-header-cell *matHeaderCellDef>N° CSS</th>
+          <td mat-cell *matCellDef="let candidate">{{ candidate.cssNumber }}</td>
+        </ng-container>
+
+        <!-- Created At Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Date création</th>
+          <td mat-cell *matCellDef="let candidate">{{ formatDate(candidate.createdAt) }}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let candidate">
+            <div class="actions">
+              <button mat-icon-button color="primary" (click)="viewCandidate(candidate)" title="Voir">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="accent" (click)="editCandidate(candidate)" title="Modifier">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteCandidate(candidate)" title="Supprimer">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- No Data -->
+      <div *ngIf="candidates.length === 0" class="no-data">
+        <mat-icon>people_outline</mat-icon>
+        <p>Aucun candidat trouvé</p>
+      </div>
+    </div>
+  </mat-card>
+</div>

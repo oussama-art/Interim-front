@@ -1,0 +1,31 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Gestion des Factures</h1>
+    <button mat-raised-button color="primary">
+      <mat-icon>add</mat-icon>
+      Nouvelle facture
+    </button>
+  </div>
+
+  <div class="cards-grid">
+    <div class="simple-card" *ngFor="let invoice of invoices">
+      <div class="card-header">
+        <h3>{{ invoice.invoiceNumber }}</h3>
+        <span class="status-badge" [ngClass]="getStatusClass(invoice.status)">
+          {{ getStatusLabel(invoice.status) }}
+        </span>
+      </div>
+      <div class="card-body">
+        <p><strong>Client:</strong> {{ invoice.clientName }}</p>
+        <p><strong>Contrat:</strong> {{ invoice.contractRef }}</p>
+        <p><strong>Émise le:</strong> {{ invoice.issueDate }}</p>
+        <p><strong>Échéance:</strong> {{ invoice.dueDate }}</p>
+        <p class="amount"><strong>Montant:</strong> {{ invoice.amount }}€</p>
+      </div>
+      <div class="card-footer">
+        <button mat-button color="primary">Voir</button>
+        <button mat-button>PDF</button>
+      </div>
+    </div>
+  </div>
+</div>

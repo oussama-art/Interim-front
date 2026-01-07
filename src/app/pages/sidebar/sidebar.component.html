@@ -1,0 +1,28 @@
+<div
+  class="sidebar-container"
+  [class.expanded]="isExpanded()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()">
+
+  <!-- Logo + Name -->
+  <div class="logo-section">
+    <div class="logo-icon-wrapper">
+      <mat-icon class="logo-icon">business_center</mat-icon>
+    </div>
+    <span class="logo-text" [class.visible]="isExpanded()">3N Services</span>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav class="nav-links">
+    <a
+      *ngFor="let item of navItems()"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      [matTooltip]="!isExpanded() ? item.label : ''"
+      matTooltipPosition="right"
+      class="nav-item">
+      <mat-icon>{{ item.icon }}</mat-icon>
+      <span class="nav-label" [class.visible]="isExpanded()">{{ item.label }}</span>
+    </a>
+  </nav>
+</div>

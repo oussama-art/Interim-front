@@ -1,0 +1,57 @@
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <mat-icon class="logo-icon">admin_panel_settings</mat-icon>
+      <h1>Admin Panel</h1>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a
+        *ngFor="let item of menuItems"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="updateActiveMenuItem()"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span>{{ item.title }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button mat-stroked-button class="logout-btn" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Déconnexion</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h2>Administration</h2>
+      </div>
+      <div class="topbar-right">
+        <button mat-icon-button>
+          <mat-icon>notifications</mat-icon>
+        </button>
+        <button mat-icon-button>
+          <mat-icon>account_circle</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; {{ currentYear }} Interim Admin. Tous droits réservés.</p>
+    </footer>
+  </div>
+</div>

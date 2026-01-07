@@ -1,0 +1,243 @@
+<div class="auth-container">
+  <div class="auth-left">
+    <div class="background-image"></div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Créer un compte</h2>
+        <p>Commencez votre aventure avec nous</p>
+      </div>
+
+      <mat-stepper [linear]="true" #stepper>
+        <!-- Step 1: Type d'utilisateur -->
+        <mat-step [stepControl]="userTypeForm">
+          <form [formGroup]="userTypeForm">
+            <ng-template matStepLabel>Type de compte</ng-template>
+
+            <div class="user-type-selection">
+              <mat-radio-group formControlName="userType" class="radio-group">
+                <div class="type-card" [class.selected]="userType() === 'candidate'">
+                  <mat-radio-button value="candidate">
+                    <div class="type-content">
+                      <mat-icon>person</mat-icon>
+                      <h3>Candidat</h3>
+                      <p>Je recherche des missions d'intérim</p>
+                    </div>
+                  </mat-radio-button>
+                </div>
+
+                <div class="type-card" [class.selected]="userType() === 'client'">
+                  <mat-radio-button value="client">
+                    <div class="type-content">
+                      <mat-icon>business</mat-icon>
+                      <h3>Entreprise</h3>
+                      <p>Je recherche des intérimaires</p>
+                    </div>
+                  </mat-radio-button>
+                </div>
+              </mat-radio-group>
+            </div>
+
+            <div class="stepper-actions">
+              <button mat-raised-button color="primary" matStepperNext>
+                Continuer
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 2: Informations de base -->
+        <mat-step [stepControl]="baseInfoForm">
+          <form [formGroup]="baseInfoForm">
+            <ng-template matStepLabel>Informations de base</ng-template>
+
+            @if (userType() === 'candidate') {
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Prénom</mat-label>
+                  <input matInput formControlName="firstName" placeholder="Votre prénom">
+                  <mat-icon matPrefix>person</mat-icon>
+                  <mat-error *ngIf="baseInfoForm.get('firstName')?.invalid">
+                    {{ getErrorMessage(baseInfoForm, 'firstName') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nom</mat-label>
+                  <input matInput formControlName="lastName" placeholder="Votre nom">
+                  <mat-icon matPrefix>person</mat-icon>
+                  <mat-error *ngIf="baseInfoForm.get('lastName')?.invalid">
+                    {{ getErrorMessage(baseInfoForm, 'lastName') }}
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            }
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="emailAddress" placeholder="exemple@email.com">
+              <mat-icon matPrefix>email</mat-icon>
+              <mat-error *ngIf="baseInfoForm.get('emailAddress')?.invalid">
+                {{ getErrorMessage(baseInfoForm, 'emailAddress') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Téléphone</mat-label>
+              <input matInput formControlName="phoneNumber" placeholder="0612345678">
+              <mat-icon matPrefix>phone</mat-icon>
+              <mat-error *ngIf="baseInfoForm.get('phoneNumber')?.invalid">
+                {{ getErrorMessage(baseInfoForm, 'phoneNumber') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Années d'expérience</mat-label>
+              <input matInput type="number" formControlName="experienceYear" placeholder="0">
+              <mat-icon matPrefix>work</mat-icon>
+              <mat-error *ngIf="baseInfoForm.get('experienceYear')?.invalid">
+                {{ getErrorMessage(baseInfoForm, 'experienceYear') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Mot de passe</mat-label>
+              <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password">
+              <mat-icon matPrefix>lock</mat-icon>
+              <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="baseInfoForm.get('password')?.invalid">
+                {{ getErrorMessage(baseInfoForm, 'password') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Confirmer le mot de passe</mat-label>
+              <input matInput [type]="hideConfirmPassword() ? 'password' : 'text'" formControlName="confirmPassword">
+              <mat-icon matPrefix>lock</mat-icon>
+              <button mat-icon-button matSuffix type="button" (click)="hideConfirmPassword.set(!hideConfirmPassword())">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="baseInfoForm.hasError('passwordMismatch')">
+                Les mots de passe ne correspondent pas
+              </mat-error>
+            </mat-form-field>
+
+            <div class="stepper-actions">
+              <button mat-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Retour
+              </button>
+              <button mat-raised-button color="primary" matStepperNext [disabled]="baseInfoForm.invalid">
+                Continuer
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 3: Informations spécifiques -->
+        <mat-step [stepControl]="specificInfoForm">
+          <form [formGroup]="specificInfoForm">
+            <ng-template matStepLabel>Informations {{ userType() === 'candidate' ? 'professionnelles' : 'entreprise' }}</ng-template>
+
+            <!-- Champs Candidat -->
+            @if (userType() === 'candidate') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Compétences</mat-label>
+                <textarea matInput formControlName="skills" rows="3" placeholder="Ex: Électricité, Plomberie..."></textarea>
+                <mat-icon matPrefix>star</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Titre professionnel</mat-label>
+                <input matInput formControlName="professional" placeholder="Ex: Électricien">
+                <mat-icon matPrefix>badge</mat-icon>
+              </mat-form-field>
+
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>CIN</mat-label>
+                  <input matInput formControlName="cin" placeholder="AB123456">
+                  <mat-icon matPrefix>credit_card</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Numéro CSS</mat-label>
+                  <input matInput formControlName="cssNumber" placeholder="123456789">
+                  <mat-icon matPrefix>assignment_ind</mat-icon>
+                </mat-form-field>
+              </div>
+            }
+
+            <!-- Champs Client -->
+            @if (userType() === 'client') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Nom de l'entreprise</mat-label>
+                <input matInput formControlName="title" placeholder="Ex: ABC Industries">
+                <mat-icon matPrefix>business</mat-icon>
+                <mat-error *ngIf="specificInfoForm.get('title')?.invalid">
+                  {{ getErrorMessage(specificInfoForm, 'title') }}
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="3" placeholder="Décrivez votre entreprise..."></textarea>
+                <mat-icon matPrefix>description</mat-icon>
+              </mat-form-field>
+
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Secteur d'activité</mat-label>
+                  <input matInput formControlName="sector" placeholder="Ex: BTP">
+                  <mat-icon matPrefix>category</mat-icon>
+                  <mat-error *ngIf="specificInfoForm.get('sector')?.invalid">
+                    {{ getErrorMessage(specificInfoForm, 'sector') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre d'employés</mat-label>
+                  <input matInput type="number" formControlName="nbEmployee" placeholder="0">
+                  <mat-icon matPrefix>groups</mat-icon>
+                  <mat-error *ngIf="specificInfoForm.get('nbEmployee')?.invalid">
+                    {{ getErrorMessage(specificInfoForm, 'nbEmployee') }}
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            }
+
+            <div class="stepper-actions">
+              <button mat-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Retour
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="onSubmit()"
+                [disabled]="specificInfoForm.invalid || isLoading">
+                <span *ngIf="!isLoading">Créer mon compte</span>
+                <span *ngIf="isLoading">Création en cours...</span>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+      </mat-stepper>
+
+      <div class="login-link">
+        <p>Vous avez déjà un compte ?</p>
+        <a routerLink="/login">Se connecter</a>
+      </div>
+    </div>
+
+    <div class="auth-footer">
+      <p>&copy; 2025 3N Intérim. Tous droits réservés.</p>
+    </div>
+  </div>
+</div>

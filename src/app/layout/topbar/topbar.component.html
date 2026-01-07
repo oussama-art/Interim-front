@@ -1,0 +1,29 @@
+<div class="topbar">
+  <div class="search-container">
+    <mat-icon class="search-icon">search</mat-icon>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Rechercher...">
+  </div>
+
+  <div class="user-section">
+    <button
+      mat-icon-button
+      class="user-button"
+      [matMenuTriggerFor]="userMenu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" class="user-menu">
+      <button mat-menu-item>
+        <mat-icon>person</mat-icon>
+        <span>Mon Profil</span>
+      </button>
+      <button mat-menu-item (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Déconnexion</span>
+      </button>
+    </mat-menu>
+  </div>
+</div>

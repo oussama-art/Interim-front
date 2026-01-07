@@ -1,0 +1,128 @@
+<div class="demandes-container">
+  <div class="header">
+    <h1>Gestion des Demandes</h1>
+    <p>Liste de toutes les demandes enregistrées</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des demandes...</p>
+  </div>
+
+  <!-- Demandes Table -->
+  <mat-card *ngIf="!loading" class="table-card">
+    <!-- Stats Summary -->
+    <div class="summary-bar">
+      <div class="summary-item">
+        <mat-icon>assignment</mat-icon>
+        <div class="summary-content">
+          <span class="summary-label">Total</span>
+          <span class="summary-value">{{ demandes.length }}</span>
+        </div>
+      </div>
+      <div class="summary-item">
+        <mat-icon>people</mat-icon>
+        <div class="summary-content">
+          <span class="summary-label">Employés requis</span>
+          <span class="summary-value">{{ getTotalEmployees() }}</span>
+        </div>
+      </div>
+      <div class="summary-item">
+        <mat-icon>badge</mat-icon>
+        <div class="summary-content">
+          <span class="summary-label">Profils uniques</span>
+          <span class="summary-value">{{ getTotalProfils() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="demandes" class="demandes-table">
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let demande">{{ demande.id }}</td>
+        </ng-container>
+
+        <!-- Client Column -->
+        <ng-container matColumnDef="clientTitle">
+          <th mat-header-cell *matHeaderCellDef>Client ID</th>
+          <td mat-cell *matCellDef="let demande">
+            <span class="client-id-badge">{{ demande.clientId }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Title Column -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Titre de la demande</th>
+          <td mat-cell *matCellDef="let demande">
+            <div class="title-cell">
+              <span class="title-text">{{ demande.title }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Description Column -->
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <td mat-cell *matCellDef="let demande">
+            <span class="description-cell">{{ demande.description }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Total Employees Column -->
+        <ng-container matColumnDef="totalEmployeesNeeded">
+          <th mat-header-cell *matHeaderCellDef>Employés requis</th>
+          <td mat-cell *matCellDef="let demande">{{ demande.totalEmployeesNeeded }}</td>
+        </ng-container>
+
+        <!-- Profiles Count Column -->
+        <ng-container matColumnDef="nombreProfils">
+          <th mat-header-cell *matHeaderCellDef>Profils demandés</th>
+          <td mat-cell *matCellDef="let demande">
+            <div class="profils-cell">
+              <mat-chip-set>
+                <mat-chip
+                  *ngFor="let profil of demande.profils"
+                  [highlighted]="true"
+                  class="profil-chip"
+                >
+                  <span class="profil-name">{{ profil.profilName }}</span>
+                  <span class="profil-quantity">×{{ profil.quantity }}</span>
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let demande">
+            <div class="actions">
+              <button mat-icon-button color="primary" (click)="viewDemande(demande)" title="Voir">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="accent" (click)="editDemande(demande)" title="Modifier">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteDemande(demande)" title="Supprimer">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- No Data -->
+      <div *ngIf="demandes.length === 0" class="no-data">
+        <mat-icon>assignment_late</mat-icon>
+        <p>Aucune demande trouvée</p>
+      </div>
+    </div>
+  </mat-card>
+</div>

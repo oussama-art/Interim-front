@@ -1,0 +1,200 @@
+/* Normalisation stricte pour tous les navigateurs */
+
+.auth-container {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: none;
+    outline: none;
+  }
+
+  /* Forcer les dimensions exactes pour tous les éléments */
+  .brand-logo {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+
+    mat-icon {
+      font-size: 24px !important;
+      width: 24px !important;
+      height: 24px !important;
+      line-height: 24px !important;
+    }
+  }
+
+  .brand-title {
+    font-size: 24px !important;
+    line-height: 32px !important;
+    letter-spacing: -0.4px !important;
+  }
+
+  .brand-tagline {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  .toggle-btn {
+    height: 40px !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+
+    mat-icon {
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      line-height: 18px !important;
+    }
+
+    span {
+      line-height: 20px !important;
+    }
+  }
+
+  .form-label {
+    font-size: 14px !important;
+    line-height: 20px !important;
+    margin-bottom: 6px !important;
+    display: block !important;
+  }
+
+  .form-input {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 10px 14px !important;
+    font-size: 15px !important;
+    line-height: 22px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+  }
+
+  .error-message {
+    font-size: 12px !important;
+    line-height: 16px !important;
+    margin-top: 4px !important;
+    display: block !important;
+  }
+
+  .submit-button {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+    line-height: 22px !important;
+
+    mat-icon {
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      line-height: 18px !important;
+    }
+  }
+
+  .google-button {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+
+    .google-icon {
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+
+  .register-button {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+
+    mat-icon {
+      font-size: 20px !important;
+      width: 20px !important;
+      height: 20px !important;
+      line-height: 20px !important;
+    }
+
+    span {
+      line-height: 20px !important;
+      flex: 1 !important;
+      text-align: center !important;
+    }
+  }
+
+  .contact-section {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  .register-text {
+    font-size: 13px !important;
+    line-height: 18px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Espacement uniforme */
+  .brand-section {
+    margin-bottom: 16px !important;
+  }
+
+  .logo-wrapper {
+    gap: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .user-type-toggle {
+    gap: 8px !important;
+    margin-bottom: 20px !important;
+    padding: 6px !important;
+  }
+
+  .form-field {
+    margin-bottom: 16px !important;
+  }
+
+  .login-form {
+    margin-bottom: 16px !important;
+  }
+
+  .divider {
+    margin: 20px 0 !important;
+  }
+
+  .register-section {
+    margin-top: 24px !important;
+    padding-top: 24px !important;
+  }
+}

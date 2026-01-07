@@ -1,0 +1,69 @@
+<div class="dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+      <h1>Tableau de Bord</h1>
+      <p>Bienvenue dans le panneau d'administration</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <mat-card
+        *ngFor="let card of statsCards"
+        class="stat-card"
+        [routerLink]="card.route"
+      >
+        <div class="stat-icon" [style.background]="card.bgColor">
+          <mat-icon [style.color]="card.color">{{ card.icon }}</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ card.title }}</h3>
+          <p class="stat-value">{{ getStatValue(card.key) }}</p>
+        </div>
+        <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+      </mat-card>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="activities-section">
+      <h2>Activités Récentes</h2>
+      <div class="activities-grid">
+        <mat-card *ngFor="let activity of recentActivities" class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon" [style.color]="activity.color">
+              <mat-icon>{{ activity.icon }}</mat-icon>
+            </div>
+            <h3>{{ activity.title }}</h3>
+          </div>
+          <p class="activity-value">{{ getStatValue(activity.key) }}</p>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+      <h2>Actions Rapides</h2>
+      <div class="actions-grid">
+        <button mat-raised-button color="primary" routerLink="/admin/clients">
+          <mat-icon>add_business</mat-icon>
+          Gérer les Clients
+        </button>
+        <button mat-raised-button color="primary" routerLink="/admin/candidates">
+          <mat-icon>person_add</mat-icon>
+          Gérer les Candidats
+        </button>
+        <button mat-raised-button color="primary" routerLink="/admin/demandes">
+          <mat-icon>assignment_add</mat-icon>
+          Gérer les Demandes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

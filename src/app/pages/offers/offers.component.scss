@@ -1,0 +1,329 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.simple-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1.5rem;
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+
+    h3 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .card-body {
+    margin-bottom: 1rem;
+
+    p {
+      margin: 0.5rem 0;
+      color: #555;
+      font-size: 0.875rem;
+
+      strong {
+        color: #333;
+      }
+    }
+  }
+
+  .card-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+
+    &.status-active {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    &.status-closed {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    &.status-filled {
+      background: #d1fae5;
+      color: #065f46;
+    }
+  }
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    mat-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+
+      .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+    }
+
+    &.active {
+      mat-icon {
+        color: #3b82f6;
+      }
+      .stat-value {
+        color: #3b82f6;
+      }
+    }
+
+    &.filled {
+      mat-icon {
+        color: #10b981;
+      }
+      .stat-value {
+        color: #10b981;
+      }
+    }
+
+    &.applicants {
+      mat-icon {
+        color: #8b5cf6;
+      }
+      .stat-value {
+        color: #8b5cf6;
+      }
+    }
+  }
+}
+
+.offers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  .offer-card {
+    mat-card-header {
+      padding: 1.5rem 1.5rem 0;
+
+      .offer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        gap: 1rem;
+
+        .offer-title-section {
+          flex: 1;
+
+          h3 {
+            font-size: 1.375rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+          }
+
+          .company-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6b7280;
+
+            mat-icon {
+              font-size: 1.125rem;
+              width: 1.125rem;
+              height: 1.125rem;
+              color: #1a237e;
+            }
+
+            span {
+              font-size: 0.9375rem;
+              font-weight: 500;
+            }
+          }
+        }
+
+        mat-chip {
+          font-size: 0.75rem;
+          min-height: 28px;
+          padding: 0 0.75rem;
+
+          &.status-active {
+            background: #dbeafe;
+            color: #1e40af;
+          }
+
+          &.status-closed {
+            background: #e5e7eb;
+            color: #374151;
+          }
+
+          &.status-filled {
+            background: #d1fae5;
+            color: #065f46;
+          }
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 1.5rem;
+
+      .offer-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+
+        .detail-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #6b7280;
+          font-size: 0.875rem;
+
+          mat-icon {
+            font-size: 1.125rem;
+            width: 1.125rem;
+            height: 1.125rem;
+            color: #1a237e;
+          }
+        }
+      }
+
+      .offer-description {
+        margin: 0 0 1.5rem 0;
+        color: #374151;
+        line-height: 1.6;
+      }
+
+      .requirements-section {
+        margin-bottom: 1.5rem;
+
+        h4 {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #374151;
+          margin: 0 0 0.75rem 0;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+
+          mat-icon {
+            font-size: 1rem;
+            width: 1rem;
+            height: 1rem;
+            color: #1a237e;
+          }
+        }
+
+        .requirements-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+
+          mat-chip {
+            font-size: 0.8125rem;
+            min-height: 32px;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+          }
+        }
+      }
+
+      .applicants-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 0.5rem;
+        color: white;
+        font-weight: 500;
+
+        mat-icon {
+          font-size: 1.25rem;
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+      }
+    }
+
+    mat-card-actions {
+      padding: 0 1.5rem 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+
+      button {
+        mat-icon {
+          font-size: 1.125rem;
+          width: 1.125rem;
+          height: 1.125rem;
+          margin-right: 0.25rem;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,243 @@
+.demandes-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.5rem 0;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+
+  p {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.summary-bar {
+  display: flex;
+  gap: 2rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-bottom: 1px solid #e5e7eb;
+
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: #3b82f6;
+    }
+
+    .summary-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .summary-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+      }
+    }
+  }
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.demandes-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+    color: #111827;
+
+    &:has(.description-cell) {
+      max-width: 300px;
+    }
+
+    &:has(.profils-cell) {
+      min-width: 300px;
+    }
+
+    .client-id-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: #eff6ff;
+      color: #3b82f6;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.8125rem;
+    }
+
+    .title-cell {
+      .title-text {
+        font-weight: 600;
+        color: #111827;
+      }
+    }
+
+    .description-cell {
+      display: block;
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #6b7280;
+      font-size: 0.8125rem;
+    }
+
+    .profils-cell {
+      mat-chip-set {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .profil-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+
+        .profil-name {
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: #0369a1;
+        }
+
+        .profil-quantity {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #0284c7;
+          background: #e0f2fe;
+          padding: 0.125rem 0.375rem;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+
+  tr:hover {
+    background: #f9fafb;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.25rem;
+
+    button {
+      width: 36px;
+      height: 36px;
+
+      mat-icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+  }
+
+  mat-chip-set {
+    display: inline-flex;
+
+    mat-chip {
+      font-weight: 600;
+    }
+  }
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #9ca3af;
+
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .header {
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .demandes-table {
+    th, td {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.8125rem;
+    }
+  }
+}
