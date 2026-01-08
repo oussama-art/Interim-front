@@ -1,0 +1,89 @@
+<div class="pro-dialog-container edit-mode create-mode">
+  <header class="pro-header">
+    <div class="header-main">
+      <div class="icon-circle create">
+        <mat-icon>add_task</mat-icon>
+      </div>
+      <div>
+        <h2>Nouveau Contrat</h2>
+        <p class="subtitle">Initialisation des termes contractuels</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()"><mat-icon>close</mat-icon></button>
+  </header>
+
+  <form [formGroup]="addForm" (ngSubmit)="onSubmit()">
+    <div class="pro-content">
+      
+      <div class="identity-section">
+        <div class="logo-preview empty">
+          <mat-icon>person_add</mat-icon>
+        </div>
+        <div class="primary-info">
+          <span class="field-context">Informations Collaborateur</span>
+          <mat-form-field appearance="outline" class="custom-field large no-subscript">
+            <mat-label>Nom complet du candidat</mat-label>
+            <input matInput formControlName="candidateName" placeholder="ex: Jean Dupont">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <label><mat-icon>tag</mat-icon> Référence</label>
+          <mat-form-field appearance="outline">
+            <input matInput formControlName="reference">
+          </mat-form-field>
+        </div>
+
+        <div class="info-item">
+          <label><mat-icon>work_outline</mat-icon> Poste</label>
+          <mat-form-field appearance="outline">
+            <input matInput formControlName="position" placeholder="ex: Analyste Développeur">
+          </mat-form-field>
+        </div>
+
+        <div class="info-item">
+          <label><mat-icon>business</mat-icon> Client</label>
+          <mat-form-field appearance="outline">
+            <input matInput formControlName="clientName">
+          </mat-form-field>
+        </div>
+
+        <div class="info-item salary-highlight">
+          <label><mat-icon>payments</mat-icon> Salaire Mensuel</label>
+          <mat-form-field appearance="outline">
+            <input matInput type="number" formControlName="salary">
+            <span matSuffix>€</span>
+          </mat-form-field>
+        </div>
+
+        <div class="info-item">
+          <label><mat-icon>calendar_today</mat-icon> Date de début</label>
+          <mat-form-field appearance="outline">
+            <input matInput [matDatepicker]="pickerS" formControlName="startDate">
+            <mat-datepicker-toggle matSuffix [for]="pickerS"></mat-datepicker-toggle>
+            <mat-datepicker #pickerS></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="info-item">
+          <label><mat-icon>event_busy</mat-icon> Date de fin</label>
+          <mat-form-field appearance="outline">
+            <input matInput [matDatepicker]="pickerE" formControlName="endDate">
+            <mat-datepicker-toggle matSuffix [for]="pickerE"></mat-datepicker-toggle>
+            <mat-datepicker #pickerE></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <footer class="pro-actions">
+      <button mat-button type="button" (click)="dialogRef.close()" class="btn-secondary">Annuler</button>
+      <button mat-flat-button class="btn-primary-gradient" type="submit" [disabled]="addForm.invalid">
+        <mat-icon>check</mat-icon>
+        Créer le contrat
+      </button>
+    </footer>
+  </form>
+</div>

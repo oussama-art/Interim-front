@@ -1,0 +1,112 @@
+<div class="pro-dialog-container">
+  <div class="pro-header">
+    <div class="header-main">
+      <div class="title-group">
+        <h2>Détails du Contrat</h2>
+        <span class="ref-badge">REF: {{ displayData.reference }}</span>
+      </div>
+    </div>
+    <span class="status-indicator" [ngClass]="'status-' + displayData.status">
+        {{ getStatusLabel(displayData.status) }}
+    </span>
+  </div>
+
+  <mat-dialog-content class="pro-content">
+    <div class="identity-section">
+      <div class="logo-preview" (click)="fileInput.click()">
+        <img *ngIf="displayData.companyLogo" [src]="displayData.companyLogo" />
+        <mat-icon *ngIf="!displayData.companyLogo">add_a_photo</mat-icon>
+      </div>
+      <div class="primary-info">
+        <label>Intitulé du poste</label>
+        <div class="value-highlight">{{ displayData.position }}</div>
+      </div>
+      <input type="file" hidden #fileInput (change)="onLogoUpload($event)" />
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <label><mat-icon>person</mat-icon> Candidat</label>
+        <div class="value">{{ displayData.candidateName }}</div>
+      </div>
+
+      <div class="info-item">
+        <label><mat-icon>business</mat-icon> Client</label>
+        <div class="value">{{ displayData.clientName }}</div>
+      </div>
+
+      <div class="info-item salary-highlight">
+        <label><mat-icon>payments</mat-icon> Salaire Annuel</label>
+        <div class="value">{{ displayData.salary }}<span>€ / an</span></div>
+      </div>
+
+      <div class="info-item">
+        <label><mat-icon>history_edu</mat-icon> Type de Contrat</label>
+        <div class="value">CDI Temps Plein</div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="pro-actions">
+    <button mat-button mat-dialog-close>Annuler</button>
+    <button mat-flat-button class="btn-primary" (click)="generatePdf()">
+      <mat-icon>download</mat-icon> Exporter PDF
+    </button>
+  </mat-dialog-actions>
+</div>
+<!-- Contenu PDF caché à l'écran -->
+<div class="print-view" id="contract-pdf">
+  <div class="print-header">
+    <div class="company-brand">
+      <img *ngIf="displayData.companyLogo" [src]="displayData.companyLogo" class="print-logo" />
+      <h2 *ngIf="!displayData.companyLogo">{{ displayData.clientName }}</h2>
+    </div>
+    <div class="contract-meta">
+      <p><strong>Réf :</strong> {{ displayData.reference }}</p>
+      <p><strong>Date :</strong> {{ getCurrentDate() }}</p>
+    </div>
+  </div>
+
+  <h1 class="print-title">CONTRAT DE TRAVAIL / PRESTATION</h1>
+
+  <div class="print-content">
+    <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+    <p>La société <strong>{{ displayData.clientName }}</strong>, ci-après désignée "L'Employeur",</p>
+    <p><strong>ET :</strong></p>
+    <p>M./Mme <strong>{{ displayData.candidateName }}</strong>, ci-après désigné(e) "Le Collaborateur".</p>
+
+    <hr>
+
+    <h3>ARTICLE 1 : FONCTIONS ET QUALIFICATION</h3>
+    <p>Le Collaborateur est engagé au poste de <strong>{{ displayData.position }}</strong>. Dans le cadre de ses fonctions, il sera amené à effectuer les missions relatives à son expertise professionnelle.</p>
+
+    <h3>ARTICLE 2 : RÉMUNÉRATION</h3>
+    <p>En contrepartie de l'exécution de ses missions, le Collaborateur percevra une rémunération annuelle brute de <strong>{{ displayData.salary }} €</strong>, versée en 12 mensualités.</p>
+
+    <h3>ARTICLE 3 : DURÉE ET PÉRIODE D'ESSAI</h3>
+    <p>Le présent contrat prend effet à compter du <strong>{{ displayData.startDate || 'à définir' }}</strong>. Une période d'essai de 3 mois est prévue, renouvelable d'un commun accord.</p>
+
+    <h3>ARTICLE 4 : CONFIDENTIALITÉ</h3>
+    <p>Le Collaborateur s'engage à conserver la plus stricte confidentialité sur toutes les informations, documents ou secrets dont il pourrait avoir connaissance au cours de l'exécution de son contrat.</p>
+
+    <h3>ARTICLE 5 : RÉSILIATION</h3>
+    <p>Chacune des parties pourra mettre fin au présent contrat sous réserve du respect d'un préavis légal, notifié par lettre recommandée avec accusé de réception.</p>
+  </div>
+
+  <div class="print-signatures">
+    <div class="sig-box">
+      <p>Fait à : ...........................</p>
+      <p>Le : <strong>{{ getCurrentDate() }}</strong></p>
+      <div class="sig-label">Signature du Collaborateur</div>
+      <div class="sig-space"></div>
+      <small>(Précédé de la mention "Lu et approuvé")</small>
+    </div>
+    <div class="sig-box">
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <div class="sig-label">Signature de l'Employeur</div>
+      <div class="sig-space"></div>
+      <small>(Cachet de l'entreprise)</small>
+    </div>
+  </div>
+</div>

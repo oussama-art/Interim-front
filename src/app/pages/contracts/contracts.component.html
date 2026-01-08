@@ -1,52 +1,79 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>Gestion des Contrats</h1>
-    <button mat-raised-button color="primary">
+<div class="dashboard-container">
+  <header class="page-header">
+    <div class="header-titles">
+      <h1>Gestion des Contrats</h1>
+      <p class="subtitle">
+        Gérez et suivez les engagements contractuels de vos collaborateurs
+      </p>
+    </div>
+    <button mat-flat-button class="btn-primary-gradient" (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
-      Nouveau contrat
+      <span>Nouveau contrat</span>
     </button>
-  </div>
+  </header>
 
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Référence</th>
-        <th>Candidat</th>
-        <th>Client</th>
-        <th>Poste</th>
-        <th>Date début</th>
-        <th>Date fin</th>
-        <th>Salaire</th>
-        <th>Statut</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let contract of contracts">
-        <td>{{ contract.reference }}</td>
-        <td>{{ contract.candidateName }}</td>
-        <td>{{ contract.clientName }}</td>
-        <td>{{ contract.position }}</td>
-        <td>{{ contract.startDate }}</td>
-        <td>{{ contract.endDate }}</td>
-        <td>{{ contract.salary }}€</td>
-        <td>
-          <span class="status-badge" [ngClass]="getStatusClass(contract.status)">
-            {{ getStatusLabel(contract.status) }}
-          </span>
-        </td>
-        <td class="actions">
-          <button mat-icon-button color="primary" title="Voir">
-            <mat-icon>visibility</mat-icon>
-          </button>
-          <button mat-icon-button title="Modifier">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button mat-icon-button color="warn" title="Supprimer">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="table-wrapper">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>Collaborateur</th>
+          <th>Client / Entreprise</th>
+          <th>Poste Occupé</th>
+          <th>Période</th>
+          <th>Rémunération</th>
+          <th class="text-center">Statut</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let contract of contracts">
+          <td class="ref-id">{{ contract.reference }}</td>
+          <td>
+            <div class="user-cell">
+              <div class="avatar">{{ contract.candidateName[0] }}</div>
+              <span>{{ contract.candidateName }}</span>
+            </div>
+          </td>
+          <td class="client-name">{{ contract.clientName }}</td>
+          <td>{{ contract.position }}</td>
+          <td class="date-range">
+            <span>{{ contract.startDate }}</span>
+            <mat-icon class="arrow-sep">arrow_right_alt</mat-icon>
+            <small>{{ contract.endDate }}</small>
+          </td>
+          <td class="salary-cell">
+            <strong>{{ contract.salary }}</strong> <small>€/mois</small>
+          </td>
+
+          <td class="text-center">
+            <span class="badge" [ngClass]="getStatusClass(contract.status)">
+              {{ getStatusLabel(contract.status) }}
+            </span>
+          </td>
+
+          <td class="text-right">
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="btn-more">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #menu="matMenu" class="modern-dropdown">
+              <button mat-button (click)="openConsultDialog(contract)">
+                <mat-icon>visibility</mat-icon>
+                <span>Consulter</span>
+              </button>
+              <button mat-menu-item (click)="openEditDialog(contract)">
+                <mat-icon>edit_note</mat-icon>
+                <span>Modifier</span>
+              </button>
+              <button mat-menu-item class="delete-action">
+                <mat-icon>delete_sweep</mat-icon>
+                <span>Supprimer</span>
+              </button>
+            </mat-menu>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
