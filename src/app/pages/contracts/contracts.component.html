@@ -43,7 +43,7 @@
             <small>{{ contract.endDate }}</small>
           </td>
           <td class="salary-cell">
-            <strong>{{ contract.salary }}</strong> <small>€/mois</small>
+            <strong>{{ contract.salary }}</strong> <small>MAD/mois</small>
           </td>
 
           <td class="text-center">
@@ -66,7 +66,7 @@
                 <mat-icon>edit_note</mat-icon>
                 <span>Modifier</span>
               </button>
-              <button mat-menu-item class="delete-action">
+              <button mat-menu-item (click)="openDeleteDialog(contract)" class="delete-action">
                 <mat-icon>delete_sweep</mat-icon>
                 <span>Supprimer</span>
               </button>

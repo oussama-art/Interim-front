@@ -9,16 +9,47 @@
         <p class="subtitle">Initialisation des termes contractuels</p>
       </div>
     </div>
-    <button mat-icon-button (click)="dialogRef.close()"><mat-icon>close</mat-icon></button>
+    <button mat-icon-button (click)="dialogRef.close()">
+      <mat-icon>close</mat-icon>
+    </button>
   </header>
 
   <form [formGroup]="addForm" (ngSubmit)="onSubmit()">
     <div class="pro-content">
       
+      <!-- Identity Section with Photo Upload -->
       <div class="identity-section">
-        <div class="logo-preview empty">
-          <mat-icon>person_add</mat-icon>
+        <div class="logo-preview" 
+             [class.empty]="!logoPreview"
+             (click)="triggerFileInput()"
+             title="Cliquez pour ajouter une photo">
+          
+          <!-- Show uploaded image -->
+          <img *ngIf="logoPreview" 
+               [src]="logoPreview" 
+               alt="Photo du candidat">
+          
+          <!-- Show placeholder icon when no image -->
+          <mat-icon *ngIf="!logoPreview">person_add</mat-icon>
+          
+          <!-- Remove button overlay when image exists -->
+          <button *ngIf="logoPreview"
+                  mat-icon-button
+                  class="remove-logo-btn"
+                  type="button"
+                  (click)="removeLogo(); $event.stopPropagation()"
+                  title="Supprimer la photo">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
+
+        <!-- Hidden file input -->
+        <input type="file"
+               id="logoInput"
+               accept="image/*"
+               style="display: none"
+               (change)="onFileSelected($event)">
+
         <div class="primary-info">
           <span class="field-context">Informations Collaborateur</span>
           <mat-form-field appearance="outline" class="custom-field large no-subscript">
@@ -28,6 +59,7 @@
         </div>
       </div>
 
+      <!-- Info Grid -->
       <div class="info-grid">
         <div class="info-item">
           <label><mat-icon>tag</mat-icon> Référence</label>
@@ -79,8 +111,13 @@
     </div>
 
     <footer class="pro-actions">
-      <button mat-button type="button" (click)="dialogRef.close()" class="btn-secondary">Annuler</button>
-      <button mat-flat-button class="btn-primary-gradient" type="submit" [disabled]="addForm.invalid">
+      <button mat-button type="button" (click)="dialogRef.close()" class="btn-secondary">
+        Annuler
+      </button>
+      <button mat-flat-button 
+              class="btn-primary-gradient" 
+              type="submit" 
+              [disabled]="addForm.invalid">
         <mat-icon>check</mat-icon>
         Créer le contrat
       </button>

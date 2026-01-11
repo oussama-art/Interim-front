@@ -36,8 +36,8 @@
       </div>
 
       <div class="info-item salary-highlight">
-        <label><mat-icon>payments</mat-icon> Salaire Annuel</label>
-        <div class="value">{{ displayData.salary }}<span>€ / an</span></div>
+        <label><mat-icon>payments</mat-icon> Salaire Montiel</label>
+        <div class="value">{{ displayData.salary }}<span>MAD / mois</span></div>
       </div>
 
       <div class="info-item">
@@ -56,57 +56,102 @@
 </div>
 <!-- Contenu PDF caché à l'écran -->
 <div class="print-view" id="contract-pdf">
+
+  <!-- HEADER -->
   <div class="print-header">
     <div class="company-brand">
-      <img *ngIf="displayData.companyLogo" [src]="displayData.companyLogo" class="print-logo" />
-      <h2 *ngIf="!displayData.companyLogo">{{ displayData.clientName }}</h2>
+      <img *ngIf="displayData.companyLogo"
+           [src]="displayData.companyLogo"
+           class="print-logo" />
+      <div *ngIf="!displayData.companyLogo" class="company-name">
+        {{ displayData.clientName }}
+      </div>
     </div>
+
     <div class="contract-meta">
-      <p><strong>Réf :</strong> {{ displayData.reference }}</p>
+      <p><strong>Référence :</strong> {{ displayData.reference }}</p>
       <p><strong>Date :</strong> {{ getCurrentDate() }}</p>
     </div>
   </div>
 
-  <h1 class="print-title">CONTRAT DE TRAVAIL / PRESTATION</h1>
+  <!-- TITLE -->
+  <h1 class="print-title">
+    CONTRAT DE TRAVAIL / PRESTATION
+  </h1>
 
+  <!-- CONTENT -->
   <div class="print-content">
-    <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
-    <p>La société <strong>{{ displayData.clientName }}</strong>, ci-après désignée "L'Employeur",</p>
-    <p><strong>ET :</strong></p>
-    <p>M./Mme <strong>{{ displayData.candidateName }}</strong>, ci-après désigné(e) "Le Collaborateur".</p>
 
-    <hr>
+    <p class="intro">
+      Entre les soussignés :
+    </p>
 
-    <h3>ARTICLE 1 : FONCTIONS ET QUALIFICATION</h3>
-    <p>Le Collaborateur est engagé au poste de <strong>{{ displayData.position }}</strong>. Dans le cadre de ses fonctions, il sera amené à effectuer les missions relatives à son expertise professionnelle.</p>
+    <p>
+      <strong>{{ displayData.clientName }}</strong>,
+      ci-après désignée « l’Employeur »,
+    </p>
 
-    <h3>ARTICLE 2 : RÉMUNÉRATION</h3>
-    <p>En contrepartie de l'exécution de ses missions, le Collaborateur percevra une rémunération annuelle brute de <strong>{{ displayData.salary }} €</strong>, versée en 12 mensualités.</p>
+    <p class="and">ET</p>
 
-    <h3>ARTICLE 3 : DURÉE ET PÉRIODE D'ESSAI</h3>
-    <p>Le présent contrat prend effet à compter du <strong>{{ displayData.startDate || 'à définir' }}</strong>. Une période d'essai de 3 mois est prévue, renouvelable d'un commun accord.</p>
+    <p>
+      M./Mme <strong>{{ displayData.candidateName }}</strong>,
+      ci-après désigné(e) « le Collaborateur ».
+    </p>
 
-    <h3>ARTICLE 4 : CONFIDENTIALITÉ</h3>
-    <p>Le Collaborateur s'engage à conserver la plus stricte confidentialité sur toutes les informations, documents ou secrets dont il pourrait avoir connaissance au cours de l'exécution de son contrat.</p>
+    <hr class="divider">
 
-    <h3>ARTICLE 5 : RÉSILIATION</h3>
-    <p>Chacune des parties pourra mettre fin au présent contrat sous réserve du respect d'un préavis légal, notifié par lettre recommandée avec accusé de réception.</p>
+    <h3>Article 1 – Fonctions</h3>
+    <p>
+      Le Collaborateur est engagé en qualité de
+      <strong>{{ displayData.position }}</strong>.
+      Il exercera ses fonctions conformément aux instructions de l’Employeur.
+    </p>
+
+    <h3>Article 2 – Rémunération</h3>
+    <p>
+      La rémunération annuelle brute est fixée à
+      <strong>{{ displayData.salary }} €</strong>,
+      versée mensuellement.
+    </p>
+
+    <h3>Article 3 – Durée</h3>
+    <p>
+      Le présent contrat prend effet à compter du
+      <strong>{{ displayData.startDate || 'à définir' }}</strong>.
+      Une période d’essai de trois (3) mois est applicable.
+    </p>
+
+    <h3>Article 4 – Confidentialité</h3>
+    <p>
+      Le Collaborateur s’engage à respecter une stricte obligation
+      de confidentialité pendant et après la durée du contrat.
+    </p>
+
+    <h3>Article 5 – Résiliation</h3>
+    <p>
+      Le contrat peut être résilié par l’une ou l’autre des parties
+      dans le respect du préavis légal.
+    </p>
   </div>
 
+  <!-- SIGNATURES -->
   <div class="print-signatures">
     <div class="sig-box">
-      <p>Fait à : ...........................</p>
+      <p>Fait à : ....................................</p>
       <p>Le : <strong>{{ getCurrentDate() }}</strong></p>
-      <div class="sig-label">Signature du Collaborateur</div>
       <div class="sig-space"></div>
-      <small>(Précédé de la mention "Lu et approuvé")</small>
+      <div class="sig-label">Signature du Collaborateur</div>
+      <small>Lu et approuvé</small>
     </div>
+
     <div class="sig-box">
       <p>&nbsp;</p>
       <p>&nbsp;</p>
-      <div class="sig-label">Signature de l'Employeur</div>
       <div class="sig-space"></div>
-      <small>(Cachet de l'entreprise)</small>
+      <div class="sig-label">Signature de l’Employeur</div>
+      <small>Cachet et signature</small>
     </div>
   </div>
+
 </div>
+

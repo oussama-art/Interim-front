@@ -6,9 +6,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ContractDetailsDialog } from '../../shared/components/ContractDetailsDialog/contract-details-dialog.component';
-import { ContractEditDialog } from '../../shared/components/ContractEditDialog/contract-edit-dialog.component';
-import { ContractAddDialog } from '../../shared/components/ContractAddDialog/contract-add-dialog.component';
+import { ContractDetailsDialog } from '../../shared/components/ContractDialog/ContractDetailsDialog/contract-details-dialog.component';
+import { ContractEditDialog } from '../../shared/components/ContractDialog/ContractEditDialog/contract-edit-dialog.component';
+import { ContractAddDialog } from '../../shared/components/ContractDialog/ContractAddDialog/contract-add-dialog.component';
+import { ContractDeleteDialog } from '../../shared/components/ContractDialog/ContractDeleteDialog/contractDeleteDialog .component';
 
 interface Contract {
   id: number;
@@ -33,6 +34,7 @@ interface Contract {
     MatChipsModule,
     MatMenuModule,
     MatDialogModule,
+    
   ],
   templateUrl: './contracts.component.html',
   styleUrl: './contracts.component.scss',
@@ -151,5 +153,46 @@ openAddDialog() {
   } catch (error) {
     console.error('Erreur lors de l\'ouverture :', error);
   }
+}
+openDeleteDialog(contract: Contract) {
+  const dialogRef = this.dialog.open(ContractDeleteDialog, {
+    width: '500px',
+    maxWidth: '95vw',
+    panelClass: 'delete-dialog-panel',
+    data: contract, // On passe le contrat à supprimer
+    disableClose: false // L'utilisateur peut fermer en cliquant à l'extérieur
+  });
+
+  // 3️⃣ Écouter la réponse après fermeture du dialog
+  dialogRef.afterClosed().subscribe(confirmed => {
+    if (confirmed) {
+      // L'utilisateur a confirmé la suppression
+      const index = this.contracts.findIndex(c => c.id === contract.id);
+      
+      if (index > -1) {
+        // Supprimer du tableau local
+        this.contracts.splice(index, 1);
+        
+        console.log(`✅ Contrat ${contract.reference} supprimé avec succès`);
+        
+        // 🔥 ICI : Appeler votre service backend pour supprimer en DB
+        // this.contractService.deleteContract(contract.id).subscribe({
+        //   next: () => {
+        //     console.log('Supprimé de la base de données');
+        //     // Optionnel : Afficher un message de succès
+        //   },
+        //   error: (err) => {
+        //     console.error('Erreur lors de la suppression:', err);
+        //     // Optionnel : Afficher un message d'erreur
+        //     // Et remettre le contrat dans le tableau si l'API échoue
+        //     this.contracts.splice(index, 0, contract);
+        //   }
+        // });
+      }
+    } else {
+      // L'utilisateur a annulé
+      console.log('❌ Suppression annulée');
+    }
+  });
 }
 }

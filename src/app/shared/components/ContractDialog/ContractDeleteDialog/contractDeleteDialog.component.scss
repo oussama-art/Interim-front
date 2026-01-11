@@ -1,0 +1,190 @@
+.delete-dialog-container {
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --danger-dark: #dc2626;
+  --text-dark: #0f172a;
+  --text-light: #64748b;
+  --bg-subtle: #f8fafc;
+  --border: #f1f5f9;
+
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 32px;
+  max-width: 500px;
+
+  .delete-icon-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+
+    .danger-icon-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--danger-light) 0%, #fecaca 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse-danger 2s ease-in-out infinite;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: var(--danger);
+      }
+    }
+  }
+
+  .delete-content {
+    text-align: center;
+
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .warning-message {
+      font-size: 15px;
+      color: var(--text-light);
+      margin: 0 0 24px 0;
+      line-height: 1.6;
+    }
+
+    .contract-info-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: left;
+
+      .info-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+
+        &:not(:last-child) {
+          border-bottom: 1px solid var(--border);
+        }
+
+        mat-icon {
+          color: var(--text-light);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+
+        .info-details {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .info-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+          }
+        }
+      }
+    }
+
+    .danger-notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--danger-light);
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--danger-dark);
+      text-align: left;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: var(--danger);
+        flex-shrink: 0;
+      }
+
+      span {
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .delete-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+
+    button {
+      flex: 1;
+      height: 44px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .btn-cancel {
+      border: 1px solid var(--border);
+      color: var(--text-dark);
+      background: white;
+
+      &:hover {
+        background: var(--bg-subtle);
+        border-color: #cbd5e1;
+      }
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+
+      &:hover {
+        background: var(--danger-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+@keyframes pulse-danger {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+  }
+}
