@@ -1,0 +1,157 @@
+<div class="pro-dialog-container">
+  <div class="pro-header">
+    <div class="header-main">
+      <div class="title-group">
+        <h2>Détails du Contrat</h2>
+        <span class="ref-badge">REF: {{ displayData.reference }}</span>
+      </div>
+    </div>
+    <span class="status-indicator" [ngClass]="'status-' + displayData.status">
+        {{ getStatusLabel(displayData.status) }}
+    </span>
+  </div>
+
+  <mat-dialog-content class="pro-content">
+    <div class="identity-section">
+      <div class="logo-preview" (click)="fileInput.click()">
+        <img *ngIf="displayData.companyLogo" [src]="displayData.companyLogo" />
+        <mat-icon *ngIf="!displayData.companyLogo">add_a_photo</mat-icon>
+      </div>
+      <div class="primary-info">
+        <label>Intitulé du poste</label>
+        <div class="value-highlight">{{ displayData.position }}</div>
+      </div>
+      <input type="file" hidden #fileInput (change)="onLogoUpload($event)" />
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <label><mat-icon>person</mat-icon> Candidat</label>
+        <div class="value">{{ displayData.candidateName }}</div>
+      </div>
+
+      <div class="info-item">
+        <label><mat-icon>business</mat-icon> Client</label>
+        <div class="value">{{ displayData.clientName }}</div>
+      </div>
+
+      <div class="info-item salary-highlight">
+        <label><mat-icon>payments</mat-icon> Salaire Montiel</label>
+        <div class="value">{{ displayData.salary }}<span>MAD / mois</span></div>
+      </div>
+
+      <div class="info-item">
+        <label><mat-icon>history_edu</mat-icon> Type de Contrat</label>
+        <div class="value">CDI Temps Plein</div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="pro-actions">
+    <button mat-button mat-dialog-close>Annuler</button>
+    <button mat-flat-button class="btn-primary" (click)="generatePdf()">
+      <mat-icon>download</mat-icon> Exporter PDF
+    </button>
+  </mat-dialog-actions>
+</div>
+<!-- Contenu PDF caché à l'écran -->
+<div class="print-view" id="contract-pdf">
+
+  <!-- HEADER -->
+  <div class="print-header">
+    <div class="company-brand">
+      <img *ngIf="displayData.companyLogo"
+           [src]="displayData.companyLogo"
+           class="print-logo" />
+      <div *ngIf="!displayData.companyLogo" class="company-name">
+        {{ displayData.clientName }}
+      </div>
+    </div>
+
+    <div class="contract-meta">
+      <p><strong>Référence :</strong> {{ displayData.reference }}</p>
+      <p><strong>Date :</strong> {{ getCurrentDate() }}</p>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <h1 class="print-title">
+    CONTRAT DE TRAVAIL / PRESTATION
+  </h1>
+
+  <!-- CONTENT -->
+  <div class="print-content">
+
+    <p class="intro">
+      Entre les soussignés :
+    </p>
+
+    <p>
+      <strong>{{ displayData.clientName }}</strong>,
+      ci-après désignée « l’Employeur »,
+    </p>
+
+    <p class="and">ET</p>
+
+    <p>
+      M./Mme <strong>{{ displayData.candidateName }}</strong>,
+      ci-après désigné(e) « le Collaborateur ».
+    </p>
+
+    <hr class="divider">
+
+    <h3>Article 1 – Fonctions</h3>
+    <p>
+      Le Collaborateur est engagé en qualité de
+      <strong>{{ displayData.position }}</strong>.
+      Il exercera ses fonctions conformément aux instructions de l’Employeur.
+    </p>
+
+    <h3>Article 2 – Rémunération</h3>
+    <p>
+      La rémunération annuelle brute est fixée à
+      <strong>{{ displayData.salary }} €</strong>,
+      versée mensuellement.
+    </p>
+
+    <h3>Article 3 – Durée</h3>
+    <p>
+      Le présent contrat prend effet à compter du
+      <strong>{{ displayData.startDate || 'à définir' }}</strong>.
+      Une période d’essai de trois (3) mois est applicable.
+    </p>
+
+    <h3>Article 4 – Confidentialité</h3>
+    <p>
+      Le Collaborateur s’engage à respecter une stricte obligation
+      de confidentialité pendant et après la durée du contrat.
+    </p>
+
+    <h3>Article 5 – Résiliation</h3>
+    <p>
+      Le contrat peut être résilié par l’une ou l’autre des parties
+      dans le respect du préavis légal.
+    </p>
+  </div>
+
+  <!-- SIGNATURES -->
+  <div class="print-signatures">
+    <div class="sig-box">
+      <p>Fait à : ....................................</p>
+      <p>Le : <strong>{{ getCurrentDate() }}</strong></p>
+      <div class="sig-space"></div>
+      <div class="sig-label">Signature du Collaborateur</div>
+      <small>Lu et approuvé</small>
+    </div>
+
+    <div class="sig-box">
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <div class="sig-space"></div>
+      <div class="sig-label">Signature de l’Employeur</div>
+      <small>Cachet et signature</small>
+    </div>
+  </div>
+
+</div>
+

@@ -1,0 +1,56 @@
+<div class="delete-dialog-container">
+  <div class="delete-icon-wrapper">
+    <div class="danger-icon-circle">
+      <mat-icon>warning</mat-icon>
+    </div>
+  </div>
+
+  <div class="delete-content">
+    <h2>Confirmer la suppression</h2>
+    <p class="warning-message">
+      Êtes-vous sûr de vouloir supprimer ce contrat ?
+    </p>
+
+    <div class="contract-info-card">
+      <div class="info-row">
+        <mat-icon>badge</mat-icon>
+        <div class="info-details">
+          <span class="info-label">Référence</span>
+          <span class="info-value">{{ data.reference }}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <mat-icon>person</mat-icon>
+        <div class="info-details">
+          <span class="info-label">Collaborateur</span>
+          <span class="info-value">{{ data.candidateName }}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <mat-icon>business</mat-icon>
+        <div class="info-details">
+          <span class="info-label">Client</span>
+          <span class="info-value">{{ data.clientName }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-notice">
+      <mat-icon>info</mat-icon>
+      <span>Cette action est irréversible. Toutes les données associées seront définitivement supprimées.</span>
+    </div>
+  </div>
+
+  <div class="delete-actions">
+    <button mat-button class="btn-cancel" (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+      Annuler
+    </button>
+    <button mat-flat-button class="btn-delete" (click)="onConfirm()">
+      <mat-icon>delete_forever</mat-icon>
+      Supprimer définitivement
+    </button>
+  </div>
+</div>
