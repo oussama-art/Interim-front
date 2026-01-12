@@ -2,6 +2,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -57,7 +58,8 @@ export class DemandeDetailDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { demande: DemandeResponse },
     private candidateService: CandidateService,
     private offerService: OfferService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {
     this.demande = data.demande;
   }
@@ -135,6 +137,11 @@ export class DemandeDetailDialogComponent implements OnInit {
         this.loadingOffer = false;
       }
     });
+  }
+
+  navigateToCandidates(): void {
+    this.dialogRef.close();
+    this.router.navigate(['/admin/candidates']);
   }
 
   close(): void {

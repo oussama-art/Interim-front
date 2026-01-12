@@ -61,7 +61,7 @@ export class CandidateService {
    * @returns Observable<PageResponse<CandidateResponse>>
    */
   getCandidatesPage(page: number = 0, size: number = 10): Observable<PageResponse<CandidateResponse>> {
-    const url = getApiUrl('/candidates/page');
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.PAGE);
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -69,6 +69,21 @@ export class CandidateService {
     return this.http.get<PageResponse<CandidateResponse>>(url, { params }).pipe(
       catchError(error => {
         console.error('Erreur lors de la récupération des candidats paginés:', error);
+        return throwError(() => this.handleError(error));
+      })
+    );
+  }
+
+  /**
+   * Récupérer un candidat par son ID
+   * @param id ID du candidat
+   * @returns Observable<CandidateResponse>
+   */
+  getCandidateById(id: number): Observable<CandidateResponse> {
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.GET_BY_ID(id));
+    return this.http.get<CandidateResponse>(url).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération du candidat:', error);
         return throwError(() => this.handleError(error));
       })
     );

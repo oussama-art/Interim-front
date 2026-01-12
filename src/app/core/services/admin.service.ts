@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { API_CONFIG, getApiUrl } from '../config/api.config';
@@ -62,7 +62,11 @@ export class AdminService {
 
   // Candidates Management
   getAllCandidates(): Observable<CandidateResponse[]> {
-    return this.http.get<CandidateResponse[]>(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN.CANDIDATES));
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.PAGE);
+    const params = new HttpParams().set('page', '0').set('size', '10000');
+    return this.http.get<PagedResponse<CandidateResponse>>(url, { params }).pipe(
+      map(response => response.content)
+    );
   }
 
   getCandidateById(id: number): Observable<CandidateResponse> {

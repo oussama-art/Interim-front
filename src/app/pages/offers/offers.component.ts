@@ -1,23 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
-
-interface Offer {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  contractType: string;
-  salary: string;
-  description: string;
-  requirements: string[];
-  postedDate: string;
-  status: 'active' | 'closed' | 'filled';
-  applicants: number;
-}
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { trigger, state, style, transition, animate } from '@angular/animations';
+import { OfferService } from '../../core/services/offer.service';
+import { OfferResponse, ProposedCandidate } from '../../core/models/offer.model';
+import { ClientService } from '../../core/services/client.service';
+import { CandidateService } from '../../core/services/candidate.service';
+import { CandidateResponse } from '../../core/models/user.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-offers',
@@ -27,79 +22,130 @@ interface Offer {
     MatIconModule,
     MatButtonModule,
     MatCardModule,
-    MatChipsModule
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   templateUrl: './offers.component.html',
-  styleUrl: './offers.component.scss'
+  styleUrl: './offers.component.scss',
+  animations: [
+    trigger('expandCollapse', [
+      state('collapsed', style({
+        height: '0',
+        overflow: 'hidden',
+        opacity: 0
+      })),
+      state('expanded', style({
+        height: '*',
+        overflow: 'visible',
+        opacity: 1
+      })),
+      transition('collapsed <=> expanded', animate('300ms ease-in-out'))
+    ])
+  ]
 })
-export class OffersComponent {
-  offers: Offer[] = [
-    {
-      id: 1,
-      title: 'Développeur Full Stack Angular/Java',
-      company: 'Tech Solutions SA',
-      location: 'Paris, France',
-      contractType: 'Intérim 6 mois',
-      salary: '3500€ - 4200€',
-      description: 'Nous recherchons un développeur full stack expérimenté pour rejoindre notre équipe de développement.',
-      requirements: ['Angular', 'Java/Spring Boot', 'PostgreSQL', '3+ ans d\'expérience'],
-      postedDate: '2024-12-15',
-      status: 'active',
-      applicants: 8
-    },
-    {
-      id: 2,
-      title: 'Designer UI/UX Senior',
-      company: 'Digital Agency SARL',
-      location: 'Lyon, France',
-      contractType: 'Intérim 4 mois',
-      salary: '3000€ - 3800€',
-      description: 'Créez des expériences utilisateur exceptionnelles pour nos clients prestigieux.',
-      requirements: ['Figma', 'Adobe Suite', 'Portfolio requis', '5+ ans d\'expérience'],
-      postedDate: '2024-12-10',
-      status: 'active',
-      applicants: 12
-    },
-    {
-      id: 3,
-      title: 'Chef de chantier BTP',
-      company: 'Construction Pro',
-      location: 'Marseille, France',
-      contractType: 'Intérim 12 mois',
-      salary: '4000€ - 5000€',
-      description: 'Supervision et coordination d\'un grand chantier de construction résidentielle.',
-      requirements: ['Gestion d\'équipe', 'Sécurité chantier', 'Permis B', '7+ ans d\'expérience'],
-      postedDate: '2024-11-25',
-      status: 'filled',
-      applicants: 15
-    },
-    {
-      id: 4,
-      title: 'Comptable confirmé',
-      company: 'Finance Corp',
-      location: 'Toulouse, France',
-      contractType: 'Intérim 3 mois',
-      salary: '2800€ - 3200€',
-      description: 'Gestion comptable complète et préparation des clôtures mensuelles.',
-      requirements: ['DCG/DSCG', 'SAP', 'Excel avancé', '4+ ans d\'expérience'],
-      postedDate: '2024-12-01',
-      status: 'active',
-      applicants: 6
-    },
-    {
-      id: 5,
-      title: 'Responsable logistique',
-      company: 'Logistique Express',
-      location: 'Bordeaux, France',
-      contractType: 'Intérim 8 mois',
-      salary: '3500€ - 4000€',
-      description: 'Optimisation de la chaîne logistique et gestion des stocks.',
-      requirements: ['Supply Chain', 'WMS', 'Gestion d\'équipe', '5+ ans d\'expérience'],
-      postedDate: '2024-11-20',
-      status: 'closed',
-      applicants: 20
+export class OffersComponent implements OnInit {
+  offers: OfferResponse[] = [];
+  loading = false;
+  clientId: number | null = null;
+  candidatesDetails: Map<number, CandidateResponse> = new Map();
+  expandedOffers: Set<number> = new Set();
+
+  constructor(
+    private offerService: OfferService,
+    private clientService: ClientService,
+    private candidateService: CandidateService,
+    private snackBar: MatSnackBar
+  ) {}
+
+  ngOnInit(): void {
+    this.loadClientAndOffers();
+  }
+
+  loadClientAndOffers(): void {
+    this.loading = true;
+    this.clientService.getMe().subscribe({
+      next: (client) => {
+        this.clientId = client.id;
+        this.loadOffers();
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement du client:', err);
+        this.snackBar.open('Erreur lors du chargement du profil client', 'Fermer', {
+          duration: 3000
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  loadOffers(): void {
+    if (!this.clientId) return;
+
+    this.offerService.getOffersByClientId(this.clientId).subscribe({
+      next: (data) => {
+        this.offers = data;
+        this.loadCandidatesDetails();
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des offres:', err);
+        this.snackBar.open('Erreur lors du chargement des offres', 'Fermer', {
+          duration: 3000
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  loadCandidatesDetails(): void {
+    const candidateIds: number[] = [];
+
+    this.offers.forEach(offer => {
+      offer.proposedCandidates.forEach(candidate => {
+        if (!candidateIds.includes(candidate.candidateId)) {
+          candidateIds.push(candidate.candidateId);
+        }
+      });
+    });
+
+    if (candidateIds.length === 0) {
+      this.loading = false;
+      return;
     }
-  ];
+
+    const requests = candidateIds.map(id =>
+      this.candidateService.getCandidateById(id)
+    );
+
+    forkJoin(requests).subscribe({
+      next: (candidates) => {
+        candidates.forEach(candidate => {
+          this.candidatesDetails.set(candidate.id, candidate);
+        });
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des détails des candidats:', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  getCandidateDetail(candidateId: number): CandidateResponse | undefined {
+    return this.candidatesDetails.get(candidateId);
+  }
+
+  toggleCandidates(offerId: number): void {
+    if (this.expandedOffers.has(offerId)) {
+      this.expandedOffers.delete(offerId);
+    } else {
+      this.expandedOffers.add(offerId);
+    }
+  }
+
+  isCandidatesExpanded(offerId: number): boolean {
+    return this.expandedOffers.has(offerId);
+  }
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
@@ -112,5 +158,48 @@ export class OffersComponent {
 
   getStatusClass(status: string): string {
     return `status-${status}`;
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  }
+
+  acceptCandidate(offerId: number, candidateId: number): void {
+    if (!confirm('Voulez-vous accepter ce candidat ?')) return;
+
+    this.offerService.updateCandidateStatus(offerId, candidateId, 'ACCEPTED').subscribe({
+      next: () => {
+        this.snackBar.open('Candidat accepté avec succès', 'Fermer', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        this.loadOffers();
+      },
+      error: (err) => {
+        console.error('Erreur lors de l\'acceptation du candidat:', err);
+        this.snackBar.open('Erreur lors de l\'acceptation du candidat', 'Fermer', {
+          duration: 3000
+        });
+      }
+    });
+  }
+
+  rejectCandidate(offerId: number, candidateId: number): void {
+    if (!confirm('Voulez-vous refuser ce candidat ?')) return;
+
+    this.offerService.updateCandidateStatus(offerId, candidateId, 'REJECTED').subscribe({
+      next: () => {
+        this.snackBar.open('Candidat refusé', 'Fermer', {
+          duration: 3000
+        });
+        this.loadOffers();
+      },
+      error: (err) => {
+        console.error('Erreur lors du refus du candidat:', err);
+        this.snackBar.open('Erreur lors du refus du candidat', 'Fermer', {
+          duration: 3000
+        });
+      }
+    });
   }
 }

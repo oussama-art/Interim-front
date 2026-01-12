@@ -1,0 +1,245 @@
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from '../services/auth.service';
+import { from, switchMap, catchError, throwError, BehaviorSubject, filter, take, Observable } from 'rxjs';
+import { Router } from '@angular/router';
+
+// Flag pour éviter plusieurs tentatives de refresh simultanées
+let isRefreshing = false;
+const refreshTokenSubject = new BehaviorSubject<string | null>(null);
+
+/**
+ * Intercepteur HTTP pour ajouter automatiquement le token et gérer le rafraîchissement
+ */
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  // Liste des URLs qui ne nécessitent pas de token
+  const publicUrls = [
+    '/auth/login',
+    '/auth/refresh',
+    '/clients/create',
+    '/admins/create',
+    '/candidates/create'
+  ];
+
+  // Vérifier si l'URL est publique
+  const isPublicUrl = publicUrls.some(url => req.url.includes(url));
+
+  // Si l'URL n'est pas publique, ajouter le token
+  if (!isPublicUrl) {
+    console.log('🔵 [INTERCEPTOR] Requête vers:', req.url);
+
+    // Priorité 1: Token backend
+    const backendToken = authService.getAuthToken();
+    console.log('🔵 [INTERCEPTOR] Token backend présent:', !!backendToken);
+
+    if (backendToken) {
+      console.log('🔵 [INTERCEPTOR] Utilisation du token backend');
+      const clonedReq = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${backendToken}`
+        }
+      });
+
+      return next(clonedReq).pipe(
+        catchError((error: HttpErrorResponse) => {
+          console.log('🔴 [INTERCEPTOR] Erreur HTTP détectée:', error.status);
+          console.log('🔴 [INTERCEPTOR] URL:', error.url);
+
+          // Si erreur 401, tenter de rafraîchir le token
+          if (error.status === 401) {
+            const hasRefreshToken = !!authService.getAuthRefreshToken();
+            console.log('🔴 [INTERCEPTOR] 401 Unauthorized détecté');
+            console.log('🔴 [INTERCEPTOR] Refresh token disponible:', hasRefreshToken);
+
+            if (hasRefreshToken) {
+              console.log('🔄 [INTERCEPTOR] Tentative de refresh du token...');
+              return handleTokenRefresh(authService, router, req, next);
+            } else {
+              console.log('❌ [INTERCEPTOR] Pas de refresh token, déconnexion');
+            }
+          }
+          return throwError(() => error);
+        })
+      );
+    }
+
+    // Priorité 2: Token Keycloak
+    if (authService.isLoggedIn()) {
+      console.log('🔵 [INTERCEPTOR] Utilisation du token Keycloak');
+      return from(authService.getToken()).pipe(
+        switchMap(token => {
+          console.log('🔵 [INTERCEPTOR] Token Keycloak obtenu:', token ? token.substring(0, 20) + '...' : 'null');
+          const clonedReq = req.clone({
+            setHeaders: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          return next(clonedReq);
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.log('🔴 [INTERCEPTOR KEYCLOAK] Erreur HTTP détectée:', error.status);
+          console.log('🔴 [INTERCEPTOR KEYCLOAK] URL:', error.url);
+
+          // Si erreur 401 avec Keycloak, utiliser /auth/refresh qui communique avec Keycloak
+          if (error.status === 401) {
+            console.log('🔴 [INTERCEPTOR KEYCLOAK] 401 détecté - Tentative de refresh via backend');
+
+            // Afficher l'état actuel des tokens
+            authService.displayTokensInfo();
+
+            // Obtenir le refresh token Keycloak
+            return from(authService.getKeycloakRefreshToken()).pipe(
+              switchMap(refreshToken => {
+                if (refreshToken) {
+                  console.log('🔄 [INTERCEPTOR KEYCLOAK] Refresh token Keycloak trouvé, appel /auth/refresh');
+                  return handleKeycloakTokenRefresh(authService, router, req, next, refreshToken);
+                } else {
+                  console.log('❌ [INTERCEPTOR KEYCLOAK] Pas de refresh token - Session expirée');
+                  console.log('🚪 [INTERCEPTOR KEYCLOAK] Pas de déconnexion immédiate, laisser l\'erreur se propager');
+                  // Ne pas déconnecter ici, laisser l'application gérer l'erreur
+                  return throwError(() => error);
+                }
+              }),
+              catchError(refreshError => {
+                console.error('❌ [INTERCEPTOR KEYCLOAK] Erreur lors de la récupération du refresh token:', refreshError);
+                return throwError(() => error);
+              })
+            );
+          }
+          return throwError(() => error);
+        })
+      );
+    }
+  }
+
+  console.log('🔵 [INTERCEPTOR] Requête publique ou non authentifiée');
+  return next(req);
+};
+
+/**
+ * Gestion du rafraîchissement du token backend
+ */
+function handleTokenRefresh(
+  authService: AuthService,
+  router: Router,
+  req: any,
+  next: any
+): Observable<any> {
+  if (!isRefreshing) {
+    console.log('🔄 [TOKEN REFRESH] Début du processus de refresh');
+    isRefreshing = true;
+    refreshTokenSubject.next(null);
+
+    return authService.refreshBackendToken().pipe(
+      switchMap((response) => {
+        console.log('✅ [TOKEN REFRESH] Refresh réussi, nouveau token obtenu');
+        isRefreshing = false;
+        refreshTokenSubject.next(response.access_token);
+
+        // Relancer la requête avec le nouveau token
+        const clonedReq = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${response.access_token}`
+          }
+        });
+        console.log('🔄 [TOKEN REFRESH] Relance de la requête originale:', req.url);
+        return next(clonedReq);
+      }),
+      catchError((error) => {
+        console.error('❌ [TOKEN REFRESH] Échec du refresh');
+        console.error('❌ [TOKEN REFRESH] Erreur:', error);
+        console.error('❌ [TOKEN REFRESH] Status:', error?.status);
+        console.error('❌ [TOKEN REFRESH] Message:', error?.message);
+        isRefreshing = false;
+
+        // NE PAS déconnecter automatiquement - laisser le guard gérer ça
+        console.log('⚠️ [TOKEN REFRESH] Propagation de l\'erreur sans déconnexion forcée');
+
+        // Réinitialiser le sujet pour débloquer les requêtes en attente
+        refreshTokenSubject.next(null);
+
+        return throwError(() => error);
+      })
+    );
+  } else {
+    // Si un refresh est déjà en cours, attendre qu'il se termine
+    return refreshTokenSubject.pipe(
+      filter(token => token !== null),
+      take(1),
+      switchMap(token => {
+        const clonedReq = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        return next(clonedReq);
+      })
+    );
+  }
+}
+
+/**
+ * Gestion du rafraîchissement du token Keycloak via le backend
+ */
+function handleKeycloakTokenRefresh(
+  authService: AuthService,
+  router: Router,
+  req: any,
+  next: any,
+  keycloakRefreshToken: string
+): Observable<any> {
+  if (!isRefreshing) {
+    console.log('🔄 [KEYCLOAK REFRESH] Début du processus de refresh via backend');
+    isRefreshing = true;
+    refreshTokenSubject.next(null);
+
+    return authService.refreshKeycloakTokenViaBackend(keycloakRefreshToken).pipe(
+      switchMap((response) => {
+        console.log('✅ [KEYCLOAK REFRESH] Refresh réussi, nouveau token obtenu');
+        isRefreshing = false;
+        refreshTokenSubject.next(response.access_token);
+
+        // Relancer la requête avec le nouveau token
+        const clonedReq = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${response.access_token}`
+          }
+        });
+        console.log('🔄 [KEYCLOAK REFRESH] Relance de la requête originale:', req.url);
+        return next(clonedReq);
+      }),
+      catchError((error) => {
+        console.error('❌ [KEYCLOAK REFRESH] Échec du refresh');
+        console.error('❌ [KEYCLOAK REFRESH] Erreur:', error);
+        console.error('❌ [KEYCLOAK REFRESH] Status:', error?.status);
+        console.error('❌ [KEYCLOAK REFRESH] Message:', error?.message);
+        isRefreshing = false;
+
+        // NE PAS déconnecter automatiquement - laisser le guard gérer ça
+        console.log('⚠️ [KEYCLOAK REFRESH] Propagation de l\'erreur sans déconnexion forcée');
+
+        // Réinitialiser le sujet pour débloquer les requêtes en attente
+        refreshTokenSubject.next(null);
+
+        return throwError(() => error);
+      })
+    );
+  } else {
+    // Si un refresh est déjà en cours, attendre qu'il se termine
+    return refreshTokenSubject.pipe(
+      filter(token => token !== null),
+      take(1),
+      switchMap(token => {
+        const clonedReq = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        return next(clonedReq);
+      })
+    );
+  }
+}

@@ -1,7 +1,45 @@
 <div class="candidates-container">
   <div class="header">
-    <h1>Gestion des Candidats</h1>
-    <p>Liste de tous les candidats enregistrés</p>
+    <div class="header-content">
+      <h1>Gestion des Candidats</h1>
+      <p>Liste de tous les candidats enregistrés</p>
+    </div>
+    <div class="header-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="toggleCreateForm()"
+        [class.active]="showCreateForm"
+      >
+        <mat-icon>person_add</mat-icon>
+        <span>{{ showCreateForm ? 'Masquer le formulaire' : 'Créer un candidat' }}</span>
+      </button>
+      <button
+        mat-raised-button
+        color="accent"
+        (click)="toggleImportForm()"
+        [class.active]="showImportForm"
+      >
+        <mat-icon>upload_file</mat-icon>
+        <span>{{ showImportForm ? 'Masquer l\'import' : 'Importer Excel' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Create Candidate Form -->
+  <div *ngIf="showCreateForm" class="form-section">
+    <app-create-candidate-form
+      (candidateCreated)="onCandidateCreated()"
+      (cancel)="onFormCancel()"
+    ></app-create-candidate-form>
+  </div>
+
+  <!-- Import Candidates Form -->
+  <div *ngIf="showImportForm" class="form-section">
+    <app-import-candidates
+      (candidatesImported)="onCandidatesImported()"
+      (cancel)="onFormCancel()"
+    ></app-import-candidates>
   </div>
 
   <!-- Loading State -->

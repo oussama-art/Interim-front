@@ -18,7 +18,29 @@ export class OfferService {
    * @returns Observable<OfferResponse>
    */
   createOffer(clientId: number, request: OfferCreateRequest): Observable<OfferResponse> {
-    const url = getApiUrl(`/clients/offers`);
+    const url = getApiUrl(`/clients/${clientId}/offers`);
     return this.http.post<OfferResponse>(url, request);
+  }
+
+  /**
+   * Récupérer toutes les offres d'un client
+   * @param clientId ID du client
+   * @returns Observable<OfferResponse[]>
+   */
+  getOffersByClientId(clientId: number): Observable<OfferResponse[]> {
+    const url = getApiUrl(`/clients/${clientId}/offers`);
+    return this.http.get<OfferResponse[]>(url);
+  }
+
+  /**
+   * Mettre à jour le statut d'un candidat dans une offre
+   * @param offerId ID de l'offre
+   * @param candidateId ID du candidat
+   * @param status Nouveau statut (ACCEPTED, REJECTED)
+   * @returns Observable<void>
+   */
+  updateCandidateStatus(offerId: number, candidateId: number, status: string): Observable<void> {
+    const url = getApiUrl(`/offers/${offerId}/candidates/${candidateId}/status`);
+    return this.http.patch<void>(url, { status });
   }
 }
