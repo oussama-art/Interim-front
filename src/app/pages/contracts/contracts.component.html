@@ -6,7 +6,11 @@
         Gérez et suivez les engagements contractuels de vos collaborateurs
       </p>
     </div>
-    <button mat-flat-button class="btn-primary-gradient" (click)="openAddDialog()">
+    <button
+      mat-flat-button
+      class="btn-primary-gradient"
+      (click)="openAddDialog()"
+    >
       <mat-icon>add</mat-icon>
       <span>Nouveau contrat</span>
     </button>
@@ -32,7 +36,11 @@
           <td>
             <div class="user-cell">
               <div class="avatar">{{ contract.candidateName[0] }}</div>
-              <span>{{ contract.candidateName }}</span>
+
+              <div class="text">
+                <span class="name">{{ contract.candidateName }}</span>
+                <span class="role">{{ contract.email }}</span>
+              </div>
             </div>
           </td>
           <td class="client-name">{{ contract.clientName }}</td>
@@ -66,7 +74,11 @@
                 <mat-icon>edit_note</mat-icon>
                 <span>Modifier</span>
               </button>
-              <button mat-menu-item (click)="openDeleteDialog(contract)" class="delete-action">
+              <button
+                mat-menu-item
+                (click)="openDeleteDialog(contract)"
+                class="delete-action"
+              >
                 <mat-icon>delete_sweep</mat-icon>
                 <span>Supprimer</span>
               </button>

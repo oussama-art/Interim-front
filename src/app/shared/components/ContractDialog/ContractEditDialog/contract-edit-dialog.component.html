@@ -42,34 +42,24 @@
         </div>
 
         <div class="info-item">
-          <label><mat-icon>calendar_today</mat-icon> Date de début</label>
+          <label>
+            <mat-icon>calendar_today</mat-icon>
+            Date de début
+          </label>
+
           <mat-form-field appearance="outline" class="w-100">
-            <input
-              matInput
-              [matDatepicker]="pickerStart"
-              formControlName="startDate"
-            />
-            <mat-datepicker-toggle
-              matSuffix
-              [for]="pickerStart"
-            ></mat-datepicker-toggle>
-            <mat-datepicker #pickerStart></mat-datepicker>
+            <input matInput type="date" formControlName="startDate" />
           </mat-form-field>
         </div>
 
         <div class="info-item">
-          <label><mat-icon>event_busy</mat-icon> Date de fin</label>
+          <label>
+            <mat-icon>calendar_today</mat-icon>
+            Date de fin
+          </label>
+
           <mat-form-field appearance="outline" class="w-100">
-            <input
-              matInput
-              [matDatepicker]="pickerEnd"
-              formControlName="endDate"
-            />
-            <mat-datepicker-toggle
-              matSuffix
-              [for]="pickerEnd"
-            ></mat-datepicker-toggle>
-            <mat-datepicker #pickerEnd></mat-datepicker>
+            <input matInput type="date" formControlName="endDate" />
           </mat-form-field>
         </div>
 
