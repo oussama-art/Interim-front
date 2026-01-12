@@ -67,6 +67,7 @@ export interface CandidateResponse {
   professional: string;
   cin: string;
   cssNumber: string;
+  cvPath?: string;
   createdAt: string;
 }
 

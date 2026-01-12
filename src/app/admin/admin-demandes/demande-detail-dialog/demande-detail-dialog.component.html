@@ -154,6 +154,10 @@
             <div *ngIf="candidates.length === 0" class="no-candidates">
               <mat-icon>person_off</mat-icon>
               <p>Aucun candidat disponible</p>
+              <button mat-raised-button color="accent" (click)="navigateToCandidates()" class="create-candidate-btn">
+                <mat-icon>person_add</mat-icon>
+                <span>Créer un candidat</span>
+              </button>
             </div>
           </div>
 

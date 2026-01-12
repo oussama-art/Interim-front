@@ -1,0 +1,164 @@
+<div class="form-container">
+  <mat-card class="form-card">
+    <div class="form-header">
+      <mat-icon>person_add</mat-icon>
+      <h2>Créer un nouveau candidat</h2>
+    </div>
+
+    <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <!-- Personal Information -->
+        <div class="section-title">
+          <mat-icon>badge</mat-icon>
+          <h3>Informations personnelles</h3>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Prénom</mat-label>
+          <input matInput formControlName="firstName" placeholder="Entrez le prénom">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="candidateForm.get('firstName')?.invalid">
+            {{ getErrorMessage('firstName') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nom</mat-label>
+          <input matInput formControlName="lastName" placeholder="Entrez le nom">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="candidateForm.get('lastName')?.invalid">
+            {{ getErrorMessage('lastName') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="emailAddress" placeholder="exemple@email.com">
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="candidateForm.get('emailAddress')?.invalid">
+            {{ getErrorMessage('emailAddress') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Téléphone</mat-label>
+          <input matInput formControlName="phoneNumber" placeholder="12345678">
+          <mat-icon matPrefix>phone</mat-icon>
+          <mat-error *ngIf="candidateForm.get('phoneNumber')?.invalid">
+            {{ getErrorMessage('phoneNumber') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Security -->
+        <div class="section-title">
+          <mat-icon>lock</mat-icon>
+          <h3>Sécurité</h3>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Mot de passe</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password" placeholder="Minimum 6 caractères">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword"
+                  type="button" [attr.aria-label]="'Hide password'">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="candidateForm.get('password')?.invalid">
+            {{ getErrorMessage('password') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmer le mot de passe</mat-label>
+          <input matInput [type]="hideConfirmPassword ? 'password' : 'text'"
+                 formControlName="confirmPassword" placeholder="Re-entrez le mot de passe">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword"
+                  type="button" [attr.aria-label]="'Hide password'">
+            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="candidateForm.get('confirmPassword')?.invalid || candidateForm.hasError('passwordMismatch')">
+            {{ getErrorMessage('confirmPassword') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Professional Information -->
+        <div class="section-title">
+          <mat-icon>work</mat-icon>
+          <h3>Informations professionnelles</h3>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Profession</mat-label>
+          <input matInput formControlName="professional" placeholder="Ex: Développeur, Électricien">
+          <mat-icon matPrefix>work</mat-icon>
+          <mat-error *ngIf="candidateForm.get('professional')?.invalid">
+            {{ getErrorMessage('professional') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Années d'expérience</mat-label>
+          <input matInput type="number" formControlName="experienceYear"
+                 placeholder="0" min="0" max="50">
+          <mat-icon matPrefix>schedule</mat-icon>
+          <mat-error *ngIf="candidateForm.get('experienceYear')?.invalid">
+            {{ getErrorMessage('experienceYear') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Compétences</mat-label>
+          <textarea matInput formControlName="skills"
+                    placeholder="Ex: Java, Angular, Communication" rows="3"></textarea>
+          <mat-icon matPrefix>settings</mat-icon>
+          <mat-error *ngIf="candidateForm.get('skills')?.invalid">
+            {{ getErrorMessage('skills') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Administrative Information -->
+        <div class="section-title">
+          <mat-icon>assignment_ind</mat-icon>
+          <h3>Informations administratives</h3>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>CIN</mat-label>
+          <input matInput formControlName="cin" placeholder="Numéro CIN">
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-error *ngIf="candidateForm.get('cin')?.invalid">
+            {{ getErrorMessage('cin') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Numéro CSS</mat-label>
+          <input matInput formControlName="cssNumber" placeholder="Numéro CSS">
+          <mat-icon matPrefix>credit_card</mat-icon>
+          <mat-error *ngIf="candidateForm.get('cssNumber')?.invalid">
+            {{ getErrorMessage('cssNumber') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button mat-raised-button type="button" (click)="onCancel()"
+                [disabled]="loading" class="cancel-btn">
+          <mat-icon>close</mat-icon>
+          <span>Annuler</span>
+        </button>
+
+        <button mat-raised-button color="primary" type="submit"
+                [disabled]="loading || candidateForm.invalid" class="submit-btn">
+          <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+          <mat-icon *ngIf="!loading">save</mat-icon>
+          <span *ngIf="!loading">Créer le candidat</span>
+          <span *ngIf="loading">Création en cours...</span>
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

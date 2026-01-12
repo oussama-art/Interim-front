@@ -23,6 +23,7 @@ export const API_CONFIG = {
     CANDIDATES: {
       CREATE: '/candidates/create',
       GET_ALL: '/candidates',
+      PAGE: '/candidates/page',
       ME: '/candidates/me',
       PATCH_ME: '/candidates/me',
       GET_BY_ID: (id: number) => `/candidates/${id}`,

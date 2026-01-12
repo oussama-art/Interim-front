@@ -3,13 +3,21 @@ export interface OfferCreateRequest {
   candidateIds: number[];
 }
 
+export interface ProposedCandidate {
+  candidateId: number;
+  firstName: string;
+  lastName: string;
+  skills: string;
+  professional: string;
+  status: string;
+}
+
 export interface OfferResponse {
-  id: number;
+  offerId: number;
   demandeId: number;
-  candidateIds: number[];
   clientId: number;
   createdAt: string;
-  status?: string;
+  proposedCandidates: ProposedCandidate[];
 }
 
 export interface PageResponse<T> {

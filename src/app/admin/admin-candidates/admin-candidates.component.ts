@@ -6,8 +6,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTabsModule } from '@angular/material/tabs';
 import { AdminService } from '../../core/services/admin.service';
 import { CandidateResponse } from '../../core/models/user.model';
+import { CreateCandidateFormComponent } from './create-candidate-form/create-candidate-form.component';
+import { ImportCandidatesComponent } from './import-candidates/import-candidates.component';
 
 @Component({
   selector: 'app-admin-candidates',
@@ -19,7 +22,10 @@ import { CandidateResponse } from '../../core/models/user.model';
     MatIconModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTabsModule,
+    CreateCandidateFormComponent,
+    ImportCandidatesComponent
   ],
   templateUrl: './admin-candidates.component.html',
   styleUrls: ['./admin-candidates.component.scss']
@@ -27,6 +33,8 @@ import { CandidateResponse } from '../../core/models/user.model';
 export class AdminCandidatesComponent implements OnInit {
   candidates: CandidateResponse[] = [];
   loading = true;
+  showCreateForm = false;
+  showImportForm = false;
   displayedColumns: string[] = [
     'id',
     'firstName',
@@ -96,6 +104,31 @@ export class AdminCandidatesComponent implements OnInit {
         }
       });
     }
+  }
+
+  toggleCreateForm(): void {
+    this.showCreateForm = !this.showCreateForm;
+    this.showImportForm = false;
+  }
+
+  toggleImportForm(): void {
+    this.showImportForm = !this.showImportForm;
+    this.showCreateForm = false;
+  }
+
+  onCandidateCreated(): void {
+    this.showCreateForm = false;
+    this.loadCandidates();
+  }
+
+  onCandidatesImported(): void {
+    this.showImportForm = false;
+    this.loadCandidates();
+  }
+
+  onFormCancel(): void {
+    this.showCreateForm = false;
+    this.showImportForm = false;
   }
 
   formatDate(dateString: string): string {

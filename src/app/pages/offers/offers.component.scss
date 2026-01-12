@@ -58,6 +58,149 @@
         color: #333;
       }
     }
+
+    .candidates-section {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+
+      h4 {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+      }
+
+      .candidate-item {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #f9fafb;
+        border-radius: 4px;
+        border-left: 3px solid #3b82f6;
+
+        .candidate-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          .candidate-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.875rem;
+          }
+
+          .candidate-role {
+            font-size: 0.75rem;
+            color: #666;
+            font-style: italic;
+          }
+        }
+
+        .candidate-details {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+
+          .skills {
+            font-size: 0.75rem;
+            color: #555;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            .small-icon {
+              font-size: 0.875rem;
+              width: 0.875rem;
+              height: 0.875rem;
+              color: #666;
+            }
+          }
+
+          .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.625rem;
+            font-weight: 500;
+            text-transform: uppercase;
+
+            &.status-proposed {
+              background: #dbeafe;
+              color: #1e40af;
+            }
+
+            &.status-accepted {
+              background: #d1fae5;
+              color: #065f46;
+            }
+
+            &.status-rejected {
+              background: #fee2e2;
+              color: #991b1b;
+            }
+          }
+        }
+
+        .candidate-extra-info {
+          margin-top: 0.75rem;
+          padding-top: 0.75rem;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #555;
+
+            .small-icon {
+              font-size: 1rem;
+              width: 1rem;
+              height: 1rem;
+              color: #666;
+            }
+
+            .cv-link {
+              color: #3b82f6;
+              text-decoration: none;
+              font-weight: 500;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+          }
+        }
+
+        .candidate-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+          padding-top: 0.75rem;
+          border-top: 1px solid #e5e7eb;
+
+          button {
+            flex: 1;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+
+            mat-icon {
+              font-size: 1rem;
+              width: 1rem;
+              height: 1rem;
+              margin-right: 0.25rem;
+            }
+          }
+        }
+      }
+    }
   }
 
   .card-footer {

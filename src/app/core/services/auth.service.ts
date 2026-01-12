@@ -4,7 +4,7 @@ import { KeycloakService } from 'keycloak-angular';
 import { KeycloakProfile } from 'keycloak-js';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { BehaviorSubject, firstValueFrom, Observable, tap } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable, tap, catchError, throwError } from 'rxjs';
 import { LoginRequest, TokenResponse } from '../models/auth.models';
 import { API_CONFIG } from '../config/api.config';
 
@@ -24,7 +24,7 @@ export class AuthService {
    * Permet aux composants de s'abonner aux changements de contexte
    */
   private contextSubject = new BehaviorSubject<AppContext>('user');
-  
+
   /**
    * Observable exposé publiquement pour que les composants puissent observer les changements de contexte
    */
@@ -185,14 +185,29 @@ export class AuthService {
     const ctx = context || this.getCurrentContext();
     const refreshToken = this.getAuthRefreshToken(ctx);
 
+    console.log('🔄 [REFRESH TOKEN] Début du refresh');
+    console.log('🔄 [REFRESH TOKEN] Contexte:', ctx);
+    console.log('🔄 [REFRESH TOKEN] Refresh token présent:', !!refreshToken);
+
     if (!refreshToken) {
+      console.error('❌ [REFRESH TOKEN] Aucun refresh token disponible');
       throw new Error('Aucun refresh token disponible');
     }
 
     const refreshUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`;
+    const fullUrl = `${refreshUrl}?refresh_token=${encodeURIComponent(refreshToken)}`;
 
-    return this.http.post<TokenResponse>(refreshUrl, { refresh_token: refreshToken }).pipe(
+    console.log('🔄 [REFRESH TOKEN] URL complète:', fullUrl);
+    console.log('🔄 [REFRESH TOKEN] Refresh token (10 premiers chars):', refreshToken.substring(0, 10) + '...');
+
+    // Envoyer le refresh_token en tant que query parameter
+    return this.http.post<TokenResponse>(fullUrl, null).pipe(
       tap(response => {
+        console.log('✅ [REFRESH TOKEN] Succès! Nouveau token reçu');
+        console.log('✅ [REFRESH TOKEN] Access token présent:', !!response.access_token);
+        console.log('✅ [REFRESH TOKEN] Refresh token présent:', !!response.refresh_token);
+        console.log('✅ [REFRESH TOKEN] Expires in:', response.expires_in);
+
         // Mettre à jour les tokens
         this.secureStorage.setItem(this.getKey('access_token', ctx), response.access_token);
         this.secureStorage.setItem(this.getKey('refresh_token', ctx), response.refresh_token);
@@ -204,6 +219,13 @@ export class AuthService {
         }
 
         this.secureLog(`Token ${ctx} rafraîchi avec succès`);
+      }),
+      catchError(error => {
+        console.error('❌ [REFRESH TOKEN] Erreur lors du refresh:', error);
+        console.error('❌ [REFRESH TOKEN] Status:', error.status);
+        console.error('❌ [REFRESH TOKEN] Message:', error.message);
+        console.error('❌ [REFRESH TOKEN] Error body:', error.error);
+        throw error;
       })
     );
   }
@@ -278,7 +300,7 @@ export class AuthService {
    */
   logout(redirectTo?: string): void {
     const ctx = this.getCurrentContext();
-    
+
     // Nettoyer les tokens backend de manière sécurisée
     this.clearBackendTokens(ctx);
     this.clearLoginContext(ctx);
@@ -312,6 +334,180 @@ export class AuthService {
    */
   async getToken(): Promise<string> {
     return this.keycloak.getToken();
+  }
+
+  /**
+   * Récupérer le refresh token Keycloak de manière asynchrone
+   */
+  async getKeycloakRefreshToken(): Promise<string | undefined> {
+    const refreshToken = this.keycloak.getKeycloakInstance().refreshToken;
+    console.log('🔍 [AUTH SERVICE] Récupération refresh token Keycloak:', !!refreshToken);
+
+    if (refreshToken) {
+      // Parser et afficher les informations du refresh token
+      const parsed = this.parseJwt(refreshToken);
+      if (parsed) {
+        const now = Math.floor(Date.now() / 1000);
+        const expiresAt = parsed.exp;
+        const issuedAt = parsed.iat;
+        const timeUntilExpiry = expiresAt - now;
+
+        console.log('📅 [REFRESH TOKEN INFO] ==================');
+        console.log('📅 Date actuelle:', new Date().toLocaleString());
+        console.log('📅 Token émis le (iat):', new Date(issuedAt * 1000).toLocaleString());
+        console.log('📅 Token expire le (exp):', new Date(expiresAt * 1000).toLocaleString());
+        console.log('📅 Temps restant:', Math.floor(timeUntilExpiry / 60), 'minutes', timeUntilExpiry % 60, 'secondes');
+        console.log('📅 Token expiré?', timeUntilExpiry <= 0 ? '❌ OUI' : '✅ NON');
+        console.log('📅 ==================');
+
+        if (timeUntilExpiry <= 0) {
+          console.error('❌ [REFRESH TOKEN] Le refresh token est déjà EXPIRÉ!');
+          console.error('❌ Expiré depuis:', Math.abs(Math.floor(timeUntilExpiry / 60)), 'minutes');
+        } else if (timeUntilExpiry < 300) { // Moins de 5 minutes
+          console.warn('⚠️ [REFRESH TOKEN] Le refresh token expire bientôt!');
+        }
+      }
+    }
+
+    return refreshToken;
+  }
+
+  /**
+   * Rafraîchir le token Keycloak via le backend
+   * Le backend communique avec Keycloak pour obtenir un nouveau token
+   */
+  refreshKeycloakTokenViaBackend(keycloakRefreshToken: string): Observable<TokenResponse> {
+    console.log('🔄 [AUTH SERVICE] Refresh Keycloak via backend');
+    console.log('🔄 [AUTH SERVICE] Refresh token présent:', !!keycloakRefreshToken);
+
+    // Afficher les infos du refresh token AVANT l'envoi
+    const refreshTokenParsed = this.parseJwt(keycloakRefreshToken);
+    if (refreshTokenParsed) {
+      const now = Math.floor(Date.now() / 1000);
+      const refreshExpiresAt = refreshTokenParsed.exp;
+      const refreshTimeRemaining = refreshExpiresAt - now;
+
+      console.log('📤 [ENVOI REFRESH TOKEN] ==================');
+      console.log('📤 Refresh token expire le:', new Date(refreshExpiresAt * 1000).toLocaleString());
+      console.log('📤 Temps restant:', Math.floor(refreshTimeRemaining / 60), 'minutes', refreshTimeRemaining % 60, 'secondes');
+      console.log('📤 Est expiré?', refreshTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
+      console.log('📤 ==================');
+    }
+
+    const refreshUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`;
+    const fullUrl = `${refreshUrl}?refresh_token=${encodeURIComponent(keycloakRefreshToken)}`;
+
+    console.log('🔄 [AUTH SERVICE] URL complète:', fullUrl);
+
+    return this.http.post<TokenResponse>(fullUrl, null).pipe(
+      tap(async response => {
+        console.log('✅ [AUTH SERVICE] Nouveau token Keycloak reçu via backend');
+        console.log('✅ [AUTH SERVICE] Access token présent:', !!response.access_token);
+        console.log('✅ [AUTH SERVICE] Refresh token présent:', !!response.refresh_token);
+
+        // Mettre à jour les tokens dans Keycloak
+        try {
+          const keycloakInstance = this.keycloak.getKeycloakInstance();
+          keycloakInstance.token = response.access_token;
+          keycloakInstance.refreshToken = response.refresh_token;
+
+          if (response.expires_in) {
+            // Calculer le temps d'expiration
+            const expiresAt = Math.floor(Date.now() / 1000) + response.expires_in;
+            keycloakInstance.tokenParsed = this.parseJwt(response.access_token);
+            keycloakInstance.refreshTokenParsed = this.parseJwt(response.refresh_token);
+          }
+
+          console.log('✅ [AUTH SERVICE] Tokens Keycloak mis à jour');
+        } catch (error) {
+          console.error('❌ [AUTH SERVICE] Erreur mise à jour tokens Keycloak:', error);
+        }
+      }),
+      catchError(error => {
+        console.error('❌ [AUTH SERVICE] Erreur refresh Keycloak via backend:', error);
+        console.error('❌ [AUTH SERVICE] Status:', error.status);
+        console.error('❌ [AUTH SERVICE] StatusText:', error.statusText);
+        console.error('❌ [AUTH SERVICE] Message:', error.message);
+        console.error('❌ [AUTH SERVICE] Error response body:', error.error);
+
+        // Afficher l'URL complète qui a échoué
+        console.error('❌ [AUTH SERVICE] URL qui a échoué:', error.url);
+
+        // Afficher tous les headers de la réponse
+        if (error.headers) {
+          console.error('❌ [AUTH SERVICE] Response headers:');
+          error.headers.keys().forEach((key: string) => {
+            console.error(`   ${key}: ${error.headers.get(key)}`);
+          });
+        }
+
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Parser un JWT token
+   */
+  private parseJwt(token: string): any {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Erreur parsing JWT:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Afficher les informations détaillées sur les tokens Keycloak
+   */
+  displayTokensInfo(): void {
+    const keycloakInstance = this.keycloak.getKeycloakInstance();
+    const accessToken = keycloakInstance.token;
+    const refreshToken = keycloakInstance.refreshToken;
+
+    console.log('🔐 [TOKENS INFO] ==================');
+
+    if (accessToken) {
+      const accessParsed = this.parseJwt(accessToken);
+      if (accessParsed) {
+        const now = Math.floor(Date.now() / 1000);
+        const accessExpiresAt = accessParsed.exp;
+        const accessTimeRemaining = accessExpiresAt - now;
+
+        console.log('🎫 ACCESS TOKEN:');
+        console.log('   Expire le:', new Date(accessExpiresAt * 1000).toLocaleString());
+        console.log('   Temps restant:', Math.floor(accessTimeRemaining / 60), 'min', accessTimeRemaining % 60, 'sec');
+        console.log('   Expiré?', accessTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
+      }
+    } else {
+      console.log('🎫 ACCESS TOKEN: ❌ Absent');
+    }
+
+    console.log('');
+
+    if (refreshToken) {
+      const refreshParsed = this.parseJwt(refreshToken);
+      if (refreshParsed) {
+        const now = Math.floor(Date.now() / 1000);
+        const refreshExpiresAt = refreshParsed.exp;
+        const refreshTimeRemaining = refreshExpiresAt - now;
+
+        console.log('🔄 REFRESH TOKEN:');
+        console.log('   Expire le:', new Date(refreshExpiresAt * 1000).toLocaleString());
+        console.log('   Temps restant:', Math.floor(refreshTimeRemaining / 60), 'min', refreshTimeRemaining % 60, 'sec');
+        console.log('   Expiré?', refreshTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
+      }
+    } else {
+      console.log('🔄 REFRESH TOKEN: ❌ Absent');
+    }
+
+    console.log('🔐 ==================');
   }
 
   /**

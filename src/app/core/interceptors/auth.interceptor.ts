@@ -1,118 +1,113 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
-import { from, switchMap, catchError, throwError, BehaviorSubject, filter, take, Observable } from 'rxjs';
+import { from, switchMap, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 
-// Flag pour éviter plusieurs tentatives de refresh simultanées
-let isRefreshing = false;
-const refreshTokenSubject = new BehaviorSubject<string | null>(null);
-
 /**
- * Intercepteur HTTP pour ajouter automatiquement le token et gérer le rafraîchissement
+ * Intercepteur HTTP simplifié
+ * - Ajoute automatiquement le token JWT aux requêtes
+ * - Le refresh token est géré DIRECTEMENT par Keycloak (pas par le backend)
+ * - keycloak-angular appelle directement l'endpoint /token de Keycloak
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Liste des URLs qui ne nécessitent pas de token
+  // URLs publiques qui ne nécessitent pas d'authentification
   const publicUrls = [
     '/auth/login',
-    '/auth/refresh',
     '/clients/create',
     '/admins/create',
     '/candidates/create'
   ];
 
-  // Vérifier si l'URL est publique
   const isPublicUrl = publicUrls.some(url => req.url.includes(url));
 
-  // Si l'URL n'est pas publique, ajouter le token
   if (!isPublicUrl) {
-    // Priorité 1: Token backend
+    // ========== Gestion Token Backend (Admins) ==========
     const backendToken = authService.getAuthToken();
+
     if (backendToken) {
       const clonedReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${backendToken}`
-        }
+        setHeaders: { Authorization: `Bearer ${backendToken}` }
       });
-      
+
       return next(clonedReq).pipe(
         catchError((error: HttpErrorResponse) => {
-          // Si erreur 401, tenter de rafraîchir le token
+          // En cas d'erreur 401, tenter de rafraîchir le token backend
           if (error.status === 401 && authService.getAuthRefreshToken()) {
-            return handleTokenRefresh(authService, router, req, next);
+            return from(authService.refreshBackendToken()).pipe(
+              switchMap(response => {
+                const retryReq = req.clone({
+                  setHeaders: { Authorization: `Bearer ${response.access_token}` }
+                });
+                return next(retryReq);
+              }),
+              catchError(() => {
+                authService.logout();
+                router.navigate(['/admin/login']);
+                return throwError(() => error);
+              })
+            );
           }
           return throwError(() => error);
         })
       );
     }
 
-    // Priorité 2: Token Keycloak
+    // ========== Gestion Token Keycloak (Clients/Candidats) ==========
     if (authService.isLoggedIn()) {
       return from(authService.getToken()).pipe(
         switchMap(token => {
           const clonedReq = req.clone({
-            setHeaders: {
-              Authorization: `Bearer ${token}`
-            }
+            setHeaders: { Authorization: `Bearer ${token}` }
           });
-          return next(clonedReq);
+
+          return next(clonedReq).pipe(
+            catchError((error: HttpErrorResponse) => {
+              // En cas d'erreur 401, refresh AUTOMATIQUE via Keycloak
+              if (error.status === 401) {
+                console.log('🔄 Token expiré, refresh automatique via Keycloak...');
+
+                // refreshToken() appelle keycloak.updateToken() DIRECTEMENT
+                // Keycloak communique avec son propre endpoint /token
+                return from(authService.refreshToken(5)).pipe(
+                  switchMap(refreshed => {
+                    if (refreshed) {
+                      console.log('✅ Token rafraîchi avec succès');
+                      // Récupérer le nouveau token
+                      return from(authService.getToken()).pipe(
+                        switchMap(newToken => {
+                          const retryReq = req.clone({
+                            setHeaders: { Authorization: `Bearer ${newToken}` }
+                          });
+                          return next(retryReq);
+                        })
+                      );
+                    } else {
+                      console.error('❌ Refresh échoué');
+                      authService.logout();
+                      router.navigate(['/login']);
+                      return throwError(() => error);
+                    }
+                  }),
+                  catchError((refreshError) => {
+                    console.error('❌ Erreur refresh:', refreshError);
+                    authService.logout();
+                    router.navigate(['/login']);
+                    return throwError(() => error);
+                  })
+                );
+              }
+              return throwError(() => error);
+            })
+          );
         })
       );
     }
   }
 
+  // URLs publiques : pas de modification
   return next(req);
 };
-
-/**
- * Gestion du rafraîchissement du token
- */
-function handleTokenRefresh(
-  authService: AuthService,
-  router: Router,
-  req: any,
-  next: any
-): Observable<any> {
-  if (!isRefreshing) {
-    isRefreshing = true;
-    refreshTokenSubject.next(null);
-
-    return authService.refreshBackendToken().pipe(
-      switchMap((response) => {
-        isRefreshing = false;
-        refreshTokenSubject.next(response.access_token);
-        
-        // Relancer la requête avec le nouveau token
-        const clonedReq = req.clone({
-          setHeaders: {
-            Authorization: `Bearer ${response.access_token}`
-          }
-        });
-        return next(clonedReq);
-      }),
-      catchError((error) => {
-        isRefreshing = false;
-        // Si le refresh échoue, déconnecter l'utilisateur
-        authService.logout('/login');
-        return throwError(() => error);
-      })
-    );
-  } else {
-    // Si un refresh est déjà en cours, attendre qu'il se termine
-    return refreshTokenSubject.pipe(
-      filter(token => token !== null),
-      take(1),
-      switchMap(token => {
-        const clonedReq = req.clone({
-          setHeaders: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        return next(clonedReq);
-      })
-    );
-  }
-}
