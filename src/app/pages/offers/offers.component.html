@@ -1,85 +1,159 @@
-h4<div class="page-container">
-  <div class="page-header">
-    <h1>Offres d'emploi</h1>
-    <button mat-raised-button color="primary">
-      <mat-icon>add</mat-icon>
-      Publier une offre
+<div class="page-container">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Gestion des Offres</h1>
+      <p class="subtitle">{{ offers.length }} mission(s) en cours</p>
+    </div>
+    <button mat-flat-button color="primary">
+      <mat-icon>add</mat-icon> Publier une offre
     </button>
-  </div>
+  </header>
 
   <div *ngIf="loading" class="loading-container">
-    <mat-spinner></mat-spinner>
-    <p>Chargement des offres...</p>
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Mise à jour des offres...</p>
   </div>
 
-  <div *ngIf="!loading && offers.length === 0" class="no-data">
-    <mat-icon>inbox</mat-icon>
-    <p>Aucune offre disponible</p>
+  <div *ngIf="!loading && offers.length === 0" class="empty-state">
+    <mat-icon color="primary" style="font-size: 48px; height: 48px; width: 48px"
+      >work_outline</mat-icon
+    >
+    <h3>Aucune offre disponible</h3>
   </div>
 
-  <div class="cards-grid" *ngIf="!loading && offers.length > 0">
-    <div class="simple-card" *ngFor="let offer of offers">
-      <div class="card-header">
-        <h3>Offre #{{ offer.offerId }}</h3>
-        <span class="info-badge">{{ offer.proposedCandidates.length }} candidat(s)</span>
-      </div>
-      <div class="card-body">
-        <p><strong>Demande ID:</strong> {{ offer.demandeId }}</p>
-        <p><strong>Créée le:</strong> {{ formatDate(offer.createdAt) }}</p>
+  <div class="offers-grid" *ngIf="!loading">
+    <mat-card class="pro-card" *ngFor="let offer of offers">
+      <mat-card-header>
+        <div style="width: 100%">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <span class="id-tag">REF-{{ offer.offerId }}</span>
+            <span class="status-badge status-proposed">En cours</span>
+          </div>
+          <mat-card-title>Projet {{ offer.demandeId }}</mat-card-title>
+          <mat-card-subtitle style="color: #86868b; font-weight: 400">
+            Publié le {{ formatDate(offer.createdAt) }}
+          </mat-card-subtitle>
+        </div>
+      </mat-card-header>
 
-        <div class="candidates-section"
-             *ngIf="offer.proposedCandidates.length > 0"
-             [@expandCollapse]="isCandidatesExpanded(offer.offerId) ? 'expanded' : 'collapsed'">
-          <h4>Candidats proposés:</h4>
-          <div class="candidate-item" *ngFor="let candidate of offer.proposedCandidates">
-            <div class="candidate-info">
-              <span class="candidate-name">{{ candidate.firstName }} {{ candidate.lastName }}</span>
-              <span class="candidate-role">{{ candidate.professional }}</span>
+      <mat-card-content>
+        <div class="candidates-summary" (click)="toggleCandidates(offer.id)">
+          <div class="avatar-stack">
+            <div
+              class="mini-avatar"
+              *ngFor="let c of offer.proposedCandidates | slice : 0 : 3"
+            >
+              {{ c.firstName ? c.firstName[0] : "?" }}
             </div>
-            <div class="candidate-details">
-              <span class="skills"><mat-icon class="small-icon">settings</mat-icon>{{ candidate.skills }}</span>
-              <span class="status-badge" [ngClass]="'status-' + candidate.status.toLowerCase()">{{ candidate.status }}</span>
-            </div>
-
-            <!-- Détails enrichis du candidat -->
-            <div class="candidate-extra-info" *ngIf="getCandidateDetail(candidate.candidateId) as details">
-              <div class="info-row">
-                <mat-icon class="small-icon">email</mat-icon>
-                <span>{{ details.emailAddress }}</span>
-              </div>
-              <div class="info-row">
-                <mat-icon class="small-icon">phone</mat-icon>
-                <span>{{ details.phoneNumber }}</span>
-              </div>
-              <div class="info-row">
-                <mat-icon class="small-icon">work_history</mat-icon>
-                <span>{{ details.experienceYear }} ans d'expérience</span>
-              </div>
-              <div class="info-row" *ngIf="details.cvPath">
-                <mat-icon class="small-icon">description</mat-icon>
-                <a [href]="details.cvPath" target="_blank" class="cv-link">Voir le CV</a>
-              </div>
-            </div>
-
-            <div class="candidate-actions" *ngIf="candidate.status === 'PROPOSED'">
-              <button mat-raised-button color="primary" (click)="acceptCandidate(offer.offerId, candidate.candidateId)">
-                <mat-icon>check_circle</mat-icon>
-                Accepter
-              </button>
-              <button mat-raised-button color="warn" (click)="rejectCandidate(offer.offerId, candidate.candidateId)">
-                <mat-icon>cancel</mat-icon>
-                Refuser
-              </button>
+            <div
+              class="extra-count"
+              *ngIf="offer.proposedCandidates.length > 3"
+            >
+              +{{ offer.proposedCandidates.length - 3 }}
             </div>
           </div>
+          <span class="label"
+            >{{ offer.proposedCandidates.length }} candidats identifiés</span
+          >
+          <mat-icon
+            class="expand-icon"
+            [class.rotated]="isCandidatesExpanded(offer.id)"
+            style="color: #c7c7cc"
+            >chevron_right</mat-icon
+          >
         </div>
-      </div>
-      <div class="card-footer">
-        <button mat-raised-button color="primary" (click)="toggleCandidates(offer.offerId)">
-          <mat-icon>{{ isCandidatesExpanded(offer.offerId) ? 'visibility_off' : 'visibility' }}</mat-icon>
-          {{ isCandidatesExpanded(offer.offerId) ? 'Masquer les candidats' : 'Voir les candidats' }}
-        </button>
-      </div>
+
+        <div
+          [@expandCollapse]="
+            isCandidatesExpanded(offer.id) ? 'expanded' : 'collapsed'
+          "
+        >
+          <div class="candidate-row" *ngFor="let candidate of offer.proposedCandidates">
+  <div
+    class="candidate-main"
+    (click)="toggleCandidateDetails(candidate.candidateId)"
+    style="cursor: pointer;"
+  >
+    <div class="candidate-avatar">
+      {{ candidate.firstName[0] }}{{ candidate.lastName[0] }}
     </div>
+    <div class="candidate-info">
+      <span class="name">{{ candidate.firstName }} {{ candidate.lastName }}</span>
+      <span class="job">{{ candidate.professional }}</span>
+    </div>
+    <span
+      class="status-badge"
+      [ngClass]="'status-' + candidate.status.toLowerCase()"
+    >
+      {{ candidate.status }}
+    </span>
+    <mat-icon
+      class="expand-icon"
+      [class.rotated]="expandedCandidates.has(candidate.candidateId)"
+      style="margin-left: auto; color: #c7c7cc;"
+      >chevron_right</mat-icon
+    >
+  </div>
+
+  <!-- Détails du candidat affichés uniquement si le candidat est déployé -->
+  <div
+    *ngIf="expandedCandidates.has(candidate.candidateId)"
+    class="candidate-details"
+    style="gap: 8px; align-items: center; margin-top: 12px;"
+  >
+    <div class="detail-pill">
+      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">history</mat-icon>
+      {{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans d'expérience
+    </div>
+    <div class="detail-pill">
+      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">alternate_email</mat-icon>
+      {{ getCandidateDetail(candidate.candidateId)?.email || 'Contact non disponible' }}
+    </div>
+
+    <!-- Bouton CV -->
+    <a
+      *ngIf="getCandidateDetail(candidate.candidateId)?.cvUrl"
+      [href]="getCandidateDetail(candidate.candidateId)?.cvUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="cv-button"
+      title="Voir le CV"
+    >
+      <mat-icon>description</mat-icon> Voir le CV
+    </a>
+  </div>
+
+  <div
+    class="candidate-actions"
+    *ngIf="candidate.status === 'PROPOSED'"
+    style="margin-top: 16px"
+  >
+    <button
+      mat-button
+      class="reject-btn"
+      (click)="rejectCandidate(offer.id, candidate.candidateId)"
+    >
+      Décliner
+    </button>
+    <button
+      mat-flat-button
+      class="accept-btn"
+      (click)="acceptCandidate(offer.id, candidate.candidateId)"
+    >
+      Retenir
+    </button>
+  </div>
+</div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 </div>
