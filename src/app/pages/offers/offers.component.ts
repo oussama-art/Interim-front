@@ -9,7 +9,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
 
-// Services & Models (Assurez-vous que les chemins sont corrects)
 import { OfferService } from '../../core/services/offer.service';
 import { OfferResponse } from '../../core/models/offer.model';
 import { ClientService } from '../../core/services/client.service';
@@ -34,7 +33,7 @@ import { CandidateResponse } from '../../core/models/user.model';
     trigger('expandCollapse', [
       state('collapsed', style({ height: '0px', opacity: '0', overflow: 'hidden', margin: '0' })),
       state('expanded', style({ height: '*', opacity: '1', margin: '1rem 0' })),
-      transition('expanded <=> collapsed', animate('300ms ease-in-out'))
+      transition('expanded <=> collapsed', animate('300ms cubic-bezier(0.4, 0, 0.2, 1)'))
     ])
   ]
 })
@@ -43,9 +42,8 @@ export class OffersComponent implements OnInit {
   loading = false;
   clientId: number | null = null;
   candidatesDetails: Map<number, CandidateResponse> = new Map();
-  expandedOffers: Set<number> = new Set();
+  expandedOffers = new Set<number>();
   expandedCandidates: Set<number> = new Set();
-
 
   constructor(
     private offerService: OfferService,
@@ -65,8 +63,8 @@ export class OffersComponent implements OnInit {
         this.clientId = client.id;
         this.loadOffers();
       },
-      error: (err) => {
-        this.showError('Erreur lors du chargement du profil client');
+      error: () => {
+        this.showError('Erreur chargement profil');
         this.loading = false;
       }
     });
@@ -74,14 +72,13 @@ export class OffersComponent implements OnInit {
 
   loadOffers(): void {
     if (!this.clientId) return;
-
     this.offerService.getOffersByClientId(this.clientId).subscribe({
       next: (data) => {
         this.offers = data;
         this.loadCandidatesDetails();
       },
       error: () => {
-        this.showError('Erreur lors du chargement des offres');
+        this.showError('Erreur chargement offres');
         this.loading = false;
       }
     });
@@ -99,7 +96,6 @@ export class OffersComponent implements OnInit {
     }
 
     const requests = Array.from(candidateIds).map(id => this.candidateService.getCandidateById(id));
-
     forkJoin(requests).subscribe({
       next: (candidates) => {
         candidates.forEach(c => this.candidatesDetails.set(c.id, c));
@@ -112,26 +108,30 @@ export class OffersComponent implements OnInit {
     });
   }
 
-  getCandidateDetail(candidateId: number): CandidateResponse | undefined {
-    return this.candidatesDetails.get(candidateId);
-  }
-
   toggleCandidates(offerId: number): void {
     this.expandedOffers.has(offerId) ? this.expandedOffers.delete(offerId) : this.expandedOffers.add(offerId);
+  }
+
+  toggleCandidateDetails(candidateId: number): void {
+    this.expandedCandidates.has(candidateId) ? this.expandedCandidates.delete(candidateId) : this.expandedCandidates.add(candidateId);
   }
 
   isCandidatesExpanded(offerId: number): boolean {
     return this.expandedOffers.has(offerId);
   }
 
+  getCandidateDetail(candidateId: number) {
+    return this.candidatesDetails.get(candidateId);
+  }
+
   acceptCandidate(offerId: number, candidateId: number): void {
-    if (!confirm('Voulez-vous accepter ce candidat ?')) return;
-    this.updateStatus(offerId, candidateId, 'ACCEPTED', 'Candidat accepté');
+    if (!confirm('Voulez-vous retenir ce profil ?')) return;
+    this.updateStatus(offerId, candidateId, 'ACCEPTED', 'Candidat retenu avec succès');
   }
 
   rejectCandidate(offerId: number, candidateId: number): void {
-    if (!confirm('Voulez-vous refuser ce candidat ?')) return;
-    this.updateStatus(offerId, candidateId, 'REJECTED', 'Candidat refusé');
+    if (!confirm('Voulez-vous décliner ce candidat ?')) return;
+    this.updateStatus(offerId, candidateId, 'REJECTED', 'Candidat décliné');
   }
 
   private updateStatus(offerId: number, candidateId: number, status: string, message: string) {
@@ -151,11 +151,4 @@ export class OffersComponent implements OnInit {
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('fr-FR');
   }
-  toggleCandidateDetails(candidateId: number): void {
-  if (this.expandedCandidates.has(candidateId)) {
-    this.expandedCandidates.delete(candidateId);
-  } else {
-    this.expandedCandidates.add(candidateId);
-  }
 }
-} 
