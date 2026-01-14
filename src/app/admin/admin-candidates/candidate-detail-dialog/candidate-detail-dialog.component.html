@@ -1,0 +1,155 @@
+<div class="dialog-container">
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="header-content">
+      <mat-icon class="header-icon">person</mat-icon>
+      <div class="header-text">
+        <h2>Détails du candidat</h2>
+        <span class="candidate-id">ID #{{ candidate.id }}</span>
+      </div>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="dialog-content">
+    <!-- Personal Information -->
+    <mat-card class="info-card">
+      <div class="info-section">
+        <div class="info-header">
+          <mat-icon>account_circle</mat-icon>
+          <h3>Informations personnelles</h3>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Prénom</span>
+            <span class="value">{{ candidate.firstName }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Nom</span>
+            <span class="value">{{ candidate.lastName }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Email</span>
+            <span class="value">
+              <a [href]="'mailto:' + candidate.emailAddress">{{ candidate.emailAddress }}</a>
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Téléphone</span>
+            <span class="value">
+              <a [href]="'tel:' + candidate.phoneNumber">{{ candidate.phoneNumber }}</a>
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">CIN</span>
+            <span class="value">{{ candidate.cin }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">N° CSS</span>
+            <span class="value">{{ candidate.cssNumber }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-divider class="section-divider"></mat-divider>
+
+    <!-- Professional Information -->
+    <mat-card class="info-card">
+      <div class="info-section">
+        <div class="info-header">
+          <mat-icon>work</mat-icon>
+          <h3>Informations professionnelles</h3>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item full-width">
+            <span class="label">Profession</span>
+            <span class="value highlight">{{ candidate.professional }}</span>
+          </div>
+
+          <div class="info-item full-width">
+            <span class="label">Compétences</span>
+            <span class="value">{{ candidate.skills }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Expérience</span>
+            <span class="value highlight">{{ candidate.experienceYear }} ans</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Date d'inscription</span>
+            <span class="value">{{ formatDate(candidate.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-divider class="section-divider"></mat-divider>
+
+    <!-- CV Section -->
+    <mat-card class="info-card cv-card">
+      <div class="info-section">
+        <div class="info-header">
+          <mat-icon>description</mat-icon>
+          <h3>Curriculum Vitae</h3>
+        </div>
+
+        <div class="cv-section" *ngIf="hasCv(); else noCv">
+          <div class="cv-info">
+            <mat-icon class="cv-icon">picture_as_pdf</mat-icon>
+            <div class="cv-details">
+              <span class="cv-name">CV_{{ candidate.lastName }}_{{ candidate.firstName }}.pdf</span>
+              <span class="cv-status">Disponible</span>
+            </div>
+          </div>
+          <div class="cv-actions">
+            <button mat-raised-button color="primary" (click)="downloadCV()">
+              <mat-icon>download</mat-icon>
+              Télécharger
+            </button>
+            <button mat-raised-button color="accent" (click)="fileInput.click()">
+              <mat-icon>upload</mat-icon>
+              Remplacer
+            </button>
+          </div>
+        </div>
+
+        <ng-template #noCv>
+          <div class="no-cv">
+            <mat-icon>cloud_upload</mat-icon>
+            <p>Aucun CV disponible pour ce candidat</p>
+            <button mat-raised-button color="primary" (click)="fileInput.click()">
+              <mat-icon>upload</mat-icon>
+              Uploader un CV
+            </button>
+          </div>
+        </ng-template>
+
+        <!-- Hidden file input -->
+        <input
+          #fileInput
+          type="file"
+          accept=".pdf"
+          style="display: none"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Footer -->
+  <div class="dialog-footer">
+    <button mat-button (click)="close()">Fermer</button>
+  </div>
+</div>

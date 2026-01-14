@@ -1,0 +1,115 @@
+.dialog-container {
+  padding: 8px;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .warning-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #f44336;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.dialog-content {
+  padding: 16px 0;
+
+  .message {
+    font-size: 16px;
+    color: #555;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+  }
+
+  .warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    background-color: #fff3e0;
+    border-left: 4px solid #ff9800;
+    border-radius: 4px;
+    margin: 0;
+
+    mat-icon {
+      color: #ff9800;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    span {
+      font-size: 14px;
+      color: #e65100;
+      line-height: 1.4;
+    }
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0 8px 0;
+  margin: 0;
+
+  button {
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .dialog-container {
+    padding: 4px;
+  }
+
+  .dialog-header {
+    h2 {
+      font-size: 18px;
+    }
+  }
+
+  .dialog-content {
+    .message {
+      font-size: 14px;
+    }
+
+    .warning {
+      span {
+        font-size: 13px;
+      }
+    }
+  }
+
+  .dialog-actions {
+    button {
+      min-width: 100px;
+      font-size: 14px;
+    }
+  }
+}

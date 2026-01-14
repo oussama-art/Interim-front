@@ -131,6 +131,12 @@ select:-webkit-autofill:focus {
       opacity: 1 !important;
       visibility: visible !important;
     }
+
+    // Supprimer uniquement les bordures verticales de la partie centrale (notch)
+    .mdc-notched-outline__notch {
+      border-left: none !important;
+      border-right: none !important;
+    }
   }
 }
 

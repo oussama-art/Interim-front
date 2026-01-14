@@ -7,10 +7,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AdminService } from '../../core/services/admin.service';
 import { CandidateResponse } from '../../core/models/user.model';
 import { CreateCandidateFormComponent } from './create-candidate-form/create-candidate-form.component';
 import { ImportCandidatesComponent } from './import-candidates/import-candidates.component';
+import { CandidateDetailDialogComponent } from './candidate-detail-dialog/candidate-detail-dialog.component';
+import { ConfirmDeleteDialogComponent } from '../../shared/components/confirm-delete-dialog/confirm-delete-dialog.component';
 
 @Component({
   selector: 'app-admin-candidates',
@@ -24,6 +27,7 @@ import { ImportCandidatesComponent } from './import-candidates/import-candidates
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatTabsModule,
+    MatDialogModule,
     CreateCandidateFormComponent,
     ImportCandidatesComponent
   ],
@@ -51,7 +55,8 @@ export class AdminCandidatesComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -76,8 +81,23 @@ export class AdminCandidatesComponent implements OnInit {
   }
 
   viewCandidate(candidate: CandidateResponse): void {
-    this.snackBar.open(`Affichage du candidat: ${candidate.firstName} ${candidate.lastName}`, 'Fermer', {
-      duration: 2000
+    const dialogRef = this.dialog.open(CandidateDetailDialogComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      data: { candidate: { ...candidate } },
+      panelClass: 'candidate-detail-dialog'
+    });
+
+    dialogRef.afterClosed().subscribe((updatedCandidate: CandidateResponse) => {
+      if (updatedCandidate) {
+        // Mettre à jour le candidat dans la liste avec une nouvelle référence
+        const index = this.candidates.findIndex(c => c.id === updatedCandidate.id);
+        if (index !== -1) {
+          this.candidates[index] = { ...updatedCandidate };
+          // Forcer la détection de changement
+          this.candidates = [...this.candidates];
+        }
+      }
     });
   }
 
@@ -88,22 +108,36 @@ export class AdminCandidatesComponent implements OnInit {
   }
 
   deleteCandidate(candidate: CandidateResponse): void {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le candidat ${candidate.firstName} ${candidate.lastName} ?`)) {
-      this.adminService.deleteCandidate(candidate.id).subscribe({
-        next: () => {
-          this.snackBar.open('Candidat supprimé avec succès', 'Fermer', {
-            duration: 3000
-          });
-          this.loadCandidates();
-        },
-        error: (err) => {
-          console.error('Erreur lors de la suppression:', err);
-          this.snackBar.open('Erreur lors de la suppression du candidat', 'Fermer', {
-            duration: 3000
-          });
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDeleteDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmer la suppression',
+        message: `Êtes-vous sûr de vouloir supprimer le candidat ${candidate.firstName} ${candidate.lastName} ?`,
+        warning: 'Cette action est irréversible et supprimera toutes les données associées (CV, compte Keycloak, etc.).'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.adminService.deleteCandidate(candidate.id).subscribe({
+          next: () => {
+            this.snackBar.open('Candidat supprimé avec succès', 'Fermer', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadCandidates();
+          },
+          error: (err) => {
+            console.error('Erreur lors de la suppression:', err);
+            const errorMessage = err?.error?.message || 'Erreur lors de la suppression du candidat';
+            this.snackBar.open(errorMessage, 'Fermer', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      }
+    });
   }
 
   toggleCreateForm(): void {
