@@ -7,12 +7,13 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { forkJoin } from 'rxjs';
+
 import { OfferService } from '../../core/services/offer.service';
-import { OfferResponse, ProposedCandidate } from '../../core/models/offer.model';
+import { OfferResponse } from '../../core/models/offer.model';
 import { ClientService } from '../../core/services/client.service';
 import { CandidateService } from '../../core/services/candidate.service';
 import { CandidateResponse } from '../../core/models/user.model';
-import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-offers',
@@ -30,17 +31,9 @@ import { forkJoin } from 'rxjs';
   styleUrl: './offers.component.scss',
   animations: [
     trigger('expandCollapse', [
-      state('collapsed', style({
-        height: '0',
-        overflow: 'hidden',
-        opacity: 0
-      })),
-      state('expanded', style({
-        height: '*',
-        overflow: 'visible',
-        opacity: 1
-      })),
-      transition('collapsed <=> expanded', animate('300ms ease-in-out'))
+      state('collapsed', style({ height: '0px', opacity: '0', overflow: 'hidden', margin: '0' })),
+      state('expanded', style({ height: '*', opacity: '1', margin: '1rem 0' })),
+      transition('expanded <=> collapsed', animate('300ms cubic-bezier(0.4, 0, 0.2, 1)'))
     ])
   ]
 })
@@ -49,7 +42,8 @@ export class OffersComponent implements OnInit {
   loading = false;
   clientId: number | null = null;
   candidatesDetails: Map<number, CandidateResponse> = new Map();
-  expandedOffers: Set<number> = new Set();
+  expandedOffers = new Set<number>();
+  expandedCandidates: Set<number> = new Set();
 
   constructor(
     private offerService: OfferService,
@@ -69,11 +63,8 @@ export class OffersComponent implements OnInit {
         this.clientId = client.id;
         this.loadOffers();
       },
-      error: (err) => {
-        console.error('Erreur lors du chargement du client:', err);
-        this.snackBar.open('Erreur lors du chargement du profil client', 'Fermer', {
-          duration: 3000
-        });
+      error: () => {
+        this.showError('Erreur chargement profil');
         this.loading = false;
       }
     });
@@ -81,125 +72,83 @@ export class OffersComponent implements OnInit {
 
   loadOffers(): void {
     if (!this.clientId) return;
-
     this.offerService.getOffersByClientId(this.clientId).subscribe({
       next: (data) => {
         this.offers = data;
         this.loadCandidatesDetails();
       },
-      error: (err) => {
-        console.error('Erreur lors du chargement des offres:', err);
-        this.snackBar.open('Erreur lors du chargement des offres', 'Fermer', {
-          duration: 3000
-        });
+      error: () => {
+        this.showError('Erreur chargement offres');
         this.loading = false;
       }
     });
   }
 
   loadCandidatesDetails(): void {
-    const candidateIds: number[] = [];
-
+    const candidateIds = new Set<number>();
     this.offers.forEach(offer => {
-      offer.proposedCandidates.forEach(candidate => {
-        if (!candidateIds.includes(candidate.candidateId)) {
-          candidateIds.push(candidate.candidateId);
-        }
-      });
+      offer.proposedCandidates.forEach(c => candidateIds.add(c.candidateId));
     });
 
-    if (candidateIds.length === 0) {
+    if (candidateIds.size === 0) {
       this.loading = false;
       return;
     }
 
-    const requests = candidateIds.map(id =>
-      this.candidateService.getCandidateById(id)
-    );
-
+    const requests = Array.from(candidateIds).map(id => this.candidateService.getCandidateById(id));
     forkJoin(requests).subscribe({
       next: (candidates) => {
-        candidates.forEach(candidate => {
-          this.candidatesDetails.set(candidate.id, candidate);
-        });
+        candidates.forEach(c => this.candidatesDetails.set(c.id, c));
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Erreur lors du chargement des détails des candidats:', err);
+      error: () => {
+        this.showError('Erreur détails candidats');
         this.loading = false;
       }
     });
   }
 
-  getCandidateDetail(candidateId: number): CandidateResponse | undefined {
-    return this.candidatesDetails.get(candidateId);
+  toggleCandidates(offerId: number): void {
+    this.expandedOffers.has(offerId) ? this.expandedOffers.delete(offerId) : this.expandedOffers.add(offerId);
   }
 
-  toggleCandidates(offerId: number): void {
-    if (this.expandedOffers.has(offerId)) {
-      this.expandedOffers.delete(offerId);
-    } else {
-      this.expandedOffers.add(offerId);
-    }
+  toggleCandidateDetails(candidateId: number): void {
+    this.expandedCandidates.has(candidateId) ? this.expandedCandidates.delete(candidateId) : this.expandedCandidates.add(candidateId);
   }
 
   isCandidatesExpanded(offerId: number): boolean {
     return this.expandedOffers.has(offerId);
   }
 
-  getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'active': 'Active',
-      'closed': 'Fermée',
-      'filled': 'Pourvue'
-    };
-    return labels[status] || status;
+  getCandidateDetail(candidateId: number) {
+    return this.candidatesDetails.get(candidateId);
   }
 
-  getStatusClass(status: string): string {
-    return `status-${status}`;
+  acceptCandidate(offerId: number, candidateId: number): void {
+    if (!confirm('Voulez-vous retenir ce profil ?')) return;
+    this.updateStatus(offerId, candidateId, 'ACCEPTED', 'Candidat retenu avec succès');
+  }
+
+  rejectCandidate(offerId: number, candidateId: number): void {
+    if (!confirm('Voulez-vous décliner ce candidat ?')) return;
+    this.updateStatus(offerId, candidateId, 'REJECTED', 'Candidat décliné');
+  }
+
+  private updateStatus(offerId: number, candidateId: number, status: string, message: string) {
+    this.offerService.updateCandidateStatus(offerId, candidateId, status).subscribe({
+      next: () => {
+        this.snackBar.open(message, 'Fermer', { duration: 3000 });
+        this.loadOffers();
+      },
+      error: () => this.showError('Erreur lors de la mise à jour')
+    });
+  }
+
+  private showError(msg: string) {
+    this.snackBar.open(msg, 'Fermer', { duration: 3000 });
   }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('fr-FR');
-  }
-
-  acceptCandidate(offerId: number, candidateId: number): void {
-    if (!confirm('Voulez-vous accepter ce candidat ?')) return;
-
-    this.offerService.updateCandidateStatus(offerId, candidateId, 'ACCEPTED').subscribe({
-      next: () => {
-        this.snackBar.open('Candidat accepté avec succès', 'Fermer', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-        this.loadOffers();
-      },
-      error: (err) => {
-        console.error('Erreur lors de l\'acceptation du candidat:', err);
-        this.snackBar.open('Erreur lors de l\'acceptation du candidat', 'Fermer', {
-          duration: 3000
-        });
-      }
-    });
-  }
-
-  rejectCandidate(offerId: number, candidateId: number): void {
-    if (!confirm('Voulez-vous refuser ce candidat ?')) return;
-
-    this.offerService.updateCandidateStatus(offerId, candidateId, 'REJECTED').subscribe({
-      next: () => {
-        this.snackBar.open('Candidat refusé', 'Fermer', {
-          duration: 3000
-        });
-        this.loadOffers();
-      },
-      error: (err) => {
-        console.error('Erreur lors du refus du candidat:', err);
-        this.snackBar.open('Erreur lors du refus du candidat', 'Fermer', {
-          duration: 3000
-        });
-      }
-    });
   }
 }
