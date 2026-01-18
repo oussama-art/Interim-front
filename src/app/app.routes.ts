@@ -20,13 +20,20 @@ import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard
 import { AdminClientsComponent } from './admin/admin-clients/admin-clients.component';
 import { AdminCandidatesComponent } from './admin/admin-candidates/admin-candidates.component';
 import { AdminDemandesComponent } from './admin/admin-demandes/admin-demandes.component';
+import { SplashComponent } from './pages/splash/splash.component';
 
 export const routes: Routes = [
+  // Page de garde
+  {
+    path: 'splash',
+    component: SplashComponent
+  },
+
   // Routes publiques
   
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'splash',
     pathMatch: 'full'
   },
   {

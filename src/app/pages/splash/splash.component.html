@@ -1,0 +1,219 @@
+<div class="explosion-container">
+  <nav class="mega-nav" [class.scrolled]="showScrollBtn">
+  <div class="nav-brand">
+    <img src="assets/images/3n-logo.jpg" alt="3N Logo" class="brand-img">
+    <span>3N SERVICES</span>
+  </div>
+
+  <div class="nav-links" *ngIf="isDesktop"> 
+    <a href="javascript:void(0)" (click)="scrollToServices()">Services</a>
+    <a href="javascript:void(0)">Solutions</a>
+    <a href="javascript:void(0)">À propos</a>
+  </div>
+
+  <div class="nav-cta">
+    <button class="btn-glow" (click)="navigateToLogin()">
+      <span>ESPACE CLIENT</span>
+    </button>
+  </div>
+</nav>
+
+  <header class="hero-impact">
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+    
+    <div class="hero-bg-text">3N</div>
+    
+    <div class="content-wrap reveal active">
+      <div class="badge-premium">
+        L'EXCELLENCE RH DIGITALE
+      </div>
+      <h1 class="main-title">
+        <span class="line">TRANSFORMEZ VOTRE</span>
+        <span class="line highlight">GESTION RH</span>
+      </h1>
+      <p class="hero-tagline">
+        Solutions complètes de recrutement et de gestion des ressources humaines pour les entreprises modernes.
+      </p>
+      
+      <div class="hero-actions">
+        <button class="btn-glow-large" (click)="navigateToLogin()">COMMENCER MAINTENANT</button>
+        <button class="btn-outline" (click)="scrollToServices()">DÉCOUVRIR NOS SERVICES</button>
+      </div>
+    </div>
+
+    <div class="scroll-indicator">
+      <div class="mouse">
+        <div class="wheel"></div>
+      </div>
+      <span>DÉFILER</span>
+    </div>
+  </header>
+
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span class="ticker-item">Recrutement Expert</span>
+      <span class="ticker-item">Gestion Digitale</span>
+      <span class="ticker-item">Conformité Totale</span>
+      <span class="ticker-item">Support 24/7</span>
+      <span class="ticker-item">Recrutement Expert</span>
+      <span class="ticker-item">Gestion Digitale</span>
+      <span class="ticker-item">Conformité Totale</span>
+      <span class="ticker-item">Support 24/7</span>
+    </div>
+  </div>
+
+  <section class="services-explosion" #servicesSection>
+    <div class="section-header">
+      <h2 class="reveal">Nos Services </h2>
+      <p class="reveal">Des solutions complètes pour optimiser votre gestion des ressources humaines</p>
+    </div>
+    
+    <div class="bento-grid">
+      <div class="bento-item tall reveal">
+        <div class="item-content">
+          <span class="service-num">01</span>
+          <h3>Recrutement<br>Stratégique</h3>
+          <p>Accédez aux meilleurs talents grâce à notre réseau étendu et notre processus de sélection rigoureux.</p>
+        </div>
+      </div>
+
+      <div class="bento-item wide reveal">
+        <div class="item-content">
+          <span class="service-num">02</span>
+          <h3>Plateforme Digitale Intégrée</h3>
+          <p>Gérez l'intégralité de vos opérations RH depuis une interface unique et intuitive.</p>
+        </div>
+        <div class="icon-blob">💼</div>
+      </div>
+
+      <div class="bento-item reveal">
+        <div class="item-content">
+          <span class="service-num">03</span>
+          <h3>Conseil<br>Expert</h3>
+          <p>Bénéficiez de l'expertise de nos consultants RH pour optimiser vos processus.</p>
+        </div>
+      </div>
+
+      <div class="bento-item reveal">
+        <div class="item-content">
+          <span class="service-num">04</span>
+          <h3>Conformité<br>Garantie</h3>
+          <p>Assurez la conformité légale de toutes vos opérations RH.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="partners-section">
+    <div class="partners-title">ILS NOUS FONT CONFIANCE</div>
+    <div class="partners-slider">
+      <div class="partner-logo">ACME</div>
+      <div class="partner-logo">TECHCORP</div>
+      <div class="partner-logo">INNOVATE</div>
+      <div class="partner-logo">GLOBAL</div>
+    </div>
+  </section>
+
+  <section class="impact-stats">
+    <div class="stat-row">
+      <div class="stat-box reveal">
+        <span class="number">500+</span>
+        <span class="label">Talents Actifs</span>
+      </div>
+      <div class="stat-box reveal">
+        <span class="number">98%</span>
+        <span class="label">Satisfaction Client</span>
+      </div>
+      <div class="stat-box reveal">
+        <span class="number">24/7</span>
+        <span class="label">Support Dédié</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="why-us">
+    <div class="why-container">
+      <div class="why-image reveal">
+        <div class="why-image reveal">
+      <div class="main-img-container">
+        <img
+          src="assets/images/client-bg.jpg"
+          alt="Notre équipe en action"
+          class="actual-img"
+        />
+        <div class="image-gradient-overlay"></div>
+      </div>
+
+      <div class="image-overlay-card">
+        <span class="card-num">99%</span>
+        <span>Taux de réussite</span>
+      </div>
+    </div>
+      </div>
+
+      <div class="why-content">
+        <div class="sub-title reveal">POURQUOI NOUS CHOISIR</div>
+        <h2 class="reveal">
+          L'excellence au service de <span>votre croissance</span>
+        </h2>
+        
+        <div class="benefit-item reveal">
+          <div class="benefit-icon">✓</div>
+          <div>
+            <h4>Expertise Reconnue</h4>
+            <p>Plus de 10 ans d'expérience dans le recrutement et la gestion RH au Maroc.</p>
+          </div>
+        </div>
+
+        <div class="benefit-item reveal">
+          <div class="benefit-icon">✓</div>
+          <div>
+            <h4>Technologie de Pointe</h4>
+            <p>Plateforme digitale moderne pour une gestion simplifiée et efficace.</p>
+          </div>
+        </div>
+
+        <div class="benefit-item reveal">
+          <div class="benefit-icon">✓</div>
+          <div>
+            <h4>Accompagnement Personnalisé</h4>
+            <p>Une équipe dédiée à votre service pour répondre à tous vos besoins.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq-section">
+    <h2 class="reveal">Questions Fréquentes</h2>
+    
+    <div class="faq-item" 
+         *ngFor="let item of faqItems; let i = index"
+         [class.open]="item.open"
+         (click)="toggleFaq(i)">
+      <div class="faq-question">
+        <span>{{ item.question }}</span>
+        <span class="icon">+</span>
+      </div>
+      <div class="faq-answer" *ngIf="item.open">
+        {{ item.answer }}
+      </div>
+    </div>
+  </section>
+
+  <footer class="impact-footer">
+    <div class="footer-content">
+      <h2 class="footer-logo">3N SERVICES</h2>
+      <p>© 2026 3N Services. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+  <!-- Scroll to top button -->
+  <button class="scroll-top-btn" 
+          *ngIf="showScrollBtn" 
+          (click)="scrollToTop()"
+          aria-label="Retour en haut">
+    ↑
+  </button>
+</div>
