@@ -12,43 +12,72 @@
       <div class="profile-header">
         <div class="profile-avatar">
           <div class="avatar-circle" [class.has-image]="profileImageUrl">
-            <img *ngIf="profileImageUrl" [src]="profileImageUrl" alt="Photo de profil" />
+            <img
+              *ngIf="profileImageUrl"
+              [src]="profileImageUrl"
+              alt="Photo de profil"
+            />
             <span *ngIf="!profileImageUrl">{{ getInitials() }}</span>
           </div>
-          <button mat-mini-fab color="primary" class="upload-button" (click)="triggerFileInput()" [disabled]="isUploadingImage">
+          <button
+            mat-mini-fab
+            color="primary"
+            class="upload-button"
+            (click)="triggerFileInput()"
+            [disabled]="isUploadingImage"
+          >
             <mat-icon *ngIf="!isUploadingImage">photo_camera</mat-icon>
             <mat-spinner *ngIf="isUploadingImage" diameter="24"></mat-spinner>
           </button>
-          <input type="file" id="profileImageInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+          <input
+            type="file"
+            id="profileImageInput"
+            accept="image/*"
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
         </div>
 
         <h2 *ngIf="getFullName()">{{ getFullName() }}</h2>
         <!-- <p class="role" *ngIf="isClient">Client</p>
         <p class="role" *ngIf="isCandidate">Candidat</p> -->
         <p class="company" *ngIf="client?.title">{{ client?.title }}</p>
-        <p class="company" *ngIf="candidate?.professional">{{ candidate?.professional }}</p>
+        <p class="company" *ngIf="candidate?.professional">
+          {{ candidate?.professional }}
+        </p>
       </div>
-
       <div class="quick-actions">
         <h3>Actions rapides</h3>
-        <button mat-stroked-button class="action-btn" (click)="enableEditMode()" *ngIf="!isEditMode">
-          <mat-icon>edit</mat-icon>
-          <span>Modifier le profil</span>
+
+        <button
+          mat-button
+          class="action-btn"
+          (click)="enableEditMode()"
+          *ngIf="!isEditMode"
+        >
+          <mat-icon>edit_note</mat-icon> <span>Modifier le profil</span>
         </button>
-        <button mat-stroked-button class="action-btn">
-          <mat-icon>lock</mat-icon>
-          <span>Changer le mot de passe</span>
+
+        <button mat-button class="action-btn">
+          <mat-icon>key</mat-icon> <span>Sécurité & mot de passe</span>
         </button>
-        <button mat-stroked-button color="warn" class="action-btn" (click)="logout()">
+
+        <button mat-button color="warn" class="action-btn" (click)="logout()">
           <mat-icon>logout</mat-icon>
           <span>Déconnexion</span>
         </button>
       </div>
 
-      <div class="stats-compact">
+      <div class="quick-actions">
         <h3>Statistiques</h3>
         <div class="stat-item" *ngFor="let stat of stats">
-          <mat-icon [style.color]="stat.color">{{ stat.icon }}</mat-icon>
+          <div
+            class="stat-icon-wrapper"
+            [style.background-color]="stat.color + '15'"
+          >
+            <mat-icon [style.color]="stat.color">{{ stat.icon }}</mat-icon>
+          </div>
+
           <div class="stat-content">
             <span class="stat-value">{{ stat.value }}</span>
             <span class="stat-label">{{ stat.label }}</span>
@@ -60,11 +89,18 @@
     <!-- Main Content -->
     <div class="profile-main">
       <!-- Alerte profil incomplet -->
-      <div class="incomplete-profile-alert" *ngIf="hasIncompleteProfile && !isEditMode">
+       
+      <div
+        class="incomplete-profile-alert"
+        *ngIf="hasIncompleteProfile && !isEditMode"
+      >
         <mat-icon class="warning-icon">warning</mat-icon>
         <div class="alert-content">
           <h3>Profil incomplet</h3>
-          <p>Certaines informations sont manquantes. Veuillez compléter votre profil pour bénéficier de toutes les fonctionnalités.</p>
+          <p>
+            Certaines informations sont manquantes. Veuillez compléter votre
+            profil pour bénéficier de toutes les fonctionnalités.
+          </p>
           <!-- <div class="missing-fields">
             <mat-chip *ngFor="let field of missingFields" color="warn">
               <mat-icon>info</mat-icon>
@@ -86,7 +122,12 @@
             <button mat-button (click)="cancelEdit()" [disabled]="isSaving">
               Annuler
             </button>
-            <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="isSaving">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="saveProfile()"
+              [disabled]="isSaving"
+            >
               <mat-icon *ngIf="!isSaving">save</mat-icon>
               <mat-spinner *ngIf="isSaving" diameter="20"></mat-spinner>
               Enregistrer
@@ -98,13 +139,21 @@
           <div class="form-row">
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Prénom</mat-label>
-              <input matInput formControlName="firstName" placeholder="Votre prénom">
+              <input
+                matInput
+                formControlName="firstName"
+                placeholder="Votre prénom"
+              />
               <mat-icon matPrefix>person</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Nom</mat-label>
-              <input matInput formControlName="lastName" placeholder="Votre nom">
+              <input
+                matInput
+                formControlName="lastName"
+                placeholder="Votre nom"
+              />
               <mat-icon matPrefix>person</mat-icon>
             </mat-form-field>
           </div>
@@ -112,17 +161,31 @@
           <div class="form-row">
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Téléphone</mat-label>
-              <input matInput formControlName="phoneNumber" placeholder="0612345678">
+              <input
+                matInput
+                formControlName="phoneNumber"
+                placeholder="0612345678"
+              />
               <mat-icon matPrefix>phone</mat-icon>
-              <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('pattern')">
+              <mat-error
+                *ngIf="profileForm.get('phoneNumber')?.hasError('pattern')"
+              >
                 Format invalide (10 chiffres)
               </mat-error>
             </mat-form-field>
 
             <!-- Champs spécifiques CLIENT -->
-            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isClient">
+            <mat-form-field
+              appearance="outline"
+              floatLabel="always"
+              *ngIf="isClient"
+            >
               <mat-label>Titre de l'entreprise</mat-label>
-              <input matInput formControlName="title" placeholder="Ex: SARL MonEntreprise">
+              <input
+                matInput
+                formControlName="title"
+                placeholder="Ex: SARL MonEntreprise"
+              />
               <mat-icon matPrefix>business</mat-icon>
               <mat-error *ngIf="profileForm.get('title')?.hasError('required')">
                 Le titre est requis
@@ -130,16 +193,24 @@
             </mat-form-field>
 
             <!-- Champs spécifiques CANDIDAT -->
-            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isCandidate">
+            <mat-form-field
+              appearance="outline"
+              floatLabel="always"
+              *ngIf="isCandidate"
+            >
               <mat-label>Profession</mat-label>
               <input
                 matInput
                 formControlName="professional"
                 placeholder="Ex: Développeur, Électricien..."
-                [matAutocomplete]="autoProfession">
+                [matAutocomplete]="autoProfession"
+              />
               <mat-icon matPrefix>work</mat-icon>
               <mat-autocomplete #autoProfession="matAutocomplete">
-                <mat-option *ngFor="let profession of filteredProfessions | async" [value]="profession">
+                <mat-option
+                  *ngFor="let profession of filteredProfessions | async"
+                  [value]="profession"
+                >
                   {{ profession }}
                 </mat-option>
               </mat-autocomplete>
@@ -150,18 +221,31 @@
           <div class="form-row" *ngIf="isClient">
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Secteur d'activité</mat-label>
-              <input matInput formControlName="sector" placeholder="Ex: Informatique, BTP, Commerce...">
+              <input
+                matInput
+                formControlName="sector"
+                placeholder="Ex: Informatique, BTP, Commerce..."
+              />
               <mat-icon matPrefix>category</mat-icon>
-              <mat-error *ngIf="profileForm.get('sector')?.hasError('required')">
+              <mat-error
+                *ngIf="profileForm.get('sector')?.hasError('required')"
+              >
                 Le secteur est requis
               </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Nombre d'employés</mat-label>
-              <input matInput type="number" formControlName="nbEmployee" placeholder="Ex: 50">
+              <input
+                matInput
+                type="number"
+                formControlName="nbEmployee"
+                placeholder="Ex: 50"
+              />
               <mat-icon matPrefix>groups</mat-icon>
-              <mat-error *ngIf="profileForm.get('nbEmployee')?.hasError('required')">
+              <mat-error
+                *ngIf="profileForm.get('nbEmployee')?.hasError('required')"
+              >
                 Le nombre d'employés est requis
               </mat-error>
               <mat-error *ngIf="profileForm.get('nbEmployee')?.hasError('min')">
@@ -174,13 +258,22 @@
           <div class="form-row" *ngIf="isCandidate">
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Années d'expérience</mat-label>
-              <input matInput type="number" formControlName="experienceYear" placeholder="Ex: 5">
+              <input
+                matInput
+                type="number"
+                formControlName="experienceYear"
+                placeholder="Ex: 5"
+              />
               <mat-icon matPrefix>schedule</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>CIN</mat-label>
-              <input matInput formControlName="cin" placeholder="Ex: AB123456">
+              <input
+                matInput
+                formControlName="cin"
+                placeholder="Ex: AB123456"
+              />
               <mat-icon matPrefix>badge</mat-icon>
             </mat-form-field>
           </div>
@@ -188,22 +281,39 @@
           <div class="form-row" *ngIf="isCandidate">
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Numéro CSS</mat-label>
-              <input matInput formControlName="cssNumber" placeholder="Ex: 123456789">
+              <input
+                matInput
+                formControlName="cssNumber"
+                placeholder="Ex: 123456789"
+              />
               <mat-icon matPrefix>credit_card</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Compétences</mat-label>
-              <input matInput formControlName="skills" placeholder="Ex: Java, Python, Électricité...">
+              <input
+                matInput
+                formControlName="skills"
+                placeholder="Ex: Java, Python, Électricité..."
+              />
               <mat-icon matPrefix>star</mat-icon>
             </mat-form-field>
           </div>
 
           <!-- Description commune -->
-          <mat-form-field appearance="outline" floatLabel="always" class="full-width" *ngIf="isClient">
+          <mat-form-field
+            appearance="outline"
+            floatLabel="always"
+            class="full-width"
+            *ngIf="isClient"
+          >
             <mat-label>Description de l'entreprise</mat-label>
-            <textarea matInput formControlName="description" rows="4"
-                      placeholder="Décrivez votre entreprise, vos activités..."></textarea>
+            <textarea
+              matInput
+              formControlName="description"
+              rows="4"
+              placeholder="Décrivez votre entreprise, vos activités..."
+            ></textarea>
             <mat-icon matPrefix>description</mat-icon>
           </mat-form-field>
         </form>
@@ -211,6 +321,7 @@
 
       <!-- Affichage des informations (mode lecture) -->
       <div class="content-card" *ngIf="!isEditMode">
+        
         <div class="card-header">
           <h3>Informations du compte</h3>
           <button mat-icon-button (click)="enableEditMode()">
@@ -220,21 +331,31 @@
 
         <div class="info-grid">
           <!-- Email (commun) -->
-          <div class="info-row" *ngIf="client?.emailAddress || candidate?.emailAddress">
+          <div
+            class="info-row"
+            *ngIf="client?.emailAddress || candidate?.emailAddress"
+          >
             <div class="info-label">
               <mat-icon>email</mat-icon>
               <span>Email</span>
             </div>
-            <div class="info-value">{{ client?.emailAddress || candidate?.emailAddress }}</div>
+            <div class="info-value">
+              {{ client?.emailAddress || candidate?.emailAddress }}
+            </div>
           </div>
 
           <!-- Téléphone (commun) -->
-          <div class="info-row" *ngIf="client?.phoneNumber || candidate?.phoneNumber">
+          <div
+            class="info-row"
+            *ngIf="client?.phoneNumber || candidate?.phoneNumber"
+          >
             <div class="info-label">
               <mat-icon>phone</mat-icon>
               <span>Téléphone</span>
             </div>
-            <div class="info-value">{{ client?.phoneNumber || candidate?.phoneNumber }}</div>
+            <div class="info-value">
+              {{ client?.phoneNumber || candidate?.phoneNumber }}
+            </div>
           </div>
 
           <!-- Champs CLIENT -->
@@ -263,7 +384,13 @@
             <div class="info-value">{{ candidate?.professional }}</div>
           </div>
 
-          <div class="info-row" *ngIf="candidate?.experienceYear !== null && candidate?.experienceYear !== undefined">
+          <div
+            class="info-row"
+            *ngIf="
+              candidate?.experienceYear !== null &&
+              candidate?.experienceYear !== undefined
+            "
+          >
             <div class="info-label">
               <mat-icon>schedule</mat-icon>
               <span>Expérience</span>
@@ -296,12 +423,17 @@
           </div>
 
           <!-- Date de création (commun) -->
-          <div class="info-row" *ngIf="client?.createdAt || candidate?.createdAt">
+          <div
+            class="info-row"
+            *ngIf="client?.createdAt || candidate?.createdAt"
+          >
             <div class="info-label">
               <mat-icon>calendar_today</mat-icon>
               <span>Membre depuis</span>
             </div>
-            <div class="info-value">{{ formatDate((client?.createdAt || candidate?.createdAt)!) }}</div>
+            <div class="info-value">
+              {{ formatDate((client?.createdAt || candidate?.createdAt)!) }}
+            </div>
           </div>
         </div>
       </div>
@@ -319,7 +451,11 @@
   <div *ngIf="!isLoading && !client && !candidate" class="error-state">
     <mat-icon>error_outline</mat-icon>
     <p>Impossible de charger le profil</p>
-    <button mat-raised-button color="primary" (click)="isClient ? loadClientProfile() : loadCandidateProfile()">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="isClient ? loadClientProfile() : loadCandidateProfile()"
+    >
       <mat-icon>refresh</mat-icon>
       Réessayer
     </button>
