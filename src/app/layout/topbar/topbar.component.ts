@@ -88,8 +88,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.globalSearchService.clearSearch();
   }
 
-  onProfile() {
-    console.log('Profile clicked');
+  goToProfile(): void {
+    this.router.navigate(['/app/profil']);
   }
 
   onLogout(): void {

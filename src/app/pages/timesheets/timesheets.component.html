@@ -1,0 +1,1328 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>schedule</mat-icon>
+          Feuilles de temps
+        </h1>
+        <p class="subtitle">Gestion des heures et suivi des collaborateurs</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary"
+                (click)="timesheetMode === 'monthly' ? startCreateMonthlyTimesheet() : startEditDay()"
+                [disabled]="loading || !selectedContract">
+          <mat-icon>add</mat-icon>
+          {{ timesheetMode === 'monthly' ? 'Nouvelle feuille mensuelle' : 'Nouvelle saisie' }}
+        </button>
+        <button mat-raised-button *ngIf="timesheetMode === 'weekly' || !selectedContract">
+          <mat-icon>download</mat-icon>
+          Exporter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLETS MODE DE SAISIE -->
+  <div class="mode-tabs" *ngIf="!selectedContract">
+    <button
+      mat-raised-button
+      [color]="timesheetMode === 'monthly' ? 'primary' : ''"
+      (click)="switchToMonthlyMode()">
+      <mat-icon>calendar_month</mat-icon>
+      Saisie mensuelle
+    </button>
+
+    <button
+      mat-raised-button
+      [color]="timesheetMode === 'weekly' ? 'primary' : ''"
+      (click)="switchToWeeklyMode()">
+      <mat-icon>event</mat-icon>
+      Saisie hebdomadaire
+    </button>
+
+  </div>
+
+  <!-- CONTENU SAISIE HEBDOMADAIRE -->
+  <ng-container *ngIf="timesheetMode === 'weekly'">
+
+  <!-- FILTRES COMPACTS -->
+  <div class="filters-section">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Rechercher..." [(ngModel)]="searchTerm" (input)="filterContracts()">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-icon matPrefix>filter_list</mat-icon>
+      <mat-label>Statut</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (selectionChange)="filterContracts()">
+        <mat-option value="all">Tous</mat-option>
+        <mat-option value="draft">Brouillon</mat-option>
+        <mat-option value="submitted">Soumis</mat-option>
+        <mat-option value="approved">Approuvé</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Sélecteur de mode de filtre -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-icon matPrefix>date_range</mat-icon>
+      <mat-label>Filtrer par</mat-label>
+      <mat-select [(ngModel)]="filterMode" (selectionChange)="selectedWeekDate = null; selectedFilterMonth = null; selectedFilterYear = null; filterContracts()">
+        <mat-option value="week">Semaine</mat-option>
+        <mat-option value="month">Mois</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Filtre semaine (visible quand mode = semaine) -->
+    <mat-form-field *ngIf="filterMode === 'week'" appearance="outline" class="filter-field">
+      <mat-icon matPrefix>event</mat-icon>
+      <mat-label>Sélectionner une semaine</mat-label>
+      <input matInput [matDatepicker]="weekPicker" [(ngModel)]="selectedWeekDate" (dateChange)="filterContracts()" placeholder="Choisir une date">
+      <mat-datepicker-toggle matSuffix [for]="weekPicker"></mat-datepicker-toggle>
+      <mat-datepicker #weekPicker></mat-datepicker>
+    </mat-form-field>
+
+    <!-- Filtres mois et année (visibles quand mode = mois) -->
+    <mat-form-field *ngIf="filterMode === 'month'" appearance="outline" class="filter-field">
+      <mat-icon matPrefix>calendar_today</mat-icon>
+      <mat-label>Mois</mat-label>
+      <mat-select [(ngModel)]="selectedFilterMonth" (selectionChange)="filterContracts()">
+        <mat-option [value]="null">Tous les mois</mat-option>
+        <mat-option *ngFor="let month of monthOptions" [value]="month.value">
+          {{ month.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field *ngIf="filterMode === 'month'" appearance="outline" class="filter-field">
+      <mat-icon matPrefix>calendar_today</mat-icon>
+      <mat-label>Année</mat-label>
+      <mat-select [(ngModel)]="selectedFilterYear" (selectionChange)="filterContracts()">
+        <mat-option [value]="null">Toutes les années</mat-option>
+        <mat-option *ngFor="let year of yearOptions" [value]="year">
+          {{ year }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-icon matPrefix>business</mat-icon>
+      <mat-label>Projet</mat-label>
+      <mat-select [(ngModel)]="projectFilter" (selectionChange)="filterContracts()">
+        <mat-option value="all">Tous les projets</mat-option>
+        <mat-option *ngFor="let project of availableProjects" [value]="project.value">
+          {{ project.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-icon-button matTooltip="Réinitialiser les filtres" (click)="searchTerm = ''; statusFilter = 'all'; filterMode = 'week'; selectedWeekDate = null; selectedFilterMonth = null; selectedFilterYear = null; projectFilter = 'all'; filterContracts()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Chargement des données...</p>
+  </div>
+
+  <!-- TABLEAU PRINCIPAL -->
+  <div *ngIf="!loading && !selectedContract" class="table-container">
+    <table mat-table [dataSource]="filteredContracts" class="timesheets-table">
+
+      <!-- Colonne Période -->
+      <ng-container matColumnDef="period">
+          <th mat-header-cell *matHeaderCellDef>Période</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="period-cell">
+              <mat-icon>date_range</mat-icon>
+              <span>{{ element.currentWeekTimesheet ? (formatShortDate(element.currentWeekTimesheet.weekStart) + ' - ' + formatShortDate(element.currentWeekTimesheet.weekEnd)) : '-' }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Collaborateur -->
+        <ng-container matColumnDef="collaborator">
+          <th mat-header-cell *matHeaderCellDef>Collaborateur</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="collaborator-cell">
+              <div class="avatar">{{ getInitials(element.contract) }}</div>
+              <div class="collaborator-info">
+                <span class="name">{{ getCandidateName(element.contract) }}</span>
+                <span class="role">{{ element.contract.candidate.professional }}</span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Projet -->
+        <ng-container matColumnDef="project">
+          <th mat-header-cell *matHeaderCellDef>Projet</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="project-cell">
+              <span class="project-ref">{{ element.contract.demandeReference }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Heures -->
+        <ng-container matColumnDef="hours">
+          <th mat-header-cell *matHeaderCellDef>Heures</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="hours-cell">
+              <span class="hours-value">{{ element.currentWeekTimesheet?.totalHours || 0 }}h</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Statut -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let element">
+            <span class="status-badge" [class]="'status-' + getStatus(element)">
+              {{ getStatusLabel(getStatus(element)) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Dernière mise à jour -->
+        <ng-container matColumnDef="lastUpdate">
+          <th mat-header-cell *matHeaderCellDef>Mise à jour</th>
+          <td mat-cell *matCellDef="let element">
+            <span class="update-date">{{ formatShortDate(element.contract.uploadedAt) }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Colonne Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="actions-cell">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="selectContract(element)">
+                <mat-icon>edit_calendar</mat-icon>
+                <span>Gérer</span>
+              </button>
+
+              <button
+                mat-icon-button
+                matTooltip="Voir les détails"
+                *ngIf="element.currentWeekTimesheet && element.currentWeekTimesheet.totalHours > 0">
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                matTooltip="Télécharger PDF"
+                *ngIf="element.currentWeekTimesheet && element.currentWeekTimesheet.totalHours > 0">
+                <mat-icon>download</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="table-row"
+            [class.has-hours]="row.currentWeekTimesheet && row.currentWeekTimesheet.totalHours > 0"></tr>
+      </table>
+
+    <!-- Empty state -->
+    <div *ngIf="filteredContracts.length === 0" class="empty-state">
+      <mat-icon>inbox</mat-icon>
+      <p>Aucune donnée disponible</p>
+      <span class="empty-hint">Modifiez vos critères de recherche ou créez une nouvelle saisie</span>
+    </div>
+  </div>
+
+
+  <!-- VUE DÉTAIL TIMESHEET -->
+  <div *ngIf="selectedContract && selectedContract.currentWeekTimesheet" class="timesheet-detail">
+
+    <!-- Header compact du détail -->
+    <div class="detail-header">
+      <button mat-icon-button (click)="backToList()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="detail-title">
+        <h2>{{ getCandidateName(selectedContract.contract) }}</h2>
+        <span class="ref">{{ selectedContract.contract.demandeReference}} • {{ selectedContract.contract.candidate.professional }}</span>
+      </div>
+      <div class="detail-actions">
+        <button mat-icon-button matTooltip="Semaine précédente" (click)="navigateToPreviousWeek()" [disabled]="!canNavigateToPreviousWeek()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="week-text">{{ formatShortDate(selectedContract.currentWeekTimesheet.weekStart) }} - {{ formatShortDate(selectedContract.currentWeekTimesheet.weekEnd) }}</span>
+        <button mat-icon-button matTooltip="Semaine suivante" (click)="navigateToNextWeek()" [disabled]="!canNavigateToNextWeek()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-stroked-button (click)="goToToday()">
+          <mat-icon>today</mat-icon>
+          Aujourd'hui
+        </button>
+      </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="quick-actions" *ngIf="!editMode">
+      <button mat-flat-button color="primary" (click)="startEditDay()">
+        <mat-icon>edit</mat-icon>
+        Éditer jour par jour
+      </button>
+      <button mat-stroked-button (click)="startEditPeriod()">
+        <mat-icon>flash_on</mat-icon>
+        Saisie rapide
+      </button>
+    </div>
+
+    <div class="quick-actions" *ngIf="editMode">
+      <button mat-flat-button color="primary" (click)="editMode === 'day' ? saveDayChanges() : savePeriodTotal()" [disabled]="saving">
+        <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+        <mat-icon *ngIf="!saving">save</mat-icon>
+        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+      <button mat-stroked-button (click)="cancelEdit()" [disabled]="saving">
+        Annuler
+      </button>
+      <div class="actions-group" *ngIf="editMode === 'day'">
+        <button mat-stroked-button (click)="fillWeekWithStandardHours()">
+          <mat-icon>auto_fix_high</mat-icon>
+          Remplir 9h-18h
+        </button>
+        <button mat-stroked-button (click)="duplicateToAll()">
+          <mat-icon>content_copy</mat-icon>
+          Dupliquer 1er jour
+        </button>
+        <button mat-stroked-button [matMenuTriggerFor]="clearMenu" color="warn">
+          <mat-icon>more_horiz</mat-icon>
+          Plus d'actions
+        </button>
+        <mat-menu #clearMenu="matMenu">
+          <button mat-menu-item (click)="clearWeek()">
+            <mat-icon>clear_all</mat-icon>
+            <span>Effacer (local)</span>
+          </button>
+          <button mat-menu-item (click)="deleteWeek()" class="danger-action">
+            <mat-icon>delete_forever</mat-icon>
+            <span>Supprimer définitivement</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <!-- Grille timesheet -->
+    <div class="timesheet-grid-container" *ngIf="!editMode || editMode === 'day'">
+      <div class="timesheet-grid">
+        <!-- En-têtes jours -->
+        <div class="grid-header">
+          <div class="row-label-cell"></div>
+          <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+               class="day-header-cell"
+               [class.weekend]="day.dayLabel === 'Sam' || day.dayLabel === 'Dim'"
+               [class.rest-day]="day.restDay">
+            <div class="day-name">{{ day.dayLabel }}</div>
+            <div class="day-date">{{ formatShortDate(day.date) }}</div>
+          </div>
+          <div class="total-header-cell">Total</div>
+        </div>
+
+        <!-- Mode lecture -->
+        <ng-container *ngIf="!editMode">
+          <div class="grid-row">
+            <div class="row-label">Début</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell"
+                 [class.empty]="!day.startTime || day.restDay"
+                 [class.rest-day]="day.restDay">
+              <span *ngIf="!day.restDay && day.startTime">{{ day.startTime }}</span>
+              <span *ngIf="day.restDay || !day.startTime" class="empty">—</span>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row">
+            <div class="row-label">Fin</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell"
+                 [class.empty]="!day.endTime || day.restDay"
+                 [class.rest-day]="day.restDay">
+              <span *ngIf="!day.restDay && day.endTime">{{ day.endTime }}</span>
+              <span *ngIf="day.restDay || !day.endTime" class="empty">—</span>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row">
+            <div class="row-label">Pause</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell"
+                 [class.empty]="!day.breakMinutes || day.restDay"
+                 [class.rest-day]="day.restDay">
+              <span *ngIf="!day.restDay && day.breakMinutes">{{ day.breakMinutes }}min</span>
+              <span *ngIf="day.restDay || !day.breakMinutes" class="empty">—</span>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row hours-row">
+            <div class="row-label">Heures</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell hours-cell"
+                 [class.empty]="!day.isSaved || !day.hours || day.restDay"
+                 [class.rest-day]="day.restDay">
+              <span *ngIf="!day.restDay && day.isSaved && day.hours" class="hours-value">{{ day.hours }}h</span>
+              <span *ngIf="day.restDay">Repos</span>
+              <span *ngIf="!day.restDay && !day.isSaved" class="empty">—</span>
+              <span *ngIf="!day.restDay && day.isSaved && !day.hours" class="empty">0h</span>
+            </div>
+            <div class="total-cell hours-total">{{ getTotalHours() }}h</div>
+          </div>
+
+          <div class="grid-row notes-row" *ngIf="hasAnyNotes()">
+            <div class="row-label">Notes</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell note-cell"
+                 [class.has-note]="day.note">
+              <span *ngIf="day.note" [title]="day.note">{{ day.note }}</span>
+              <span *ngIf="!day.note" class="empty">—</span>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <!-- Ligne Actions -->
+          <div class="grid-row actions-row">
+            <div class="row-label">Actions</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell action-cell"
+                 [class.rest-day]="day.restDay">
+              <button *ngIf="day.hours && day.hours > 0"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Supprimer ce jour"
+                      (click)="deleteDay(day.date)">
+                <mat-icon>delete</mat-icon>
+              </button>
+              <span *ngIf="!day.hours || day.hours === 0" class="empty">—</span>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+        </ng-container>
+
+        <!-- Mode édition -->
+        <ng-container *ngIf="editMode === 'day'">
+          <div class="grid-row edit-row">
+            <div class="row-label">Repos</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days" class="data-cell edit-cell">
+              <mat-checkbox [formControl]="$any(dayForms[day.date].get('restDay'))"
+                            (change)="calculateHoursFromTime(day.date)">
+              </mat-checkbox>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row edit-row">
+            <div class="row-label">Début</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell edit-cell"
+                 [class.disabled]="dayForms[day.date].get('restDay')!.value">
+              <input type="time"
+                     class="time-input"
+                     [formControl]="$any(dayForms[day.date].get('startTime'))"
+                     [disabled]="dayForms[day.date].get('restDay')!.value"
+                     (input)="calculateHoursFromTime(day.date)"
+                     (change)="calculateHoursFromTime(day.date)">
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row edit-row">
+            <div class="row-label">Fin</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell edit-cell"
+                 [class.disabled]="dayForms[day.date].get('restDay')!.value">
+              <input type="time"
+                     class="time-input"
+                     [formControl]="$any(dayForms[day.date].get('endTime'))"
+                     [disabled]="dayForms[day.date].get('restDay')!.value"
+                     (input)="calculateHoursFromTime(day.date)"
+                     (change)="calculateHoursFromTime(day.date)">
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row edit-row">
+            <div class="row-label">Pause (min)</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell edit-cell"
+                 [class.disabled]="dayForms[day.date].get('restDay')!.value">
+              <input type="number"
+                     class="number-input"
+                     placeholder="0"
+                     [formControl]="$any(dayForms[day.date].get('breakMinutes'))"
+                     [disabled]="dayForms[day.date].get('restDay')!.value"
+                     (input)="calculateHoursFromTime(day.date)"
+                     (change)="calculateHoursFromTime(day.date)">
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+
+          <div class="grid-row edit-row hours-row">
+            <div class="row-label">Heures</div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell edit-cell hours-cell"
+                 [class.disabled]="dayForms[day.date].get('restDay')!.value">
+              <input type="number"
+                     step="0.25"
+                     class="hours-input readonly-input"
+                     placeholder="0"
+                     [formControl]="$any(dayForms[day.date].get('hours'))"
+                     readonly>
+            </div>
+            <div class="total-cell hours-total">{{ getTotalHours() }}h</div>
+          </div>
+
+          <div class="grid-row edit-row notes-row">
+            <div class="row-label">
+              Notes
+              <span class="required-indicator" title="Note importante pour valider les heures">★</span>
+            </div>
+            <div *ngFor="let day of selectedContract.currentWeekTimesheet.days"
+                 class="data-cell edit-cell note-edit-cell"
+                 [class.disabled]="dayForms[day.date].get('restDay')!.value">
+              <textarea
+                class="note-input"
+                placeholder="Note importante..."
+                maxlength="200"
+                rows="1"
+                [formControl]="$any(dayForms[day.date].get('note'))"
+                [disabled]="dayForms[day.date].get('restDay')!.value"></textarea>
+            </div>
+            <div class="total-cell">—</div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+<!-- Mode saisie rapide période -->
+    <div *ngIf="editMode === 'period'" class="period-entry-view">
+      <mat-card class="period-card">
+        <mat-card-header>
+          <mat-card-title>Saisie Rapide</mat-card-title>
+          <mat-card-subtitle>Entrez le total d'heures sur une période, le système répartira automatiquement</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="periodForm" class="period-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Date de début</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate"
+                     [min]="getContractMinDate()"
+                     [max]="getContractMaxDate()">
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date de fin</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+                     [min]="getContractMinDate()"
+                     [max]="getContractMaxDate()">
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Total d'heures</mat-label>
+              <input matInput type="number" step="0.5" formControlName="totalHours" placeholder="35">
+              <mat-icon matPrefix>schedule</mat-icon>
+              <span matSuffix>heures</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Pause par défaut</mat-label>
+              <input matInput type="number" formControlName="defaultBreakMinutes" placeholder="60">
+              <mat-icon matPrefix>coffee</mat-icon>
+              <span matSuffix>min</span>
+            </mat-form-field>
+
+            <div class="info-box">
+              <mat-icon>info</mat-icon>
+              <span>Période du contrat: {{ formatDisplayDate(selectedContract.contract.startDate) }} - {{ formatDisplayDate(selectedContract.contract.endDate) }}</span>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  </ng-container>
+  <!-- FIN CONTENU SAISIE HEBDOMADAIRE -->
+
+  <!-- DÉBUT CONTENU SAISIE MENSUELLE -->
+  <ng-container *ngIf="timesheetMode === 'monthly'">
+
+    <!-- FILTRES COMPACTS MENSUEL -->
+    <div class="filters-section" *ngIf="!selectedContract">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput placeholder="Rechercher un collaborateur..." [(ngModel)]="searchTerm" (input)="filterContracts()">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-icon matPrefix>business</mat-icon>
+        <mat-label>Projet</mat-label>
+        <mat-select [(ngModel)]="projectFilter" (selectionChange)="filterContracts()">
+          <mat-option value="all">Tous les projets</mat-option>
+          <mat-option *ngFor="let project of availableProjects" [value]="project.value">
+            {{ project.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-icon-button matTooltip="Réinitialiser les filtres" (click)="searchTerm = ''; projectFilter = 'all'; filterContracts()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Chargement des données...</p>
+    </div>
+
+    <!-- LISTE DES CONTRATS POUR SÉLECTION -->
+    <div *ngIf="!selectedContract && !loading">
+      <!-- Empty state si pas de contrats -->
+      <div class="monthly-container" *ngIf="filteredContracts.length === 0">
+        <div class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <h2>Aucun contrat disponible</h2>
+          <p>Aucun contrat n'est disponible pour la saisie mensuelle</p>
+        </div>
+      </div>
+
+      <!-- TABLEAU DES CONTRATS -->
+      <div *ngIf="filteredContracts.length > 0" class="table-container">
+        <table mat-table [dataSource]="filteredContracts" class="timesheets-table">
+
+          <!-- Colonne Collaborateur -->
+          <ng-container matColumnDef="collaborator">
+            <th mat-header-cell *matHeaderCellDef>Collaborateur</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="collaborator-cell">
+                <div class="avatar">{{ getInitials(element.contract) }}</div>
+                <div class="collaborator-info">
+                  <span class="name">{{ getCandidateName(element.contract) }}</span>
+                  <span class="role">{{ element.contract.candidate.professional }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Projet -->
+          <ng-container matColumnDef="project">
+            <th mat-header-cell *matHeaderCellDef>Projet</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="project-cell">
+                <span class="project-ref">{{ element.contract.demandeReference }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Dates du contrat -->
+          <ng-container matColumnDef="contractPeriod">
+            <th mat-header-cell *matHeaderCellDef>Période du contrat</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="period-cell">
+                <span>{{ formatDisplayDate(element.contract.startDate) }} - {{ formatDisplayDate(element.contract.endDate) }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Actions -->
+          <ng-container matColumnDef="actionsMonthly">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let element">
+              <button mat-raised-button color="primary" (click)="selectContract(element)">
+                <mat-icon>calendar_month</mat-icon>
+                Gérer les feuilles mensuelles
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['collaborator', 'project', 'contractPeriod', 'actionsMonthly']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['collaborator', 'project', 'contractPeriod', 'actionsMonthly'];"></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- VUE DÉTAIL TIMESHEET MENSUEL -->
+    <div class="monthly-timesheet-view" *ngIf="selectedContract">
+      <!-- Barre de retour -->
+      <div class="back-bar">
+        <button mat-button (click)="backToList()">
+          <mat-icon>arrow_back</mat-icon>
+          Retour à la liste
+        </button>
+      </div>
+
+      <!-- Info collaborateur -->
+      <mat-card class="collaborator-info-card">
+        <mat-card-header>
+          <div class="collaborator-header">
+            <div class="avatar-large">{{ getInitials(selectedContract.contract) }}</div>
+            <div class="collaborator-details">
+              <h2>{{ getCandidateName(selectedContract.contract) }}</h2>
+              <p>{{ selectedContract.contract.candidate.professional }}</p>
+              <p class="project-ref">{{ selectedContract.contract.demandeReference }}</p>
+            </div>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="work-summary">
+            <h3>
+              <mat-icon>assessment</mat-icon>
+              Résumé du travail
+            </h3>
+            <div class="summary-stats">
+              <div class="stat-item">
+                <mat-icon>description</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value">{{ getCandidateWorkSummary().totalTimesheets }}</span>
+                  <span class="stat-label">Feuille(s) mensuelle(s)</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <mat-icon>work</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value badge-success">{{ getCandidateWorkSummary().totalDaysWorked }}</span>
+                  <span class="stat-label">Jours travaillés</span>
+                </div>
+              </div>
+              <div class="stat-item" *ngIf="getCandidateWorkSummary().totalAbsences > 0">
+                <mat-icon>event_busy</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value badge-warning">{{ getCandidateWorkSummary().totalAbsences }}</span>
+                  <span class="stat-label">Jours d'absence</span>
+                </div>
+              </div>
+              <div class="stat-item" *ngIf="getCandidateWorkSummary().totalPaidLeave > 0">
+                <mat-icon>beach_access</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value badge-info">{{ getCandidateWorkSummary().totalPaidLeave }}</span>
+                  <span class="stat-label">Congés payés</span>
+                </div>
+              </div>
+              <div class="stat-item" *ngIf="getCandidateWorkSummary().totalTravelFees > 0">
+                <mat-icon>euro</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value">{{ getCandidateWorkSummary().totalTravelFees | number:'1.2-2' }}€</span>
+                  <span class="stat-label">Frais déplacement</span>
+                </div>
+              </div>
+              <div class="stat-item" *ngIf="getCandidateWorkSummary().totalKmIndemnity > 0">
+                <mat-icon>directions_car</mat-icon>
+                <div class="stat-content">
+                  <span class="stat-value">{{ getCandidateWorkSummary().totalKmIndemnity | number:'1.2-2' }}€</span>
+                  <span class="stat-label">Indemnités km</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Formulaire de création/édition -->
+      <mat-card class="monthly-form-card" *ngIf="editingMonthlyTimesheet">
+        <mat-card-header class="form-header">
+          <div class="header-icon">
+            <mat-icon>description</mat-icon>
+          </div>
+          <div class="header-text">
+            <mat-card-title>{{ selectedMonthlyTimesheet ? 'Modification' : 'Nouvelle feuille' }}</mat-card-title>
+            <mat-card-subtitle>Timesheet mensuel</mat-card-subtitle>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <form class="monthly-form" [formGroup]="monthlyForm">
+            <!-- Sélection mois et année -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Mois</mat-label>
+                <mat-select formControlName="month" (selectionChange)="onMonthYearChange()">
+                  <mat-option *ngFor="let month of getMonthOptions()" [value]="month.value">
+                    {{ month.label }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Année</mat-label>
+                <mat-select formControlName="year" (selectionChange)="onMonthYearChange()">
+                  <mat-option *ngFor="let year of getYearOptions()" [value]="year">
+                    {{ year }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <!-- Date d'entrée -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Date d'entrée</mat-label>
+              <input matInput [matDatepicker]="entryDatePicker" formControlName="entryDate"
+                     [min]="getEntryDateMin()" [max]="getEntryDateMax()"
+                     readonly (click)="entryDatePicker.open()">
+              <mat-icon matPrefix>event</mat-icon>
+              <mat-datepicker-toggle matSuffix [for]="entryDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #entryDatePicker [startAt]="getEntryDateMin()"></mat-datepicker>
+            </mat-form-field>
+
+            <!-- Jours de repos récurrents -->
+            <div class="form-section">
+              <label class="section-title">Jours de repos récurrents (chaque semaine)</label>
+              <div class="checkbox-group">
+                <mat-checkbox [checked]="isRestDaySelected(1)" (change)="toggleRestDay(1)">Lundi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(2)" (change)="toggleRestDay(2)">Mardi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(3)" (change)="toggleRestDay(3)">Mercredi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(4)" (change)="toggleRestDay(4)">Jeudi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(5)" (change)="toggleRestDay(5)">Vendredi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(6)" (change)="toggleRestDay(6)">Samedi</mat-checkbox>
+                <mat-checkbox [checked]="isRestDaySelected(0)" (change)="toggleRestDay(0)">Dimanche</mat-checkbox>
+              </div>
+            </div>
+
+            <!-- Dates de repos spécifiques -->
+            <div class="form-section">
+              <label class="section-title">Dates de repos spécifiques (jours variables)</label>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Ajouter une date de repos</mat-label>
+                <input matInput [matDatepicker]="specificRestPicker"
+                       [min]="getLeaveDateMin()" [max]="getLeaveDateMax()"
+                       readonly (dateChange)="addSpecificRestDate($event)">
+                <mat-icon matPrefix>event</mat-icon>
+                <mat-datepicker-toggle matSuffix [for]="specificRestPicker"></mat-datepicker-toggle>
+                <mat-datepicker #specificRestPicker [startAt]="getLeaveDateMin()"></mat-datepicker>
+              </mat-form-field>
+
+              <mat-chip-listbox *ngIf="getSpecificRestDates().length > 0" class="dates-chips">
+                <mat-chip-option *ngFor="let date of getSpecificRestDates()" (removed)="removeSpecificRestDate(date)">
+                  {{ date | date:'dd/MM/yyyy' }}
+                  <button matChipRemove>
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </mat-chip-option>
+              </mat-chip-listbox>
+            </div>
+
+            <!-- Info: Total jours de repos -->
+            <div class="info-box" *ngIf="getRestDaysCount() > 0">
+              <mat-icon>info</mat-icon>
+              <span>Total: {{ getRestDaysCount() }} jour(s) de repos ce mois</span>
+            </div>
+
+            <!-- Jours du mois -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Jours dans le mois</mat-label>
+                <input matInput type="number" formControlName="daysInMonth" readonly>
+                <mat-icon matPrefix>calendar_today</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Jours travaillés</mat-label>
+                <input matInput type="number" formControlName="daysWorked" min="0" readonly>
+                <mat-icon matPrefix>work</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Absences et congés -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Jours d'absence</mat-label>
+                <input matInput type="number" formControlName="absenceDays" min="0">
+                <mat-icon matPrefix>event_busy</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Congés payés</mat-label>
+                <input matInput type="number" formControlName="paidLeaveDays" min="0">
+                <mat-icon matPrefix>beach_access</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Dates de congé -->
+            <div class="form-row" *ngIf="monthlyForm.get('paidLeaveDays')?.value > 0">
+              <mat-form-field appearance="outline">
+                <mat-label>Date début congé</mat-label>
+                <input matInput [matDatepicker]="leaveStartPicker" formControlName="leaveStartDate"
+                       [min]="getLeaveDateMin()" [max]="getLeaveDateMax()"
+                       readonly (click)="leaveStartPicker.open()">
+                <mat-icon matPrefix>event_available</mat-icon>
+                <mat-datepicker-toggle matSuffix [for]="leaveStartPicker"></mat-datepicker-toggle>
+                <mat-datepicker #leaveStartPicker [startAt]="getLeaveDateMin()"></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Date fin congé</mat-label>
+                <input matInput [matDatepicker]="leaveEndPicker" formControlName="leaveEndDate"
+                       [min]="getLeaveDateMin()" [max]="getLeaveDateMax()"
+                       readonly (click)="leaveEndPicker.open()">
+                <mat-icon matPrefix>event_available</mat-icon>
+                <mat-datepicker-toggle matSuffix [for]="leaveEndPicker"></mat-datepicker-toggle>
+                <mat-datepicker #leaveEndPicker [startAt]="getLeaveDateMin()"></mat-datepicker>
+                <mat-error *ngIf="monthlyForm.get('leaveEndDate')?.hasError('invalidInterval')">
+                  L'intervalle doit correspondre exactement au nombre de jours de congé ({{ monthlyForm.get('paidLeaveDays')?.value }} jours)
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Frais et indemnités -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Frais de déplacement</mat-label>
+                <input matInput type="number" step="0.01" formControlName="travelFees" min="0">
+                <mat-icon matPrefix>euro</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Indemnité kilométrique</mat-label>
+                <input matInput type="number" step="0.01" formControlName="kmIndemnity" min="0">
+                <mat-icon matPrefix>directions_car</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Avance et rappel de salaire -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Avance sur salaire</mat-label>
+                <input matInput type="number" step="0.01" formControlName="salaryAdvance" min="0">
+                <mat-icon matPrefix>account_balance_wallet</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Rappel de salaire</mat-label>
+                <input matInput type="number" step="0.01" formControlName="salaryReminder" min="0">
+                <mat-icon matPrefix>account_balance</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Ville d'affectation -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Ville d'affectation</mat-label>
+              <input matInput formControlName="cityAssignment">
+              <mat-icon matPrefix>location_city</mat-icon>
+            </mat-form-field>
+
+            <!-- Remarques -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Remarques</mat-label>
+              <textarea matInput formControlName="remarks" rows="3"></textarea>
+              <mat-icon matPrefix>notes</mat-icon>
+            </mat-form-field>
+          </form>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" (click)="saveMonthlyTimesheet()" [disabled]="saving || !monthlyForm.valid">
+            <mat-icon>save</mat-icon>
+            {{ selectedMonthlyTimesheet ? 'Mettre à jour' : 'Enregistrer' }}
+          </button>
+          <button mat-button (click)="cancelMonthlyEdit()" [disabled]="saving">
+            Annuler
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- Liste des timesheets mensuels -->
+      <div class="monthly-timesheets-list" *ngIf="!editingMonthlyTimesheet">
+        <h3 *ngIf="monthlyTimesheets.length > 0">
+          <mat-icon>description</mat-icon>
+          <span>Feuilles mensuelles</span>
+          <span class="count-badge">{{ monthlyTimesheets.length }}</span>
+        </h3>
+
+        <div class="empty-state" *ngIf="monthlyTimesheets.length === 0">
+          <mat-icon>inbox</mat-icon>
+          <p>Aucun timesheet mensuel enregistré</p>
+        </div>
+
+        <!-- Tableau des timesheets (Desktop) -->
+        <div class="table-container desktop-view" *ngIf="monthlyTimesheets.length > 0">
+          <table mat-table [dataSource]="monthlyTimesheets" class="timesheets-table">
+
+            <!-- Colonne Période -->
+            <ng-container matColumnDef="period">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">calendar_month</mat-icon>
+                Période
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <div class="period-info">
+                  <strong>{{ getMonthName(timesheet.month) }} {{ timesheet.year }}</strong>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Date d'entrée -->
+            <ng-container matColumnDef="entryDate">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">event</mat-icon>
+                Date entrée
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span class="date-value">{{ timesheet.entryDate | date:'dd/MM/yyyy' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Jours dans le mois -->
+            <ng-container matColumnDef="daysInMonth">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">calendar_today</mat-icon>
+                Jours (mois)
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span class="numeric-value">{{ timesheet.daysInMonth }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Jours travaillés -->
+            <ng-container matColumnDef="daysWorked">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">work</mat-icon>
+                Travaillés
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span class="badge-success">
+                  <mat-icon>check_circle</mat-icon>
+                  {{ timesheet.daysWorked }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Jours de repos -->
+            <ng-container matColumnDef="restDays">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">weekend</mat-icon>
+                Repos
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span class="numeric-value">{{ calculateRestDaysForTimesheet(timesheet) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Absences -->
+            <ng-container matColumnDef="absenceDays">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">event_busy</mat-icon>
+                Absences
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.absenceDays > 0" class="badge-warning">
+                  <mat-icon>warning</mat-icon>
+                  {{ timesheet.absenceDays }}
+                </span>
+                <span *ngIf="timesheet.absenceDays === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Congés payés -->
+            <ng-container matColumnDef="paidLeaveDays">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">beach_access</mat-icon>
+                Congés
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.paidLeaveDays > 0" class="badge-info">
+                  <mat-icon>info</mat-icon>
+                  {{ timesheet.paidLeaveDays }}
+                </span>
+                <span *ngIf="timesheet.paidLeaveDays === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Période de congé -->
+            <ng-container matColumnDef="leavePeriod">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">date_range</mat-icon>
+                Période congé
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.leaveStartDate && timesheet.leaveEndDate" class="date-range">
+                  {{ timesheet.leaveStartDate | date:'dd/MM' }} - {{ timesheet.leaveEndDate | date:'dd/MM' }}
+                </span>
+                <span *ngIf="!timesheet.leaveStartDate || !timesheet.leaveEndDate" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Frais déplacement -->
+            <ng-container matColumnDef="travelFees">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">euro</mat-icon>
+                Frais dépl.
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.travelFees > 0" class="money-value">{{ timesheet.travelFees | number:'1.2-2' }}€</span>
+                <span *ngIf="timesheet.travelFees === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Indemnité km -->
+            <ng-container matColumnDef="kmIndemnity">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">directions_car</mat-icon>
+                Indem. km
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.kmIndemnity > 0" class="money-value">{{ timesheet.kmIndemnity | number:'1.2-2' }}€</span>
+                <span *ngIf="timesheet.kmIndemnity === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Avance sur salaire -->
+            <ng-container matColumnDef="salaryAdvance">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">account_balance_wallet</mat-icon>
+                Avance
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.salaryAdvance > 0" class="money-value">{{ timesheet.salaryAdvance | number:'1.2-2' }}€</span>
+                <span *ngIf="timesheet.salaryAdvance === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Rappel de salaire -->
+            <ng-container matColumnDef="salaryReminder">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">account_balance</mat-icon>
+                Rappel
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.salaryReminder > 0" class="money-value">{{ timesheet.salaryReminder | number:'1.2-2' }}€</span>
+                <span *ngIf="timesheet.salaryReminder === 0" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Ville -->
+            <ng-container matColumnDef="cityAssignment">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="column-icon">location_city</mat-icon>
+                Ville
+              </th>
+              <td mat-cell *matCellDef="let timesheet">
+                <span *ngIf="timesheet.cityAssignment" class="city-value">
+                  <mat-icon>place</mat-icon>
+                  {{ timesheet.cityAssignment }}
+                </span>
+                <span *ngIf="!timesheet.cityAssignment" class="text-muted">-</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let timesheet">
+                <div class="actions-cell">
+                  <button mat-icon-button matTooltip="Voir les détails" (click)="viewMonthlyTimesheetDetails(timesheet)">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Modifier" color="primary" (click)="editMonthlyTimesheet(timesheet)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Supprimer" class="delete-btn-red" (click)="deleteMonthlyTimesheet(timesheet)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="monthlyDisplayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: monthlyDisplayedColumns;" class="table-row"></tr>
+          </table>
+        </div>
+
+        <!-- Vue Cards (Mobile) -->
+        <div class="mobile-cards-view" *ngIf="monthlyTimesheets.length > 0">
+          <div class="timesheet-card" *ngFor="let timesheet of monthlyTimesheets">
+            <div class="card-header">
+              <div class="card-title">
+                <mat-icon>calendar_month</mat-icon>
+                <strong>{{ getMonthName(timesheet.month) }} {{ timesheet.year }}</strong>
+              </div>
+              <div class="card-badges">
+                <span class="badge-success" *ngIf="timesheet.daysWorked > 0">
+                  <mat-icon>check_circle</mat-icon>
+                  {{ timesheet.daysWorked }}j
+                </span>
+                <span class="badge-warning" *ngIf="timesheet.absenceDays > 0">
+                  <mat-icon>warning</mat-icon>
+                  {{ timesheet.absenceDays }}j
+                </span>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <div class="card-row">
+                <span class="label">
+                  <mat-icon>event</mat-icon>
+                  Date d'entrée
+                </span>
+                <span class="value">{{ timesheet.entryDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+
+              <div class="card-row">
+                <span class="label">
+                  <mat-icon>calendar_today</mat-icon>
+                  Jours (mois)
+                </span>
+                <span class="value">{{ timesheet.daysInMonth }}</span>
+              </div>
+
+              <div class="card-row">
+                <span class="label">
+                  <mat-icon>weekend</mat-icon>
+                  Jours de repos
+                </span>
+                <span class="value">{{ calculateRestDaysForTimesheet(timesheet) }}</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.paidLeaveDays > 0">
+                <span class="label">
+                  <mat-icon>beach_access</mat-icon>
+                  Congés payés
+                </span>
+                <span class="value badge-info">
+                  <mat-icon>info</mat-icon>
+                  {{ timesheet.paidLeaveDays }}j
+                </span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.leaveStartDate && timesheet.leaveEndDate">
+                <span class="label">
+                  <mat-icon>date_range</mat-icon>
+                  Période congé
+                </span>
+                <span class="value">{{ timesheet.leaveStartDate | date:'dd/MM' }} - {{ timesheet.leaveEndDate | date:'dd/MM' }}</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.travelFees > 0">
+                <span class="label">
+                  <mat-icon>euro</mat-icon>
+                  Frais déplacement
+                </span>
+                <span class="value">{{ timesheet.travelFees | number:'1.2-2' }}€</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.kmIndemnity > 0">
+                <span class="label">
+                  <mat-icon>directions_car</mat-icon>
+                  Indemnité km
+                </span>
+                <span class="value">{{ timesheet.kmIndemnity | number:'1.2-2' }}€</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.salaryAdvance > 0">
+                <span class="label">
+                  <mat-icon>account_balance_wallet</mat-icon>
+                  Avance
+                </span>
+                <span class="value">{{ timesheet.salaryAdvance | number:'1.2-2' }}€</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.salaryReminder > 0">
+                <span class="label">
+                  <mat-icon>account_balance</mat-icon>
+                  Rappel
+                </span>
+                <span class="value">{{ timesheet.salaryReminder | number:'1.2-2' }}€</span>
+              </div>
+
+              <div class="card-row" *ngIf="timesheet.cityAssignment">
+                <span class="label">
+                  <mat-icon>location_city</mat-icon>
+                  Ville
+                </span>
+                <span class="value">{{ timesheet.cityAssignment }}</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button mat-button (click)="viewMonthlyTimesheetDetails(timesheet)">
+                <mat-icon>visibility</mat-icon>
+                Détails
+              </button>
+              <button mat-button color="primary" (click)="editMonthlyTimesheet(timesheet)">
+                <mat-icon>edit</mat-icon>
+                Modifier
+              </button>
+              <button mat-button class="delete-action" (click)="deleteMonthlyTimesheet(timesheet)">
+                <mat-icon>delete</mat-icon>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vue détails (Modal/Dialog) -->
+        <mat-card class="details-card" *ngIf="viewingMonthlyTimesheetDetails">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>description</mat-icon>
+              Détails - {{ getMonthName(viewingMonthlyTimesheetDetails.month) }} {{ viewingMonthlyTimesheetDetails.year }}
+            </mat-card-title>
+            <button mat-icon-button (click)="closeMonthlyTimesheetDetails()" class="close-btn">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="details-grid">
+              <div class="detail-section">
+                <h4><mat-icon>calendar_today</mat-icon> Informations générales</h4>
+                <div class="detail-row">
+                  <span class="detail-label">Date d'entrée:</span>
+                  <span class="detail-value">{{ viewingMonthlyTimesheetDetails.entryDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Créé le:</span>
+                  <span class="detail-value">{{ viewingMonthlyTimesheetDetails.createdAt | date:'dd/MM/yyyy à HH:mm' }}</span>
+                </div>
+              </div>
+
+              <div class="detail-section" *ngIf="viewingMonthlyTimesheetDetails.weeklyRestDays && viewingMonthlyTimesheetDetails.weeklyRestDays.length > 0">
+                <h4><mat-icon>weekend</mat-icon> Jours de repos récurrents</h4>
+                <mat-chip-listbox>
+                  <mat-chip-option *ngFor="let day of viewingMonthlyTimesheetDetails.weeklyRestDays">
+                    {{ getDayNameFromString(day) }}
+                  </mat-chip-option>
+                </mat-chip-listbox>
+              </div>
+
+              <div class="detail-section" *ngIf="viewingMonthlyTimesheetDetails.specificRestDates && viewingMonthlyTimesheetDetails.specificRestDates.length > 0">
+                <h4><mat-icon>event</mat-icon> Dates de repos spécifiques</h4>
+                <mat-chip-listbox>
+                  <mat-chip-option *ngFor="let date of viewingMonthlyTimesheetDetails.specificRestDates">
+                    {{ date | date:'dd/MM/yyyy' }}
+                  </mat-chip-option>
+                </mat-chip-listbox>
+              </div>
+
+              <div class="detail-section" *ngIf="viewingMonthlyTimesheetDetails.remarks">
+                <h4><mat-icon>notes</mat-icon> Remarques</h4>
+                <p class="remarks-text">{{ viewingMonthlyTimesheetDetails.remarks }}</p>
+              </div>
+            </div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button (click)="closeMonthlyTimesheetDetails()">
+              Fermer
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </div>
+
+  </ng-container>
+  <!-- FIN CONTENU SAISIE MENSUELLE -->
+
+</div>
