@@ -1,9 +1,14 @@
 <div class="admin-layout">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.open]="sidebarOpen">
     <div class="sidebar-header">
-      <mat-icon class="logo-icon">admin_panel_settings</mat-icon>
-      <h1>Admin Panel</h1>
+      <div class="header-content">
+        <mat-icon class="logo-icon">admin_panel_settings</mat-icon>
+        <h1>Admin Panel</h1>
+      </div>
+      <button mat-icon-button class="close-btn" (click)="closeSidebar()">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
     <nav class="sidebar-nav">
@@ -12,7 +17,7 @@
         [routerLink]="item.route"
         routerLinkActive="active"
         class="nav-item"
-        (click)="updateActiveMenuItem()"
+        (click)="updateActiveMenuItem(); closeSidebar()"
       >
         <mat-icon>{{ item.icon }}</mat-icon>
         <span>{{ item.title }}</span>
@@ -27,11 +32,17 @@
     </div>
   </aside>
 
+  <!-- Overlay pour fermer la sidebar en mode mobile -->
+  <div class="sidebar-overlay" [class.show]="sidebarOpen" (click)="closeSidebar()"></div>
+
   <!-- Main Content -->
   <div class="main-content">
     <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-left">
+        <button mat-icon-button class="menu-btn" (click)="toggleSidebar()">
+          <mat-icon>menu</mat-icon>
+        </button>
         <h2>Administration</h2>
       </div>
       <div class="topbar-right">

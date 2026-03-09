@@ -1,0 +1,144 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>
+    <mat-icon>edit</mat-icon>
+    Modifier la demande #{{ request.id }}
+  </h2>
+  <button mat-icon-button (click)="close()" class="close-button" [disabled]="isLoading">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <!-- Personal Info -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <mat-icon>person</mat-icon>
+        Informations personnelles
+      </h3>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Prénom</mat-label>
+          <input matInput formControlName="firstName" placeholder="Jean">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="editForm.get('firstName')?.invalid">
+            {{ getErrorMessage('firstName') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Nom</mat-label>
+          <input matInput formControlName="lastName" placeholder="Dupont">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="editForm.get('lastName')?.invalid">
+            {{ getErrorMessage('lastName') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Email professionnel</mat-label>
+          <input matInput type="email" formControlName="emailAddress" placeholder="jean.dupont@entreprise.com">
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="editForm.get('emailAddress')?.invalid">
+            {{ getErrorMessage('emailAddress') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Téléphone</mat-label>
+          <input matInput type="tel" formControlName="phoneNumber" placeholder="0612345678">
+          <mat-icon matPrefix>phone</mat-icon>
+          <mat-error *ngIf="editForm.get('phoneNumber')?.invalid">
+            {{ getErrorMessage('phoneNumber') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Années d'expérience</mat-label>
+        <input matInput type="number" formControlName="experienceYear" placeholder="5" min="0">
+        <mat-icon matPrefix>work</mat-icon>
+        <mat-hint>Dans le domaine d'activité</mat-hint>
+        <mat-error *ngIf="editForm.get('experienceYear')?.invalid">
+          {{ getErrorMessage('experienceYear') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Company Info -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <mat-icon>business</mat-icon>
+        Informations entreprise
+      </h3>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Nom de l'entreprise</mat-label>
+        <input matInput formControlName="companyTitle" placeholder="Acme Corporation">
+        <mat-icon matPrefix>business</mat-icon>
+        <mat-error *ngIf="editForm.get('companyTitle')?.invalid">
+          {{ getErrorMessage('companyTitle') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Description de l'activité</mat-label>
+        <textarea
+          matInput
+          formControlName="companyDescription"
+          rows="3"
+          placeholder="Décrivez brièvement l'activité principale de l'entreprise..."></textarea>
+        <mat-icon matPrefix>description</mat-icon>
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Secteur d'activité</mat-label>
+          <input matInput formControlName="sector" placeholder="Ex: Informatique, BTP, Commerce...">
+          <mat-icon matPrefix>category</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Nombre d'employés</mat-label>
+          <input matInput type="number" formControlName="nbEmployee" placeholder="50" min="1">
+          <mat-icon matPrefix>groups</mat-icon>
+          <mat-error *ngIf="editForm.get('nbEmployee')?.invalid">
+            {{ getErrorMessage('nbEmployee') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Nombre de comptes utilisateurs</mat-label>
+        <input matInput type="number" formControlName="requestedAccounts" placeholder="3" min="1">
+        <mat-icon matPrefix>account_circle</mat-icon>
+        <mat-hint>Nombre d'utilisateurs qui auront accès à la plateforme</mat-hint>
+        <mat-error *ngIf="editForm.get('requestedAccounts')?.invalid">
+          {{ getErrorMessage('requestedAccounts') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions">
+  <button
+    mat-stroked-button
+    (click)="close()"
+    [disabled]="isLoading">
+    Annuler
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="isLoading || editForm.invalid">
+    <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+    <mat-icon *ngIf="!isLoading">save</mat-icon>
+    <span *ngIf="!isLoading">Enregistrer</span>
+    <span *ngIf="isLoading">Enregistrement...</span>
+  </button>
+</mat-dialog-actions>

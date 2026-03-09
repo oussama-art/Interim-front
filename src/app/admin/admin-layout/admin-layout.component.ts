@@ -25,6 +25,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class AdminLayoutComponent implements OnInit {
   currentYear = new Date().getFullYear();
+  sidebarOpen = false;
 
   menuItems = [
     {
@@ -33,10 +34,28 @@ export class AdminLayoutComponent implements OnInit {
       route: '/admin/dashboard',
       active: false
     },
-     {
-      title: 'Demandes',
+    {
+      title: 'Demandes de mission',
       icon: 'assignment',
       route: '/admin/demandes',
+      active: false
+    },
+    {
+      title: 'Offres',
+      icon: 'work_outline',
+      route: '/admin/offers',
+      active: false
+    },
+    {
+      title: 'Contrats',
+      icon: 'description',
+      route: '/admin/contracts',
+      active: false
+    },
+    {
+      title: 'Inscriptions entreprises',
+      icon: 'business_center',
+      route: '/admin/account-requests',
       active: false
     },
     {
@@ -67,6 +86,14 @@ export class AdminLayoutComponent implements OnInit {
     this.menuItems.forEach(item => {
       item.active = currentRoute.startsWith(item.route);
     });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen = false;
   }
 
   logout(): void {

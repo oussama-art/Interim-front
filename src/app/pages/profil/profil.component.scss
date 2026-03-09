@@ -1,3 +1,8 @@
+@import '../shared-page-styles.scss';
+
+// Page profil avec layout spécifique (sidebar + contenu)
+// Utilise les variables partagées mais conserve sa structure unique
+
 .page-container {
   padding: 0;
   width: 100%;
@@ -508,6 +513,41 @@
         font-size: 20px;
         width: 20px;
         height: 20px;
+      }
+    }
+
+    // Style pour les champs manquants
+    &.field-missing {
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background-color: #fef3c7;
+        }
+
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: #f59e0b !important;
+          border-width: 2px !important;
+        }
+
+        .mat-mdc-floating-label {
+          color: #d97706 !important;
+        }
+      }
+
+      .missing-hint {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #d97706;
+        font-weight: 500;
+        font-size: 0.875rem;
+
+        .hint-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
       }
     }
   }

@@ -1,0 +1,201 @@
+<div class="dialog-container">
+  <!-- Mode: affichage d'un seul profil -->
+  <div *ngIf="!showAllProfils && profilGroup" class="single-profil-view">
+    <div class="dialog-header">
+      <div class="header-info">
+        <mat-icon class="profil-icon">badge</mat-icon>
+        <div class="title-group">
+          <h2>{{ profilGroup.profilName }}</h2>
+          <p class="subtitle">{{ profilGroup.candidates.length }} candidat(s) proposé(s)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <mat-chip [color]="profilGroup.acceptedCount >= profilGroup.quantityRequested ? 'primary' : 'accent'" class="quota-chip">
+          {{ profilGroup.acceptedCount }} / {{ profilGroup.quantityRequested }}
+        </mat-chip>
+        <button mat-icon-button (click)="close()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="dialog-body">
+      <div class="candidates-list">
+        <div class="candidate-card" *ngFor="let candidate of profilGroup.candidates">
+          <div class="card-header" (click)="toggleCandidateDetails(candidate.candidateId)">
+            <div class="candidate-avatar">
+              <span>{{ candidate.firstName[0] }}{{ candidate.lastName[0] }}</span>
+            </div>
+            <div class="candidate-info">
+              <h3>{{ candidate.firstName }} {{ candidate.lastName }}</h3>
+              <p class="role">{{ candidate.professional }}</p>
+            </div>
+            <div class="status-badge" [attr.data-status]="candidate.status">
+              {{ candidate.status }}
+            </div>
+            <mat-icon class="expand-icon" [class.rotated]="expandedCandidates.has(candidate.candidateId)">
+              chevron_right
+            </mat-icon>
+          </div>
+
+          <div class="card-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
+            <div class="details-grid">
+              <div class="detail-item">
+                <mat-icon>history</mat-icon>
+                <div class="detail-content">
+                  <span class="label">Expérience</span>
+                  <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <mat-icon>email</mat-icon>
+                <div class="detail-content">
+                <span class="label">Email</span>
+                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress || 'N/A' }}</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <mat-icon>phone</mat-icon>
+              <div class="detail-content">
+                <span class="label">Téléphone</span>
+                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber || 'N/A' }}</span>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.cvPath">
+              <mat-icon>description</mat-icon>
+              <div class="detail-content">
+                <span class="label">CV</span>
+                <button class="cv-link" (click)="viewCv(candidate.candidateId)" *ngIf="!isDemandeClosed()">
+                  <mat-icon>visibility</mat-icon> Voir
+                </button>
+                <span class="cv-blocked" *ngIf="isDemandeClosed()">
+                  <mat-icon>lock</mat-icon> Bloqué
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-actions" *ngIf="candidate.status === 'PROPOSED'">
+            <button mat-stroked-button color="warn" (click)="rejectCandidate(candidate.candidateId)" [disabled]="processing">
+              <mat-icon>close</mat-icon>
+              Décliner
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="acceptCandidate(candidate.candidateId)"
+                    [disabled]="processing || !canAcceptCandidate()">
+              <mat-icon>check</mat-icon>
+              {{ canAcceptCandidate() ? 'Retenir ce candidat' : 'Limite atteinte' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Mode: affichage de tous les profils (plus de 3) -->
+  <div *ngIf="showAllProfils && allProfils" class="all-profils-view">
+    <div class="dialog-header">
+      <div class="header-info">
+        <mat-icon class="profil-icon">groups</mat-icon>
+        <div class="title-group">
+          <h2>Tous les profils de l'offre</h2>
+          <p class="subtitle">{{ allProfils.length }} profil(s) • {{ getTotalCandidatesCount() }} candidat(s) au total</p>
+        </div>
+      </div>
+      <button mat-icon-button (click)="close()" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <div class="profils-sections">
+        <div class="profil-section" *ngFor="let profil of allProfils">
+          <div class="profil-section-header">
+            <div class="profil-header-left">
+              <mat-icon class="profil-icon-small">person</mat-icon>
+              <h3>{{ profil.profilName }}</h3>
+            </div>
+            <mat-chip [color]="profil.acceptedCount >= profil.quantityRequested ? 'primary' : 'accent'" class="quota-chip-small">
+              {{ profil.acceptedCount }} / {{ profil.quantityRequested }}
+            </mat-chip>
+          </div>
+
+          <div class="candidates-list">
+            <div class="candidate-card" *ngFor="let candidate of profil.candidates">
+              <div class="card-header" (click)="toggleCandidateDetails(candidate.candidateId)">
+                <div class="candidate-avatar">
+                  <span>{{ candidate.firstName[0] }}{{ candidate.lastName[0] }}</span>
+                </div>
+                <div class="candidate-info">
+                  <h4>{{ candidate.firstName }} {{ candidate.lastName }}</h4>
+                  <p class="role">{{ candidate.professional }}</p>
+                </div>
+                <div class="status-badge" [attr.data-status]="candidate.status">
+                  {{ candidate.status }}
+                </div>
+                <mat-icon class="expand-icon" [class.rotated]="expandedCandidates.has(candidate.candidateId)">
+                  chevron_right
+                </mat-icon>
+              </div>
+
+              <div class="card-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <mat-icon>history</mat-icon>
+                    <div class="detail-content">
+                      <span class="label">Expérience</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans</span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>email</mat-icon>
+                    <div class="detail-content">
+                      <span class="label">Email</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>phone</mat-icon>
+                    <div class="detail-content">
+                      <span class="label">Téléphone</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>work</mat-icon>
+                    <div class="detail-content">
+                      <span class="label">Compétences</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.skills || 'N/A' }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="candidate-actions" *ngIf="!isDemandeClosed() && candidate.status === 'PROPOSED'">
+                  <button mat-button (click)="viewCv(candidate.candidateId)" class="cv-button">
+                    <mat-icon>description</mat-icon>
+                    Voir le CV
+                  </button>
+                  <div class="action-buttons">
+                    <button mat-stroked-button color="warn"
+                            (click)="rejectCandidate(candidate.candidateId)"
+                            [disabled]="processing">
+                      <mat-icon>close</mat-icon>
+                      Décliner
+                    </button>
+                    <button mat-raised-button color="primary"
+                            (click)="acceptCandidate(candidate.candidateId, profil)"
+                            [disabled]="processing || !canAcceptCandidate(profil)">
+                      <mat-icon>check</mat-icon>
+                      {{ canAcceptCandidate(profil) ? 'Retenir' : 'Limite atteinte' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

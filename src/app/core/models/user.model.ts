@@ -15,12 +15,17 @@ export interface ClientCreateRequest extends BaseUserRequest {
   nbEmployee: number;
 }
 
-export interface CandidateCreateRequest extends BaseUserRequest {
+export interface CandidateCreateRequest {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  emailAddress: string;
   experienceYear: number;
   skills: string;
   professional: string;
   cin: string;
   cssNumber: string;
+  active?: boolean;
 }
 
 export interface ClientResponse {
@@ -33,6 +38,9 @@ export interface ClientResponse {
   description?: string;
   sector: string;
   nbEmployee: number;
+  numDemande?: number;
+  globalEmailAddress?: string;
+  approvedEmails?: string[];
   createdAt: string;
 }
 
@@ -69,17 +77,24 @@ export interface CandidateResponse {
   cssNumber: string;
   cvPath?: string;
   createdAt: string;
+  active: boolean;
+  suspendedUntil?: string;
+  status?: string;
+  nextAvailableDate?: string;
 }
 
 export interface CandidatePatchRequest {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  emailAddress?: string;
   experienceYear?: number;
   skills?: string;
   professional?: string;
   cin?: string;
   cssNumber?: string;
+  active?: boolean;
+  suspendedUntil?: string;
 }
 
 // OAuth Models

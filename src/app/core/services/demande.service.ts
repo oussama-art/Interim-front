@@ -49,6 +49,21 @@ export class DemandeService {
   }
 
   /**
+   * Récupérer le détail d'une demande par son ID
+   * @param demandeId ID de la demande
+   * @returns Observable<DemandeResponse>
+   */
+  getDemandeDetail(demandeId: number): Observable<DemandeResponse> {
+    const url = getApiUrl(`/demandes/my-demandes/detail?demandeId=${demandeId}`);
+    return this.http.get<DemandeResponse>(url).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération du détail de la demande:', error);
+        return throwError(() => this.handleError(error));
+      })
+    );
+  }
+
+  /**
    * Récupérer les demandes du client authentifié avec pagination
    * L'authentification est gérée automatiquement par l'intercepteur
    */
@@ -110,6 +125,24 @@ export class DemandeService {
       }),
       catchError(error => {
         console.error('Erreur lors de la modification de la demande:', error);
+        return throwError(() => this.handleError(error));
+      })
+    );
+  }
+
+  /**
+   * Clôturer une demande
+   * @param demandeId ID de la demande à clôturer
+   * @returns Observable<DemandeResponse>
+   */
+  closeDemande(demandeId: number): Observable<DemandeResponse> {
+    const url = getApiUrl(`/demandes/${demandeId}/close`);
+    return this.http.patch<DemandeResponse>(url, null).pipe(
+      tap(response => {
+        console.log('Demande clôturée avec succès', response);
+      }),
+      catchError(error => {
+        console.error('Erreur lors de la clôture de la demande:', error);
         return throwError(() => this.handleError(error));
       })
     );

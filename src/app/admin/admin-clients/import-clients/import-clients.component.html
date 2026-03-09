@@ -1,0 +1,154 @@
+<div class="import-container">
+  <mat-card class="import-card">
+    <div class="import-header">
+      <mat-icon>upload_file</mat-icon>
+      <h2>Importer des clients depuis Excel</h2>
+    </div>
+
+    <!-- Template Download -->
+    <div class="template-section">
+      <p>Téléchargez le modèle Excel pour voir le format requis</p>
+      <button mat-raised-button color="accent" (click)="downloadTemplate()">
+        <mat-icon>download</mat-icon>
+        <span>Télécharger le modèle</span>
+      </button>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- File Upload -->
+    <div class="upload-section">
+      <div class="file-input-wrapper">
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          (change)="onFileSelected($event)"
+          #fileInput
+          id="fileInput"
+        />
+        <label for="fileInput" class="file-input-label">
+          <mat-icon>attach_file</mat-icon>
+          <span *ngIf="!selectedFile">Choisir un fichier Excel</span>
+          <span *ngIf="selectedFile">{{ selectedFile.name }}</span>
+        </label>
+      </div>
+
+      <button
+        *ngIf="selectedFile"
+        mat-icon-button
+        color="warn"
+        (click)="clearFile(); fileInput.value = ''"
+        title="Supprimer le fichier"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading Preview -->
+    <div *ngIf="previewing" class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Lecture du fichier...</p>
+    </div>
+
+    <!-- Preview Table -->
+    <div *ngIf="!previewing && previewClients.length > 0" class="preview-section">
+      <h3>Aperçu des clients ({{ previewClients.length }})</h3>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="previewClients" class="preview-table">
+          <ng-container matColumnDef="firstName">
+            <th mat-header-cell *matHeaderCellDef>Prénom</th>
+            <td mat-cell *matCellDef="let client">{{ client.firstName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastName">
+            <th mat-header-cell *matHeaderCellDef>Nom</th>
+            <td mat-cell *matCellDef="let client">{{ client.lastName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="emailAddress">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let client">{{ client.emailAddress }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>Entreprise</th>
+            <td mat-cell *matCellDef="let client">{{ client.title }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="sector">
+            <th mat-header-cell *matHeaderCellDef>Secteur</th>
+            <td mat-cell *matCellDef="let client">{{ client.sector }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Statut</th>
+            <td mat-cell *matCellDef="let client; let i = index">
+              <mat-chip *ngIf="importResults.length === 0" class="pending-chip">
+                En attente
+              </mat-chip>
+              <mat-chip
+                *ngIf="importResults.length > 0 && importResults[i]"
+                [class.success-chip]="importResults[i].status === 'success'"
+                [class.error-chip]="importResults[i].status === 'error'"
+              >
+                {{ importResults[i].status === 'success' ? 'Succès' : 'Erreur' }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Import Results Summary -->
+    <div *ngIf="importResults.length > 0" class="results-summary">
+      <mat-divider></mat-divider>
+      <div class="summary-stats">
+        <div class="stat success">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ getSuccessCount() }} réussis</span>
+        </div>
+        <div class="stat error">
+          <mat-icon>error</mat-icon>
+          <span>{{ getErrorCount() }} échoués</span>
+        </div>
+      </div>
+
+      <!-- Error Details -->
+      <div *ngIf="hasErrors()" class="error-details">
+        <h4>Détails des erreurs:</h4>
+        <ul>
+          <li *ngFor="let result of importResults">
+            <span *ngIf="result.status === 'error'">
+              <strong>{{ result.client.firstName }} {{ result.client.lastName }}</strong>:
+              {{ result.message || 'Erreur inconnue' }}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button
+        mat-stroked-button
+        (click)="onCancel()"
+        [disabled]="loading"
+      >
+        Annuler
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="importClients()"
+        [disabled]="!selectedFile || previewClients.length === 0 || loading"
+      >
+        <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+        <span *ngIf="!loading">Importer {{ previewClients.length }} client(s)</span>
+      </button>
+    </div>
+  </mat-card>
+</div>

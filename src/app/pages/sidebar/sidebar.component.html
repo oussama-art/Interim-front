@@ -21,8 +21,32 @@
       [matTooltip]="!isExpanded() ? item.label : ''"
       matTooltipPosition="right"
       class="nav-item">
-      <mat-icon>{{ item.icon }}</mat-icon>
+      <div class="nav-icon-wrapper">
+        <mat-icon
+          [matBadge]="(newOffersCount$ | async) || 0"
+          [matBadgeHidden]="item.path !== '/app/offers' || (newOffersCount$ | async) === 0 || (newOffersCount$ | async) === null"
+          matBadgeColor="warn"
+          matBadgeSize="medium"
+          matBadgePosition="above after">
+          {{ item.icon }}
+        </mat-icon>
+      </div>
       <span class="nav-label" [class.visible]="isExpanded()">{{ item.label }}</span>
     </a>
   </nav>
+
+  <!-- Profil Link at Bottom -->
+  <div class="profil-section">
+    <a
+      [routerLink]="profilItem.path"
+      routerLinkActive="active"
+      [matTooltip]="!isExpanded() ? profilItem.label : ''"
+      matTooltipPosition="right"
+      class="nav-item">
+      <div class="nav-icon-wrapper">
+        <mat-icon>{{ profilItem.icon }}</mat-icon>
+      </div>
+      <span class="nav-label" [class.visible]="isExpanded()">{{ profilItem.label }}</span>
+    </a>
+  </div>
 </div>

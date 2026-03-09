@@ -1,0 +1,387 @@
+<div class="admin-page-container">
+  <div class="admin-page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>description</mat-icon>
+          Gestion des Contrats
+        </h1>
+        <p class="subtitle">Gestion et suivi de tous les contrats</p>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="loadDemandes()"
+          [disabled]="loading"
+          class="refresh-btn">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          <span>Actualiser</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div *ngIf="!loading && allTableRows.length > 0" class="filters-section">
+    <div class="filters-header">
+      <span>Filtrer les contrats</span>
+      <span class="filter-count" *ngIf="filteredTableRows.length !== allTableRows.length">
+        {{ filteredTableRows.length }} sur {{ allTableRows.length }}
+      </span>
+    </div>
+
+    <div class="filters-container">
+      <!-- Global Search Filter -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               [(ngModel)]="filterSearchText"
+               (ngModelChange)="applyFilters()"
+               placeholder="Rechercher par demande, candidat ou client">
+        <button mat-icon-button matSuffix
+                *ngIf="filterSearchText"
+                (click)="filterSearchText = ''; applyFilters()"
+                matTooltip="Effacer">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <!-- Start Date Filter -->
+      <mat-form-field appearance="outline" class="filter-field filter-date">
+        <input matInput
+               [matDatepicker]="startPicker"
+               [(ngModel)]="filterStartDate"
+               (ngModelChange)="onStartDateChange()"
+               placeholder="Date début"
+               readonly
+               (click)="startPicker.open()">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <!-- End Date Filter -->
+      <mat-form-field appearance="outline" class="filter-field filter-date">
+        <input matInput
+               [matDatepicker]="endPicker"
+               [(ngModel)]="filterEndDate"
+               (ngModelChange)="applyFilters()"
+               [min]="filterStartDate"
+               placeholder="Date fin"
+               readonly
+               (click)="endPicker.open()">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+
+      <!-- Contract Status Filter -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-icon matPrefix>check_circle</mat-icon>
+        <mat-select [(ngModel)]="filterContractStatus" (ngModelChange)="applyFilters()" placeholder="Statut du contrat">
+          <mat-option value="all">Tous</mat-option>
+          <mat-option value="active">Actifs</mat-option>
+          <mat-option value="pending">En attente</mat-option>
+          <mat-option value="expired">Expirés</mat-option>
+          <mat-option value="none">Sans contrat</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Clear All Filters Button -->
+      <button mat-stroked-button
+              class="clear-filters-btn"
+              (click)="clearFilters()"
+              *ngIf="filterSearchText || filterStartDate || filterEndDate || filterContractStatus !== 'all'">
+        Réinitialiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des demandes...</p>
+  </div>
+
+  <!-- No data -->
+  <div *ngIf="!loading && filteredTableRows.length === 0" class="no-data">
+    <mat-icon>inbox</mat-icon>
+    <p>Aucun candidat assigné trouvé</p>
+  </div>
+
+  <!-- Table view -->
+  <div *ngIf="!loading && filteredTableRows.length > 0" class="table-container">
+    <table mat-table [dataSource]="filteredTableRows" multiTemplateDataRows class="contracts-table">
+
+      <!-- Demande Column -->
+      <ng-container matColumnDef="demande">
+        <th mat-header-cell *matHeaderCellDef>Demande</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="demande-cell">
+            <mat-icon class="cell-icon">assignment</mat-icon>
+            <div class="cell-content">
+              <span class="reference">{{ row.demandeReference }}</span>
+              <span class="dates" *ngIf="row.demandeStartDate && row.demandeEndDate">
+                <mat-icon>event</mat-icon>
+                {{ formatDate(row.demandeStartDate) }} - {{ formatDate(row.demandeEndDate) }}
+              </span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Client Column -->
+      <ng-container matColumnDef="client">
+        <th mat-header-cell *matHeaderCellDef>Client</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="client-cell">
+            <mat-icon class="cell-icon">business</mat-icon>
+            <span class="client-name">{{ row.clientName || 'N/A' }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Candidate Column -->
+      <ng-container matColumnDef="candidate">
+        <th mat-header-cell *matHeaderCellDef>Candidat</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="candidate-cell">
+            <mat-icon class="cell-icon">person</mat-icon>
+            <div class="cell-content">
+              <span class="name">{{ row.candidateName }}</span>
+              <span class="email" *ngIf="row.candidateEmail">{{ row.candidateEmail }}</span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Contract Status Column -->
+      <ng-container matColumnDef="contract">
+        <th mat-header-cell *matHeaderCellDef>Contrat</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="contract-status-cell">
+            <mat-chip-listbox *ngIf="row.contract; else noContract">
+              <mat-chip-option [class]="'status-chip ' + getContractStatus(row.contract).class" disabled>
+                <mat-icon>{{ getContractStatus(row.contract).icon }}</mat-icon>
+                {{ getContractStatus(row.contract).label }}
+              </mat-chip-option>
+            </mat-chip-listbox>
+            <ng-template #noContract>
+              <mat-chip-listbox>
+                <mat-chip-option class="status-chip none" disabled>
+                  <mat-icon>cancel</mat-icon>
+                  Aucun contrat
+                </mat-chip-option>
+              </mat-chip-listbox>
+            </ng-template>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="actions-cell">
+            <button mat-icon-button
+                    color="primary"
+                    (click)="expandedRow = expandedRow === row ? null : row; $event.stopPropagation()"
+                    [matTooltip]="expandedRow === row ? 'Masquer les détails' : 'Voir les détails'">
+              <mat-icon>{{ expandedRow === row ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+
+            <button mat-icon-button
+                    color="primary"
+                    *ngIf="row.contract"
+                    (click)="downloadContract(row.contract); $event.stopPropagation()"
+                    matTooltip="Télécharger le contrat">
+              <mat-icon>download</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Expanded Content Column -->
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
+          <div class="row-detail" [@detailExpand]="row === expandedRow ? 'expanded' : 'collapsed'">
+            <div *ngIf="row === expandedRow" class="expanded-content">
+
+              <!-- Availability Info -->
+              <div *ngIf="row.candidateId > 0 && getCandidateAvailability(row.candidateId)" class="availability-section">
+                <div class="availability-info" [class.not-available]="!isCandidateAvailable(row.candidateId)">
+                  <mat-icon>{{ isCandidateAvailable(row.candidateId) ? 'check_circle' : 'schedule' }}</mat-icon>
+                  <span>{{ getAvailabilityMessage(row.candidateId) }}</span>
+                </div>
+              </div>
+
+              <!-- Error Message -->
+              <div *ngIf="getError(row.demandeId, row.candidateId)" class="error-message-section">
+                <div class="error-message">
+                  <mat-icon>error</mat-icon>
+                  <div class="error-content">
+                    <strong>Erreur</strong>
+                    <p>{{ getError(row.demandeId, row.candidateId) }}</p>
+                  </div>
+                  <button mat-icon-button (click)="clearError(row.demandeId, row.candidateId)">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Existing Contract - View Mode -->
+              <div *ngIf="row.contract && !isEditing(row.demandeId, row.candidateId)" class="contract-view-section">
+                <h3>Contrat existant</h3>
+                <mat-card class="contract-details-card">
+                  <mat-card-content>
+                    <div class="detail-row">
+                      <mat-icon>attach_file</mat-icon>
+                      <span><strong>Fichier:</strong> {{ row.contract.originalFileName }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <mat-icon>event</mat-icon>
+                      <span><strong>Période:</strong> Du {{ formatDate(row.contract.startDate) }} au {{ formatDate(row.contract.endDate) }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <mat-icon>schedule</mat-icon>
+                      <span><strong>Téléversé le:</strong> {{ formatDate(row.contract.uploadedAt) }}</span>
+                    </div>
+                  </mat-card-content>
+                  <mat-card-actions>
+                    <button mat-raised-button color="accent" (click)="editContractByRow(row)">
+                      <mat-icon>edit</mat-icon>
+                      Modifier
+                    </button>
+                    <button mat-raised-button color="warn" (click)="deleteContractByRow(row)"
+                            [disabled]="isDeleting(row.demandeId, row.candidateId)">
+                      <mat-spinner *ngIf="isDeleting(row.demandeId, row.candidateId)" diameter="20"></mat-spinner>
+                      <mat-icon *ngIf="!isDeleting(row.demandeId, row.candidateId)">delete</mat-icon>
+                      Supprimer
+                    </button>
+                  </mat-card-actions>
+                </mat-card>
+              </div>
+
+              <!-- Edit Contract Form -->
+              <div *ngIf="row.contract && isEditing(row.demandeId, row.candidateId)" class="contract-form-section">
+                <h3>Modifier le contrat</h3>
+                <form [formGroup]="contractForms[getFormKey(row.demandeId, row.candidateId)]" class="contract-form">
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Date de début</mat-label>
+                      <input matInput [matDatepicker]="editStartPicker" formControlName="startDate"
+                             [min]="getMinStartDateForEditByRow(row)" required readonly (click)="editStartPicker.open()">
+                      <mat-datepicker-toggle matSuffix [for]="editStartPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #editStartPicker></mat-datepicker>
+                      <mat-error>Date de début requise</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Date de fin</mat-label>
+                      <input matInput [matDatepicker]="editEndPicker" formControlName="endDate"
+                             [min]="getMinEndDate(row.demandeId, row.candidateId)" required readonly (click)="editEndPicker.open()">
+                      <mat-datepicker-toggle matSuffix [for]="editEndPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #editEndPicker></mat-datepicker>
+                      <mat-error>Date de fin requise</mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="file-upload">
+                    <input type="file" #editFileInput (change)="onFileSelected($event, row.demandeId, row.candidateId)"
+                           accept=".pdf,.doc,.docx" hidden />
+                    <button mat-stroked-button type="button" (click)="editFileInput.click()">
+                      <mat-icon>attach_file</mat-icon>
+                      Remplacer le fichier (optionnel)
+                    </button>
+                    <span *ngIf="contractForms[getFormKey(row.demandeId, row.candidateId)].value.file" class="file-name">
+                      {{ contractForms[getFormKey(row.demandeId, row.candidateId)].value.file.name }}
+                    </span>
+                    <span *ngIf="!contractForms[getFormKey(row.demandeId, row.candidateId)].value.file" class="file-info">
+                      Fichier actuel : {{ row.contract.originalFileName }}
+                    </span>
+                  </div>
+
+                  <div class="form-actions">
+                    <button mat-raised-button color="primary" type="button" (click)="updateContractByRow(row)"
+                            [disabled]="!areDatesValid(row.demandeId, row.candidateId) || isUploading(row.demandeId, row.candidateId)">
+                      <mat-spinner *ngIf="isUploading(row.demandeId, row.candidateId)" diameter="20"></mat-spinner>
+                      <mat-icon *ngIf="!isUploading(row.demandeId, row.candidateId)">save</mat-icon>
+                      Enregistrer
+                    </button>
+                    <button mat-stroked-button type="button" (click)="cancelEdit(row.demandeId, row.candidateId)"
+                            [disabled]="isUploading(row.demandeId, row.candidateId)">
+                      <mat-icon>cancel</mat-icon>
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Add New Contract Form -->
+              <div *ngIf="!row.contract && row.candidateId > 0" class="contract-form-section">
+                <h3>Ajouter un contrat</h3>
+                <div *ngIf="!isCandidateAvailable(row.candidateId)" class="availability-warning">
+                  <mat-icon>info</mat-icon>
+                  <p>
+                    <strong>Contrat en cours dans une autre demande</strong><br>
+                    {{ getAvailabilityMessage(row.candidateId) }}. Ce contrat doit commencer après cette date.
+                  </p>
+                </div>
+
+                <form [formGroup]="contractForms[getFormKey(row.demandeId, row.candidateId)]" class="contract-form">
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Date de début</mat-label>
+                      <input matInput [matDatepicker]="startPicker" formControlName="startDate"
+                             [min]="getMinStartDateForNewContractByRow(row)" required readonly (click)="startPicker.open()">
+                      <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #startPicker></mat-datepicker>
+                      <mat-error>Date de début requise</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Date de fin</mat-label>
+                      <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+                             [min]="getMinEndDate(row.demandeId, row.candidateId)" required readonly (click)="endPicker.open()">
+                      <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #endPicker></mat-datepicker>
+                      <mat-error>Date de fin requise</mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="file-upload">
+                    <input type="file" #fileInput (change)="onFileSelected($event, row.demandeId, row.candidateId)"
+                           accept=".pdf,.doc,.docx" hidden />
+                    <button mat-stroked-button type="button" (click)="fileInput.click()">
+                      <mat-icon>attach_file</mat-icon>
+                      Choisir un fichier
+                    </button>
+                    <span *ngIf="contractForms[getFormKey(row.demandeId, row.candidateId)].value.file" class="file-name">
+                      {{ contractForms[getFormKey(row.demandeId, row.candidateId)].value.file.name }}
+                    </span>
+                  </div>
+
+                  <div class="form-actions">
+                    <button mat-raised-button color="primary" type="button" (click)="uploadContractByRow(row)"
+                            [disabled]="!areDatesValid(row.demandeId, row.candidateId) || isUploading(row.demandeId, row.candidateId) || !contractForms[getFormKey(row.demandeId, row.candidateId)].value.file">
+                      <mat-spinner *ngIf="isUploading(row.demandeId, row.candidateId)" diameter="20"></mat-spinner>
+                      <mat-icon *ngIf="!isUploading(row.demandeId, row.candidateId)">upload</mat-icon>
+                      {{ isUploading(row.demandeId, row.candidateId) ? 'Envoi en cours...' : 'Téléverser le contrat' }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          class="table-row"
+          [class.expanded-row]="expandedRow === row"
+          (click)="expandedRow = expandedRow === row ? null : row"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+    </table>
+  </div>
+</div>

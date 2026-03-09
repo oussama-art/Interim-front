@@ -1,30 +1,111 @@
-<div class="candidates-container">
-  <div class="header">
+<div class="admin-page-container">
+  <div class="admin-page-header">
     <div class="header-content">
-      <h1>Gestion des Candidats</h1>
-      <p>Liste de tous les candidats enregistrés</p>
-    </div>
-    <div class="header-actions">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="toggleCreateForm()"
-        [class.active]="showCreateForm"
-      >
-        <mat-icon>person_add</mat-icon>
-        <span>{{ showCreateForm ? 'Masquer le formulaire' : 'Créer un candidat' }}</span>
-      </button>
-      <button
-        mat-raised-button
-        color="accent"
-        (click)="toggleImportForm()"
-        [class.active]="showImportForm"
-      >
-        <mat-icon>upload_file</mat-icon>
-        <span>{{ showImportForm ? 'Masquer l\'import' : 'Importer Excel' }}</span>
-      </button>
+      <div class="header-left">
+        <h1>
+          <mat-icon>people</mat-icon>
+          Gestion des Candidats
+        </h1>
+        <p class="subtitle">Liste de tous les candidats enregistrés</p>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="loadCandidates()"
+          [disabled]="loading"
+          class="refresh-btn">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          <span>Actualiser</span>
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="openUploadCvDialog()">
+          <mat-icon>description</mat-icon>
+          <span>Créer avec CV</span>
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="toggleCreateForm()"
+          [class.active]="showCreateForm"
+        >
+          <mat-icon>person_add</mat-icon>
+          <span>{{ showCreateForm ? 'Masquer le formulaire' : 'Créer un candidat' }}</span>
+        </button>
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="toggleImportForm()"
+          [class.active]="showImportForm"
+        >
+          <mat-icon>upload_file</mat-icon>
+          <span>{{ showImportForm ? 'Masquer l\'import' : 'Importer Excel' }}</span>
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- Filters Section -->
+  <mat-card *ngIf="!loading && candidates.length > 0" class="filters-card">
+    <div class="filters-header">
+      <div class="filters-title">
+        <mat-icon>filter_list</mat-icon>
+        <h3>Filtres de recherche</h3>
+        <span class="filter-count" *ngIf="getActiveFiltersCount() > 0">
+          {{ getActiveFiltersCount() }}
+        </span>
+      </div>
+      <button
+        mat-button
+        color="warn"
+        (click)="clearFilters()"
+        *ngIf="getActiveFiltersCount() > 0">
+        <mat-icon>clear</mat-icon>
+        Réinitialiser
+      </button>
+    </div>
+
+    <div class="filters-content">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Rechercher</mat-label>
+        <input
+          matInput
+          [(ngModel)]="searchText"
+          (ngModelChange)="applyFilters()"
+          placeholder="Nom, prénom ou email">
+        <mat-icon matPrefix>search</mat-icon>
+        <button
+          mat-icon-button
+          matSuffix
+          *ngIf="searchText"
+          (click)="searchText = ''; applyFilters()">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Profil / Profession</mat-label>
+        <mat-select
+          [(ngModel)]="selectedProfessional"
+          (selectionChange)="applyFilters()">
+          <mat-option [value]="''">Tous les profils</mat-option>
+          <mat-option
+            *ngFor="let professional of availableProfessionals"
+            [value]="professional">
+            {{ professional }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matPrefix>work</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <div class="filters-summary" *ngIf="filteredCandidates.length !== candidates.length">
+      <mat-icon>info</mat-icon>
+      <span>{{ filteredCandidates.length }} candidat(s) sur {{ candidates.length }}</span>
+    </div>
+  </mat-card>
 
   <!-- Create Candidate Form -->
   <div *ngIf="showCreateForm" class="form-section">
@@ -51,7 +132,7 @@
   <!-- Candidates Table -->
   <mat-card *ngIf="!loading" class="table-card">
     <div class="table-container">
-      <table mat-table [dataSource]="candidates" class="candidates-table">
+      <table mat-table [dataSource]="filteredCandidates" class="candidates-table">
         <!-- ID Column -->
         <ng-container matColumnDef="id">
           <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -76,34 +157,33 @@
           <td mat-cell *matCellDef="let candidate">{{ candidate.emailAddress }}</td>
         </ng-container>
 
-        <!-- Phone Column -->
-        <ng-container matColumnDef="phoneNumber">
-          <th mat-header-cell *matHeaderCellDef>Téléphone</th>
-          <td mat-cell *matCellDef="let candidate">{{ candidate.phoneNumber }}</td>
-        </ng-container>
-
-        <!-- Experience Column -->
-        <ng-container matColumnDef="experienceYear">
-          <th mat-header-cell *matHeaderCellDef>Expérience</th>
-          <td mat-cell *matCellDef="let candidate">{{ candidate.experienceYear }} ans</td>
-        </ng-container>
-
         <!-- Professional Column -->
         <ng-container matColumnDef="professional">
           <th mat-header-cell *matHeaderCellDef>Profession</th>
           <td mat-cell *matCellDef="let candidate">{{ candidate.professional }}</td>
         </ng-container>
 
-        <!-- CIN Column -->
-        <ng-container matColumnDef="cin">
-          <th mat-header-cell *matHeaderCellDef>CIN</th>
-          <td mat-cell *matCellDef="let candidate">{{ candidate.cin }}</td>
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let candidate">
+            <span class="status-badge" [ngClass]="getCandidateStatusClass(candidate.status)">
+              <mat-icon>{{ getCandidateStatusIcon(candidate.status) }}</mat-icon>
+              {{ getCandidateStatusLabel(candidate.status) }}
+            </span>
+          </td>
         </ng-container>
 
-        <!-- CSS Number Column -->
-        <ng-container matColumnDef="cssNumber">
-          <th mat-header-cell *matHeaderCellDef>N° CSS</th>
-          <td mat-cell *matCellDef="let candidate">{{ candidate.cssNumber }}</td>
+        <!-- Next Available Date Column -->
+        <ng-container matColumnDef="nextAvailableDate">
+          <th mat-header-cell *matHeaderCellDef>Disponible le</th>
+          <td mat-cell *matCellDef="let candidate">
+            <span *ngIf="candidate.nextAvailableDate" class="date-cell">
+              <mat-icon>event</mat-icon>
+              {{ candidate.nextAvailableDate | date:'dd/MM/yyyy' }}
+            </span>
+            <span *ngIf="!candidate.nextAvailableDate" class="no-data-text">-</span>
+          </td>
         </ng-container>
 
         <!-- Created At Column -->
@@ -135,6 +215,14 @@
       </table>
 
       <!-- No Data -->
+      <div *ngIf="filteredCandidates.length === 0 && candidates.length > 0" class="no-data">
+        <mat-icon>search_off</mat-icon>
+        <p>Aucun candidat ne correspond aux filtres</p>
+        <button mat-button color="primary" (click)="clearFilters()">
+          Réinitialiser les filtres
+        </button>
+      </div>
+
       <div *ngIf="candidates.length === 0" class="no-data">
         <mat-icon>people_outline</mat-icon>
         <p>Aucun candidat trouvé</p>

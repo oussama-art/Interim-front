@@ -198,12 +198,11 @@ export class RegisterComponent implements OnInit {
           emailAddress: baseData.emailAddress,
           phoneNumber: baseData.phoneNumber,
           experienceYear: baseData.experienceYear,
-          password: baseData.password,
-          confirmPassword: baseData.confirmPassword,
           skills: specificData.skills,
           professional: specificData.professional,
           cin: specificData.cin,
-          cssNumber: specificData.cssNumber
+          cssNumber: specificData.cssNumber,
+          active: true
         };
 
         // Appel du service pour créer le candidat

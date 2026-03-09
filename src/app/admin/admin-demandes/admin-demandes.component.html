@@ -1,8 +1,133 @@
-<div class="demandes-container">
-  <div class="header">
-    <h1>Gestion des Demandes</h1>
-    <p>Liste de toutes les demandes enregistrées</p>
+<div class="admin-page-container">
+  <div class="admin-page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>assignment</mat-icon>
+          Demandes de mission
+        </h1>
+        <p class="subtitle">Liste de toutes les demandes de recrutement et missions d'intérim</p>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="loadDemandes()"
+          [disabled]="loading"
+          class="refresh-btn">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          <span>Actualiser</span>
+        </button>
+      </div>
+    </div>
   </div>
+
+  <!-- Filters Section -->
+  <mat-card *ngIf="!loading && demandes.length > 0" class="filters-card">
+    <div class="filters-header">
+      <div class="filters-title">
+        <mat-icon>filter_list</mat-icon>
+        <h3>Filtres de recherche</h3>
+        <span class="filter-count" *ngIf="getActiveFiltersCount() > 0">
+          {{ getActiveFiltersCount() }}
+        </span>
+      </div>
+      <button
+        mat-button
+        color="warn"
+        (click)="clearFilters()"
+        *ngIf="getActiveFiltersCount() > 0">
+        <mat-icon>clear</mat-icon>
+        Réinitialiser
+      </button>
+    </div>
+
+    <div class="filters-content">
+      <div class="date-filters">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Date de début</mat-label>
+          <input
+            matInput
+            [matDatepicker]="startPicker"
+            [(ngModel)]="startDateFilter"
+            (dateChange)="applyFilters()"
+            placeholder="JJ/MM/AAAA">
+          <mat-icon matPrefix>calendar_today</mat-icon>
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+          <button
+            mat-icon-button
+            matSuffix
+            *ngIf="startDateFilter"
+            (click)="startDateFilter = null; applyFilters(); $event.stopPropagation()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-icon class="date-separator">arrow_forward</mat-icon>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Date de fin</mat-label>
+          <input
+            matInput
+            [matDatepicker]="endPicker"
+            [(ngModel)]="endDateFilter"
+            (dateChange)="applyFilters()"
+            placeholder="JJ/MM/AAAA">
+          <mat-icon matPrefix>calendar_today</mat-icon>
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <button
+            mat-icon-button
+            matSuffix
+            *ngIf="endDateFilter"
+            (click)="endDateFilter = null; applyFilters(); $event.stopPropagation()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="filter-field status-filter">
+        <mat-label>Statut</mat-label>
+        <mat-select
+          [(ngModel)]="statusFilter"
+          (selectionChange)="applyFilters()">
+          <mat-option value="ALL">Tous les statuts</mat-option>
+          <mat-option value="IN_PROGRESS">
+            <span class="status-option">
+              <mat-icon>schedule</mat-icon>
+              En cours
+            </span>
+          </mat-option>
+          <mat-option value="CLOSED">
+            <span class="status-option">
+              <mat-icon>lock</mat-icon>
+              Clôturée
+            </span>
+          </mat-option>
+          <mat-option value="REJECTED">
+            <span class="status-option">
+              <mat-icon>cancel</mat-icon>
+              Rejetée
+            </span>
+          </mat-option>
+        </mat-select>
+        <mat-icon matPrefix>label</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Date Range Error -->
+    <div class="date-error" *ngIf="dateRangeError">
+      <mat-icon>error</mat-icon>
+      <span>{{ dateRangeError }}</span>
+    </div>
+
+    <!-- Filters Summary -->
+    <div class="filters-summary" *ngIf="filteredDemandes.length !== demandes.length">
+      <mat-icon>info</mat-icon>
+      <span>{{ filteredDemandes.length }} demande(s) sur {{ demandes.length }}</span>
+    </div>
+  </mat-card>
 
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-state">
@@ -18,7 +143,7 @@
         <mat-icon>assignment</mat-icon>
         <div class="summary-content">
           <span class="summary-label">Total</span>
-          <span class="summary-value">{{ demandes.length }}</span>
+          <span class="summary-value">{{ filteredDemandes.length }}</span>
         </div>
       </div>
       <div class="summary-item">
@@ -38,19 +163,11 @@
     </div>
 
     <div class="table-container">
-      <table mat-table [dataSource]="demandes" class="demandes-table">
+      <table mat-table [dataSource]="filteredDemandes" class="demandes-table">
         <!-- ID Column -->
         <ng-container matColumnDef="id">
           <th mat-header-cell *matHeaderCellDef>ID</th>
           <td mat-cell *matCellDef="let demande">{{ demande.id }}</td>
-        </ng-container>
-
-        <!-- Client Column -->
-        <ng-container matColumnDef="clientTitle">
-          <th mat-header-cell *matHeaderCellDef>Client ID</th>
-          <td mat-cell *matCellDef="let demande">
-            <span class="client-id-badge">{{ demande.clientId }}</span>
-          </td>
         </ng-container>
 
         <!-- Title Column -->
@@ -63,11 +180,19 @@
           </td>
         </ng-container>
 
-        <!-- Description Column -->
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef>Description</th>
+        <!-- Start Date Column -->
+        <ng-container matColumnDef="startDate">
+          <th mat-header-cell *matHeaderCellDef>Date début</th>
           <td mat-cell *matCellDef="let demande">
-            <span class="description-cell">{{ demande.description }}</span>
+            <span>{{ demande.startDate | date:'dd/MM/yyyy' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- End Date Column -->
+        <ng-container matColumnDef="endDate">
+          <th mat-header-cell *matHeaderCellDef>Date fin</th>
+          <td mat-cell *matCellDef="let demande">
+            <span>{{ demande.endDate | date:'dd/MM/yyyy' }}</span>
           </td>
         </ng-container>
 
@@ -77,22 +202,18 @@
           <td mat-cell *matCellDef="let demande">{{ demande.totalEmployeesNeeded }}</td>
         </ng-container>
 
-        <!-- Profiles Count Column -->
-        <ng-container matColumnDef="nombreProfils">
-          <th mat-header-cell *matHeaderCellDef>Profils demandés</th>
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
           <td mat-cell *matCellDef="let demande">
-            <div class="profils-cell">
-              <mat-chip-set>
-                <mat-chip
-                  *ngFor="let profil of demande.profils"
-                  [highlighted]="true"
-                  class="profil-chip"
-                >
-                  <span class="profil-name">{{ profil.profilName }}</span>
-                  <span class="profil-quantity">×{{ profil.quantity }}</span>
-                </mat-chip>
-              </mat-chip-set>
-            </div>
+            <span class="status-badge" [ngClass]="getDemandeStatusClass(demande.status)">
+              <mat-icon>
+                {{ demande.status === 'IN_PROGRESS' ? 'schedule' :
+                   demande.status === 'CLOSED' ? 'lock' :
+                   demande.status === 'REJECTED' ? 'cancel' : 'help' }}
+              </mat-icon>
+              {{ getDemandeStatusLabel(demande.status) }}
+            </span>
           </td>
         </ng-container>
 
@@ -101,16 +222,49 @@
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let demande">
             <div class="actions">
-              <button mat-icon-button color="primary" (click)="viewDemande(demande)" title="Voir">
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="viewDemande(demande)"
+                [title]="isDemandeClosed(demande) ? 'Voir détails (lecture seule)' : 'Voir et créer offre'">
                 <mat-icon>visibility</mat-icon>
               </button>
-              <button mat-icon-button color="accent" (click)="editDemande(demande)" title="Modifier">
+              <button
+                mat-icon-button
+                color="accent"
+                (click)="editDemande(demande)"
+                [disabled]="isDemandeClosed(demande)"
+                [title]="isDemandeClosed(demande) ? 'Demande clôturée' : 'Modifier'">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="deleteDemande(demande)" title="Supprimer">
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deleteDemande(demande)"
+                title="Supprimer">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
+          </td>
+        </ng-container>
+
+        <!-- Close Action Column -->
+        <ng-container matColumnDef="closeAction">
+          <th mat-header-cell *matHeaderCellDef>Clôture</th>
+          <td mat-cell *matCellDef="let demande">
+            <button
+              mat-raised-button
+              color="warn"
+              class="close-btn"
+              (click)="closeDemande(demande)"
+              *ngIf="isDemandeOpen(demande)">
+              <mat-icon>lock</mat-icon>
+              <span>Clôturer</span>
+            </button>
+            <span class="closed-label" *ngIf="!isDemandeOpen(demande)">
+              <mat-icon>lock</mat-icon>
+              Clôturée
+            </span>
           </td>
         </ng-container>
 
@@ -119,6 +273,14 @@
       </table>
 
       <!-- No Data -->
+      <div *ngIf="filteredDemandes.length === 0 && demandes.length > 0" class="no-data">
+        <mat-icon>search_off</mat-icon>
+        <p>Aucune demande ne correspond aux filtres</p>
+        <button mat-button color="primary" (click)="clearFilters()">
+          Réinitialiser les filtres
+        </button>
+      </div>
+
       <div *ngIf="demandes.length === 0" class="no-data">
         <mat-icon>assignment_late</mat-icon>
         <p>Aucune demande trouvée</p>

@@ -46,6 +46,27 @@
   }
 }
 
+.clear-button {
+  width: 32px;
+  height: 32px;
+  margin-left: 0.5rem;
+
+  mat-icon {
+    color: #8b92a7;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+
+    mat-icon {
+      color: #5f6368;
+    }
+  }
+}
+
 .user-section {
   display: flex;
   align-items: center;

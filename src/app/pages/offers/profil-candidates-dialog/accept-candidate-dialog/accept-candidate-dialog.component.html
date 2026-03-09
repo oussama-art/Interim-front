@@ -1,0 +1,36 @@
+<div class="accept-dialog">
+  <h2 mat-dialog-title>Accepter le candidat</h2>
+
+  <div mat-dialog-content class="dialog-content">
+    <p class="candidate-info">
+      Veuillez sélectionner les dates de début et de fin de contrat pour <strong>{{ data.candidateName }}</strong>.
+    </p>
+
+    <div class="date-fields">
+      <mat-form-field appearance="outline">
+        <mat-label>Date de début</mat-label>
+        <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" required>
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date de fin</mat-label>
+        <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" required>
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="validation-message" *ngIf="startDate && endDate && startDate > endDate">
+      <span class="error-text">La date de début doit être antérieure à la date de fin.</span>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()">Annuler</button>
+    <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="!isValid()">
+      Confirmer
+    </button>
+  </div>
+</div>

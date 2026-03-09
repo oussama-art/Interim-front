@@ -1,183 +1,389 @@
-<div class="dialog-container">
-  <!-- Header -->
-  <div class="dialog-header">
-    <div class="header-content">
-      <mat-icon class="header-icon">assignment</mat-icon>
-      <div class="header-text">
-        <h2>Détails de la demande</h2>
-        <span class="demande-id">Demande #{{ demande.id }}</span>
+<!-- Design Minimaliste & Épuré -->
+<div class="minimal-page" *ngIf="!loadingDemande && demande">
+
+  <!-- Header Compact -->
+  <header class="minimal-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="goBack()" class="back-btn-minimal">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1 class="dialog-title">Demande #{{ demande.id }} · {{ demande.title }}</h1>
+        <div class="meta-info">
+          <span class="meta-item">
+            <mat-icon>calendar_today</mat-icon>
+            {{ demande.startDate | date:'dd/MM/yy' }} - {{ demande.endDate | date:'dd/MM/yy' }}
+          </span>
+          <span class="meta-item">
+            <mat-icon>groups</mat-icon>
+            {{ demande.totalEmployeesNeeded }} postes
+          </span>
+          <span class="meta-item" *ngIf="loadingClient">
+            <mat-icon>business</mat-icon>
+            <mat-spinner diameter="16" style="display: inline-block; margin: 0 4px;"></mat-spinner>
+            Chargement client...
+          </span>
+          <span class="meta-item" *ngIf="!loadingClient && clientDetails">
+            <mat-icon>business</mat-icon>
+            {{ clientDetails.title }}
+          </span>
+          <span class="meta-item" *ngIf="!loadingClient && !clientDetails">
+            <mat-icon>business</mat-icon>
+            Client inconnu
+          </span>
+        </div>
       </div>
     </div>
-    <button mat-icon-button (click)="close()" class="close-btn">
-      <mat-icon>close</mat-icon>
-    </button>
+  </header>
+
+  <!-- Existing Offers Alert -->
+  <div *ngIf="loadingOffers" class="alert-banner loading">
+    <mat-spinner diameter="20"></mat-spinner>
+    <span>Vérification des offres existantes...</span>
   </div>
 
-  <!-- Content -->
-  <div class="dialog-content">
-    <!-- Demande Information -->
-    <mat-card class="info-card">
-      <div class="info-section">
-        <div class="info-header">
-          <mat-icon>info</mat-icon>
-          <h3>Informations générales</h3>
+  <!-- Demande Closed Alert -->
+  <div *ngIf="isDemandeClosed()" class="alert-banner closed">
+    <mat-icon>lock</mat-icon>
+    <div class="alert-content">
+      <strong>Demande clôturée</strong>
+      <span>Cette demande a été clôturée. Vous pouvez consulter les offres et candidats envoyés.</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loadingOffers && hasExistingOffer" class="alert-banner warning">
+    <mat-icon>info</mat-icon>
+    <div class="alert-content">
+      <strong>Offre(s) existante(s)</strong>
+      <span *ngFor="let offer of existingOffers">
+        Offre #{{ offer.offerId }} ({{ offer.proposedCandidates?.length || 0 }} candidats)
+      </span>
+    </div>
+  </div>
+
+  <!-- Main Content: Single Scroll Area -->
+  <div class="minimal-content">
+
+    <!-- Section Client -->
+    <div class="client-info-card">
+      <div class="client-header">
+        <mat-icon class="client-icon">business</mat-icon>
+        <h3>Informations Client</h3>
+      </div>
+
+      <div *ngIf="loadingClient" class="client-loading">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>Chargement des informations du client...</span>
+      </div>
+
+      <div *ngIf="!loadingClient && clientDetails" class="client-details">
+        <div class="client-row">
+          <div class="client-item">
+            <span class="client-label">Entreprise</span>
+            <span class="client-value">{{ clientDetails.title }}</span>
+          </div>
+          <div class="client-item" *ngIf="clientDetails.sector">
+            <span class="client-label">Secteur</span>
+            <span class="client-value">{{ clientDetails.sector }}</span>
+          </div>
         </div>
-
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Titre</span>
-            <span class="value">{{ demande.title }}</span>
+        <div class="client-row">
+          <div class="client-item">
+            <span class="client-label">Contact</span>
+            <span class="client-value">{{ clientDetails.firstName }} {{ clientDetails.lastName }}</span>
           </div>
-
-          <div class="info-item">
-            <span class="label">Client ID</span>
-            <span class="value client-badge">{{ demande.clientId }}</span>
+          <div class="client-item">
+            <span class="client-label">Email</span>
+            <span class="client-value">{{ clientDetails.emailAddress }}</span>
           </div>
-
-          <div class="info-item full-width">
-            <span class="label">Description</span>
-            <span class="value description">{{ demande.description }}</span>
+        </div>
+        <div class="client-row" *ngIf="clientDetails.phoneNumber || clientDetails.nbEmployee">
+          <div class="client-item" *ngIf="clientDetails.phoneNumber">
+            <span class="client-label">Téléphone</span>
+            <span class="client-value">{{ clientDetails.phoneNumber }}</span>
           </div>
-
-          <div class="info-item">
-            <span class="label">Employés requis</span>
-            <span class="value highlight">{{ demande.totalEmployeesNeeded }}</span>
+          <div class="client-item" *ngIf="clientDetails.nbEmployee">
+            <span class="client-label">Employés</span>
+            <span class="client-value">{{ clientDetails.nbEmployee }}</span>
           </div>
-
-          <div class="info-item">
-            <span class="label">Nombre de profils</span>
-            <span class="value highlight">{{ demande.profils.length }}</span>
+        </div>
+        <div class="client-row" *ngIf="clientDetails.description">
+          <div class="client-item full-width">
+            <span class="client-label">Description</span>
+            <span class="client-value">{{ clientDetails.description }}</span>
           </div>
         </div>
       </div>
-    </mat-card>
 
-    <!-- Profils Demandés -->
-    <mat-card class="profils-card">
-      <div class="profils-header">
-        <mat-icon>badge</mat-icon>
-        <h3>Profils demandés</h3>
+      <div *ngIf="!loadingClient && !clientDetails" class="client-error">
+        <mat-icon>error_outline</mat-icon>
+        <span>Impossible de charger les informations du client</span>
+      </div>
+    </div>
+
+    <!-- Vue pour demandes clôturées - Affichage simple des candidats envoyés -->
+    <ng-container *ngIf="isDemandeClosed()">
+      <div *ngIf="loadingOffers" class="loading-state">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Chargement des offres...</p>
       </div>
 
-      <div class="profils-list">
-        <div *ngFor="let profil of demande.profils" class="profil-item">
-          <div class="profil-info">
-            <mat-icon class="profil-icon">person</mat-icon>
-            <span class="profil-name">{{ profil.profilName }}</span>
-          </div>
-          <div class="profil-quantity">
-            <span class="quantity-badge">{{ profil.quantity }} postes</span>
-          </div>
-        </div>
+      <div *ngIf="!loadingOffers && existingOffers.length === 0" class="no-data-minimal">
+        <mat-icon>info</mat-icon>
+        <h3>Aucune offre envoyée</h3>
+        <p>Aucun candidat n'a été proposé pour cette demande clôturée.</p>
       </div>
-    </mat-card>
 
-    <mat-divider class="section-divider"></mat-divider>
-
-    <!-- Create Offer Section -->
-    <div class="offer-section">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="toggleCreateOffer()"
-        class="create-offer-btn"
-      >
-        <mat-icon>add_circle</mat-icon>
-        <span *ngIf="!showCreateOffer">Créer une offre</span>
-        <span *ngIf="showCreateOffer">Masquer la sélection</span>
-      </button>
-
-      <!-- Candidate Selection -->
-      <div *ngIf="showCreateOffer" class="candidates-section" [@slideDown]>
-        <mat-card class="candidates-card">
-          <div class="candidates-header">
-            <div class="header-info">
-              <mat-icon>groups</mat-icon>
-              <h3>Sélectionner les candidats</h3>
+      <div *ngIf="!loadingOffers && existingOffers.length > 0" class="closed-view">
+        <div class="profil-section" *ngFor="let profil of demande.profils">
+          <ng-container *ngIf="getProposedCandidatesByProfil(profil.id).length > 0">
+            <div class="profil-header">
+              <h3>{{ profil.profilName }}</h3>
+              <span class="profil-count">{{ getProposedCandidatesByProfil(profil.id).length }} candidat(s) envoyé(s)</span>
             </div>
-            <span class="selection-count">
-              {{ selectedCandidates.size }} candidat(s) sélectionné(s)
-            </span>
-          </div>
 
-          <!-- Loading State -->
-          <div *ngIf="loadingCandidates" class="loading-container">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p>Chargement des candidats...</p>
-          </div>
-
-          <!-- Candidates List -->
-          <div *ngIf="!loadingCandidates" class="candidates-list">
-            <div
-              *ngFor="let candidate of candidates"
-              class="candidate-item"
-              [class.selected]="isCandidateSelected(candidate.id)"
-              (click)="toggleCandidate(candidate.id)"
-            >
-              <mat-checkbox
-                [checked]="isCandidateSelected(candidate.id)"
-                (click)="$event.stopPropagation()"
-                (change)="toggleCandidate(candidate.id)"
-                color="primary"
-              ></mat-checkbox>
-
-              <div class="candidate-info">
-                <div class="candidate-header">
-                  <span class="candidate-name">{{ candidate.firstName }} {{ candidate.lastName }}</span>
-                  <mat-chip class="experience-chip">
-                    {{ candidate.experienceYear }} ans d'exp.
-                  </mat-chip>
+            <div class="candidates-list-closed">
+              <div *ngFor="let candidate of getProposedCandidatesByProfil(profil.id)" class="candidate-card-closed">
+                <div class="candidate-header-closed">
+                  <div class="candidate-name-closed">
+                    <mat-icon>person</mat-icon>
+                    <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                  </div>
+                  <span class="status-badge" [class]="'status-' + candidate.status?.toLowerCase()">
+                    {{ candidate.status === 'PROPOSED' ? 'En attente' :
+                       candidate.status === 'ACCEPTED' ? 'Accepté' :
+                       candidate.status === 'REJECTED' ? 'Refusé' : candidate.status }}
+                  </span>
                 </div>
-
-                <div class="candidate-details">
-                  <div class="detail-item">
-                    <mat-icon>email</mat-icon>
-                    <span>{{ candidate.emailAddress }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <mat-icon>phone</mat-icon>
-                    <span>{{ candidate.phoneNumber }}</span>
-                  </div>
+                <div class="candidate-details-closed">
                   <div class="detail-item">
                     <mat-icon>work</mat-icon>
                     <span>{{ candidate.professional }}</span>
                   </div>
+                  <div class="detail-item" *ngIf="candidate.experienceYear">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ candidate.experienceYear }} ans d'expérience</span>
+                  </div>
+                  <div class="detail-item" *ngIf="candidate.emailAddress">
+                    <mat-icon>email</mat-icon>
+                    <span>{{ candidate.emailAddress }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="candidate.phoneNumber">
+                    <mat-icon>phone</mat-icon>
+                    <span>{{ candidate.phoneNumber }}</span>
+                  </div>
+                  <div class="detail-item skills" *ngIf="candidate.skills">
+                    <mat-icon>verified</mat-icon>
+                    <span>{{ candidate.skills }}</span>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </ng-container>
 
-                <div class="candidate-skills">
-                  <mat-icon class="skills-icon">settings</mat-icon>
-                  <span class="skills-text">{{ candidate.skills }}</span>
+    <!-- Vue normale pour demandes ouvertes -->
+    <ng-container *ngIf="!isDemandeClosed()">
+
+      <!-- Section: Candidats déjà proposés/acceptés pour chaque profil -->
+      <div *ngIf="!loadingOffers && existingOffers.length > 0" class="existing-candidates-section">
+        <div class="section-header">
+          <mat-icon>groups</mat-icon>
+          <h3>Candidats déjà proposés</h3>
+        </div>
+
+        <div class="profils-summary-grid">
+          <div class="profil-summary-card" *ngFor="let profil of demande.profils">
+            <ng-container *ngIf="getProposedCandidatesByProfil(profil.id).length > 0">
+              <div class="profil-summary-header">
+                <div class="profil-title">
+                  <h4>{{ profil.profilName }}</h4>
+                  <span class="quantity-badge" [class.complete]="getProposedCandidatesByProfil(profil.id).length >= profil.quantity">
+                    {{ getProposedCandidatesByProfil(profil.id).length }} / {{ profil.quantity }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="candidates-summary-list">
+                <div *ngFor="let candidate of getProposedCandidatesByProfil(profil.id)" class="candidate-summary-item">
+                  <div class="candidate-summary-main">
+                    <div class="initials-avatar">{{ candidate.firstName[0] }}{{ candidate.lastName[0] }}</div>
+                    <div class="candidate-summary-info">
+                      <p class="candidate-summary-name">{{ candidate.firstName }} {{ candidate.lastName }}</p>
+                      <p class="candidate-summary-role">{{ candidate.professional }}</p>
+                    </div>
+                  </div>
+                  <span class="status-pill" [class]="'status-' + candidate.status?.toLowerCase()">
+                    {{ candidate.status === 'PROPOSED' ? 'En attente' :
+                       candidate.status === 'ACCEPTED' ? 'Accepté' :
+                       candidate.status === 'REJECTED' ? 'Refusé' : candidate.status }}
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message si tous les profils sont complets -->
+      <div class="all-complete-message" *ngIf="!loadingOffers && !hasEligibleProfils() && existingOffers.length > 0">
+        <mat-icon>check_circle</mat-icon>
+        <div class="message-content">
+          <h3>Tous les profils sont complets</h3>
+          <p>Tous les profils de cette demande ont atteint le nombre requis de candidats proposés ou acceptés. Aucune nouvelle offre ne peut être créée pour le moment.</p>
+        </div>
+      </div>
+
+      <!-- Section: Ajouter de nouveaux candidats -->
+      <div class="add-candidates-section" *ngIf="hasEligibleProfils()">
+        <div class="section-header">
+          <mat-icon>person_add</mat-icon>
+          <h3>Ajouter de nouveaux candidats</h3>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="openUploadCvDialog()"
+            class="upload-cv-btn">
+            <mat-icon>description</mat-icon>
+            <span>Upload CV</span>
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loadingCandidates" class="loading-state">
+          <mat-spinner diameter="48"></mat-spinner>
+          <p>Chargement des candidats...</p>
+        </div>
+
+        <!-- Profils Dropdown -->
+        <div class="profil-selector" *ngIf="!loadingCandidates && allCandidates.length > 0">
+        <mat-form-field appearance="outline" class="profil-select-field">
+          <mat-label>Sélectionner un profil</mat-label>
+          <mat-select
+            [(ngModel)]="selectedProfilId"
+            (selectionChange)="onProfilChange($event.value)">
+            <mat-option
+              *ngFor="let profil of getEligibleProfils()"
+              [value]="profil.id">
+              {{ profil.profilName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Indicateur de sélection pour le profil actif -->
+        <div class="selection-indicator" *ngIf="selectedProfilId">
+          <div class="indicator-content" [class.ineligible]="!isProfilEligibleForNewOffer(selectedProfilId)">
+            <mat-icon *ngIf="isProfilEligibleForNewOffer(selectedProfilId)">check_circle</mat-icon>
+            <mat-icon *ngIf="!isProfilEligibleForNewOffer(selectedProfilId)" class="warning-icon">warning</mat-icon>
+            <span class="indicator-text">
+              <ng-container *ngIf="isProfilEligibleForNewOffer(selectedProfilId)">
+                <strong>{{ getSelectedCountForProfil(selectedProfilId) }}</strong> candidat(s) sélectionné(s)
+                <ng-container *ngIf="getProfilInProgressCount(selectedProfilId) > 0">
+                  · <strong>{{ getProfilInProgressCount(selectedProfilId) }}</strong> déjà en cours
+                  · <strong>{{ getRemainingNeeded(selectedProfilId) }}</strong> restant(s) sur <strong>{{ getProfilQuantity(selectedProfilId) }}</strong> demandé(s)
+                </ng-container>
+                <ng-container *ngIf="getProfilInProgressCount(selectedProfilId) === 0">
+                  sur <strong>{{ getProfilQuantity(selectedProfilId) }}</strong> demandé(s)
+                </ng-container>
+              </ng-container>
+              <ng-container *ngIf="!isProfilEligibleForNewOffer(selectedProfilId)">
+                <strong>Profil complet</strong> - {{ getProfilQuantity(selectedProfilId) }} candidat(s) déjà proposé(s) ou accepté(s)
+              </ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidates Grid -->
+      <ng-container *ngIf="!loadingCandidates && allCandidates.length > 0 && selectedProfilId">
+        <ng-container *ngFor="let profil of demande.profils">
+          <div *ngIf="profil.id === selectedProfilId" class="candidates-grid-minimal" [class.disabled-grid]="!isProfilEligibleForNewOffer(profil.id)">
+
+            <div
+              *ngFor="let candidate of getAvailableCandidatesForProfil(profil.id)"
+              class="candidate-minimal"
+              [class.selected]="isCandidateSelectedForProfil(profil.id, candidate.id)"
+              [class.disabled]="!isProfilEligibleForNewOffer(profil.id)"
+              (click)="isProfilEligibleForNewOffer(profil.id) && toggleCandidate(profil.id, candidate.id)">
+
+              <div class="candidate-check">
+                <mat-checkbox
+                  [checked]="isCandidateSelectedForProfil(profil.id, candidate.id)"
+                  [disabled]="!isProfilEligibleForNewOffer(profil.id)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleCandidate(profil.id, candidate.id)"
+                  color="primary"
+                ></mat-checkbox>
+              </div>
+
+              <div class="candidate-main">
+                <div class="candidate-name-line">
+                  <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                  <span class="exp-badge">{{ candidate.experienceYear }} ans</span>
+                </div>
+                <div class="candidate-role-line">{{ candidate.professional }}</div>
+                <div class="candidate-contact-line">
+                  <span><mat-icon>email</mat-icon>{{ candidate.emailAddress }}</span>
+                  <span><mat-icon>phone</mat-icon>{{ candidate.phoneNumber }}</span>
+                </div>
+                <div class="candidate-skills-line" *ngIf="candidate.skills">
+                  <mat-icon>verified</mat-icon>
+                  <span>{{ candidate.skills }}</span>
                 </div>
               </div>
             </div>
 
-            <div *ngIf="candidates.length === 0" class="no-candidates">
+            <!-- Empty State -->
+            <div *ngIf="getAvailableCandidatesForProfil(profil.id).length === 0" class="empty-minimal">
               <mat-icon>person_off</mat-icon>
-              <p>Aucun candidat disponible</p>
-              <button mat-raised-button color="accent" (click)="navigateToCandidates()" class="create-candidate-btn">
-                <mat-icon>person_add</mat-icon>
-                <span>Créer un candidat</span>
-              </button>
+              <p>Aucun candidat disponible pour ce profil</p>
             </div>
-          </div>
 
-          <!-- Action Buttons -->
-          <div class="offer-actions">
-            <button
-              mat-raised-button
-              color="primary"
-              (click)="createOffer()"
-              [disabled]="selectedCandidates.size === 0 || loadingOffer"
-              class="submit-btn"
-            >
-              <mat-spinner *ngIf="loadingOffer" diameter="20"></mat-spinner>
-              <mat-icon *ngIf="!loadingOffer">send</mat-icon>
-              <span *ngIf="!loadingOffer">Envoyer l'offre</span>
-              <span *ngIf="loadingOffer">Envoi en cours...</span>
-            </button>
           </div>
-        </mat-card>
+        </ng-container>
+      </ng-container>
       </div>
-    </div>
+
+      <!-- No Data State -->
+      <div *ngIf="!loadingCandidates && allCandidates.length === 0 && hasEligibleProfils()" class="no-data-minimal">
+        <mat-icon>person_add</mat-icon>
+        <h3>Aucun candidat disponible</h3>
+        <p>Ajoutez des candidats à votre base pour pouvoir créer des offres</p>
+        <button mat-flat-button color="primary" (click)="navigateToCandidates()">
+          <mat-icon>add</mat-icon>
+          Ajouter des candidats
+        </button>
+      </div>
+    </ng-container>
+
   </div>
+
+  <!-- Footer Actions -->
+  <footer class="minimal-footer" *ngIf="!loadingCandidates && allCandidates.length > 0 && !isDemandeClosed() && hasEligibleProfils()">
+    <div class="footer-info">
+      <span class="selection-count">{{ getTotalSelectedCount() }} candidat(s) sélectionné(s)</span>
+    </div>
+    <div class="footer-actions">
+      <button mat-stroked-button (click)="goBack()">Retour</button>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="createOffer()"
+        [disabled]="getTotalSelectedCount() === 0 || loadingOffer">
+        <mat-spinner *ngIf="loadingOffer" diameter="18"></mat-spinner>
+        <mat-icon *ngIf="!loadingOffer">send</mat-icon>
+        <span *ngIf="!loadingOffer">Envoyer les offres</span>
+        <span *ngIf="loadingOffer">Envoi...</span>
+      </button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Loading State -->
+<div class="loading-page" *ngIf="loadingDemande">
+ <mat-spinner diameter="48"></mat-spinner>
+  <p>Chargement de la demande...</p>
 </div>

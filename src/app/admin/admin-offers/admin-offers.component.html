@@ -1,0 +1,174 @@
+<div class="admin-page-container">
+  <div class="admin-page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>work</mat-icon>
+          Gestion des Offres
+        </h1>
+        <p class="subtitle">{{ offers.length }} offre(s) totale(s)</p>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="loadAllOffers()"
+          [disabled]="loading"
+          class="refresh-btn">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          <span>Actualiser</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="offers-grid" *ngIf="loading">
+    <div class="pro-card skeleton-card" *ngFor="let i of [1,2,3]">
+      <div class="pro-card-header">
+        <div class="skeleton-line sm w-20"></div>
+        <div class="skeleton-line lg w-60"></div>
+        <div class="skeleton-line sm w-40"></div>
+      </div>
+      <div class="pro-card-body">
+        <div class="skeleton-block"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state-container" *ngIf="!loading && offers.length === 0">
+    <div class="empty-illustration">
+      <mat-icon>work_outline</mat-icon>
+    </div>
+    <h2>Aucune offre</h2>
+    <p>Aucune offre n'a encore été créée dans le système.</p>
+  </div>
+
+  <div class="offers-grid" *ngIf="!loading && offers.length > 0">
+    <mat-card class="pro-card" *ngFor="let offer of offers">
+
+      <div class="pro-card-header">
+        <div class="header-metadata">
+          <span class="id-pill">{{ offer.demandeReference || 'Demande #' + offer.demandeId }}</span>
+          <span class="client-pill">Client #{{ offer.clientId }}</span>
+          <span class="status-indicator"
+                [class.in-progress]="getDemandeStatus(offer.demandeId) === 'IN_PROGRESS'"
+                [class.closed]="getDemandeStatus(offer.demandeId) === 'CLOSED'"
+                [class.rejected]="getDemandeStatus(offer.demandeId) === 'REJECTED'"
+                [class.complete]="isMaxReached(offer.offerId)">
+            <span class="dot"></span>
+            {{ getDemandeStatus(offer.demandeId) === 'IN_PROGRESS' ?
+               (isMaxReached(offer.offerId) ? 'Complet' : 'En cours') :
+               getDemandeStatus(offer.demandeId) === 'CLOSED' ? 'Clôturée' :
+               getDemandeStatus(offer.demandeId) === 'REJECTED' ? 'Rejetée' : 'Inconnu' }}
+          </span>
+        </div>
+        <div class="header-title-row">
+          <h2 class="header-title">Offre #{{ offer.offerId }}</h2>
+          <div class="action-buttons-group">
+            <button
+              mat-raised-button
+              color="warn"
+              class="close-demande-btn"
+              *ngIf="isDemandeOpen(offer.demandeId)"
+              (click)="closeDemande(offer.offerId, offer.demandeId)"
+              title="Clôturer la demande">
+              <mat-icon>lock</mat-icon>
+              <span>Clôturer la demande</span>
+            </button>
+            <span
+              class="closed-badge"
+              *ngIf="!isDemandeOpen(offer.demandeId)">
+              <mat-icon>lock</mat-icon>
+              Demande clôturée
+            </span>
+            <button
+              mat-icon-button
+              color="warn"
+              class="delete-offer-btn"
+              (click)="deleteOffer(offer.offerId, offer.demandeReference || 'Offre #' + offer.offerId)"
+              title="Supprimer l'offre">
+              <mat-icon>delete_forever</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="header-subtitle">
+          <mat-icon>calendar_today</mat-icon>
+          <span>Publié le {{ formatDate(offer.createdAt) }}</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-item accepted">
+            <mat-icon>check_circle</mat-icon>
+            <span>{{ getAcceptedCount(offer.offerId) }} accepté(s)</span>
+          </div>
+          <div class="stat-item rejected">
+            <mat-icon>cancel</mat-icon>
+            <span>{{ getRejectedCount(offer.offerId) }} refusé(s)</span>
+          </div>
+          <div class="stat-item total">
+            <mat-icon>people</mat-icon>
+            <span>{{ getAcceptedCount(offer.offerId) }} / {{ getTotalNeeded(offer.offerId) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <mat-card-content class="pro-card-body">
+        <div class="summary-bar" (click)="toggleCandidates(offer.offerId)">
+          <div class="avatar-group">
+            <div class="mini-avatar" *ngFor="let c of offer.proposedCandidates | slice : 0 : 3">
+              {{ c.firstName ? c.firstName[0] : '?' }}
+            </div>
+            <div class="avatar-count" *ngIf="offer.proposedCandidates.length > 3">
+              +{{ offer.proposedCandidates.length - 3 }}
+            </div>
+          </div>
+          <span class="summary-label">{{ offer.proposedCandidates.length }} candidat(s) proposé(s)</span>
+          <mat-icon class="chevron" [class.rotated]="isCandidatesExpanded(offer.offerId)">
+            expand_more
+          </mat-icon>
+        </div>
+
+        <div class="candidate-list" [@expandCollapse]="isCandidatesExpanded(offer.offerId) ? 'expanded' : 'collapsed'">
+
+          <div class="candidate-item" *ngFor="let candidate of offer.proposedCandidates">
+            <div class="item-main" (click)="toggleCandidateDetails(candidate.candidateId)">
+              <div class="initials-circle">
+                {{ candidate.firstName[0] }}{{ candidate.lastName[0] }}
+              </div>
+              <div class="item-info">
+                <p class="name">{{ candidate.firstName }} {{ candidate.lastName }}</p>
+                <p class="role">{{ candidate.professional }}</p>
+              </div>
+              <div class="item-status" [attr.data-status]="candidate.status">
+                {{ candidate.status }}
+              </div>
+              <mat-icon class="chevron-sm" [class.rotated]="expandedCandidates.has(candidate.candidateId)">
+                chevron_right
+              </mat-icon>
+            </div>
+
+            <div class="item-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
+              <div class="detail-pill">
+                <mat-icon>history</mat-icon>
+                {{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans exp.
+              </div>
+              <div class="detail-pill">
+                <mat-icon>email</mat-icon>
+                {{ getCandidateDetail(candidate.candidateId)?.emailAddress }}
+              </div>
+              <div class="detail-pill">
+                <mat-icon>phone</mat-icon>
+                {{ getCandidateDetail(candidate.candidateId)?.phoneNumber }}
+              </div>
+              <button *ngIf="getCandidateDetail(candidate.candidateId)?.cvPath"
+                      (click)="viewCv(candidate.candidateId)"
+                      class="cv-link">
+                <mat-icon>description</mat-icon> Voir CV
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

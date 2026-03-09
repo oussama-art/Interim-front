@@ -1,0 +1,23 @@
+<div class="cv-viewer-container">
+  <div class="viewer-header">
+    <div class="header-info">
+      <mat-icon>description</mat-icon>
+      <h2>CV - {{ candidateName }}</h2>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="viewer-body">
+    <!-- Affichage PDF ou Document Word -->
+    <iframe *ngIf="fileType === 'pdf' || fileType === 'document'"
+            [src]="safePdfUrl"
+            class="pdf-frame"></iframe>
+
+    <!-- Affichage Image -->
+    <div *ngIf="fileType === 'image'" class="image-container">
+      <img [src]="safeImageUrl" alt="CV" class="cv-image">
+    </div>
+  </div>
+</div>

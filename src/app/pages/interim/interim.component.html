@@ -1,29 +1,78 @@
 <div class="page-container">
   <div class="page-header">
-    <h1>Intérimaires</h1>
-    <button mat-raised-button color="primary">
-      <mat-icon>person_add</mat-icon>
-      Ajouter intérimaire
-    </button>
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>people</mat-icon>
+          Intérimaires Affectés
+        </h1>
+        <p class="subtitle">Candidats affectés à vos demandes</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="loadAssignedCandidates()" [disabled]="loading">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          Actualiser
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="cards-grid">
-    <div class="simple-card" *ngFor="let worker of workers">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des intérimaires...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredWorkers.length === 0" class="empty-state">
+    <mat-icon>groups_off</mat-icon>
+    <h3>Aucun intérimaire affecté</h3>
+    <p>Vous n'avez pas encore de candidats affectés à vos demandes.</p>
+  </div>
+
+  <!-- Workers Grid -->
+  <div class="cards-grid" *ngIf="!loading && filteredWorkers.length > 0">
+    <div class="simple-card" *ngFor="let worker of filteredWorkers">
       <div class="card-header">
-        <h3>{{ worker.name }}</h3>
-        <span class="status-badge" [ngClass]="getAvailabilityClass(worker.availability)">
-          {{ getAvailabilityLabel(worker.availability) }}
+        <div class="worker-name-section">
+          <h3>{{ worker.name }}</h3>
+          <span class="demande-ref" *ngIf="worker.demandeReference">
+            <mat-icon>assignment</mat-icon>
+            {{ worker.demandeReference }}
+          </span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(worker.status)">
+          {{ worker.status }}
         </span>
       </div>
+
       <div class="card-body">
-        <p><strong>Poste:</strong> {{ worker.position }}</p>
-        <p><strong>Email:</strong> {{ worker.email }}</p>
-        <p><strong>Tél:</strong> {{ worker.phone }}</p>
-        <p><strong>Note:</strong> {{ worker.rating }}/5 ({{ worker.completedMissions }} missions)</p>
+        <div class="info-row">
+          <mat-icon class="info-icon">work</mat-icon>
+          <div class="info-content">
+            <span class="info-label">Poste</span>
+            <span class="info-value">{{ worker.position }}</span>
+          </div>
+        </div>
+
+        <div class="info-row date-row">
+          <mat-icon class="info-icon">event</mat-icon>
+          <div class="info-content">
+            <span class="info-label">Période de mission</span>
+            <span class="info-value">{{ formatDate(worker.startDate) }} → {{ formatDate(worker.endDate) }}</span>
+          </div>
+        </div>
       </div>
+
       <div class="card-footer">
-        <button mat-button color="primary">Profil</button>
-        <button mat-button>Contacter</button>
+        <button mat-raised-button color="primary" (click)="viewCandidateDetails(worker)">
+          <mat-icon>visibility</mat-icon>
+          détails
+        </button>
+        <button mat-button (click)="contactCandidate(worker)">
+          <mat-icon>mail</mat-icon>
+          Contacter
+        </button>
       </div>
     </div>
   </div>

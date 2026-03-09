@@ -8,22 +8,30 @@ import { ContractsComponent } from './pages/contracts/contracts.component';
 import { TimesheetsComponent } from './pages/timesheets/timesheets.component';
 import { InvoicesComponent } from './pages/invoices/invoices.component';
 import { InterimComponent } from './pages/interim/interim.component';
+import { CandidateDetailComponent } from './pages/interim/candidate-detail/candidate-detail.component';
 import { OffersComponent } from './pages/offers/offers.component';
 import { ProfilComponent } from './pages/profil/profil.component';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { adminGuard, adminLoginGuard } from './core/guards/admin.guard';
 import { AdminLayoutComponent } from './admin/admin-layout/admin-layout.component';
 import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
 import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
 import { AdminClientsComponent } from './admin/admin-clients/admin-clients.component';
 import { AdminCandidatesComponent } from './admin/admin-candidates/admin-candidates.component';
 import { AdminDemandesComponent } from './admin/admin-demandes/admin-demandes.component';
+import { AdminAccountRequestsComponent } from './admin/admin-account-requests/admin-account-requests.component';
+import { AdminOffersComponent } from './admin/admin-offers/admin-offers.component';
+import { AdminContractsComponent } from './admin/admin-contracts/admin-contracts.component';
+import { CompanyRegistrationComponent } from './auth/company-registration/company-registration.component';
+import { DemandeDetailDialogComponent } from './admin/admin-demandes/demande-detail-dialog/demande-detail-dialog.component';
+import { EditCandidatePageComponent } from './admin/admin-candidates/edit-candidate-page/edit-candidate-page.component';
+import { CandidateDetailPageComponent } from './admin/admin-candidates/candidate-detail-page/candidate-detail-page.component';
 
 export const routes: Routes = [
   // Routes publiques
-  
+
   {
     path: '',
     redirectTo: 'login',
@@ -32,6 +40,11 @@ export const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent,
+    canActivate: [publicGuard]
+  },
+  {
+    path: 'company-registration',
+    component: CompanyRegistrationComponent,
     canActivate: [publicGuard]
   },
   {
@@ -56,6 +69,7 @@ export const routes: Routes = [
       { path: 'timesheets', component: TimesheetsComponent },
       { path: 'invoices', component: InvoicesComponent },
       { path: 'interim', component: InterimComponent },
+      { path: 'interim/:id', component: CandidateDetailComponent },
       { path: 'offers', component: OffersComponent },
       { path: 'demandes', component: DemandesComponent },
       { path: 'demandes/create', component: CreateDemandeComponent },
@@ -70,7 +84,7 @@ export const routes: Routes = [
     path: 'admin',
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
-      { path: 'login', component: AdminLoginComponent },
+      { path: 'login', component: AdminLoginComponent, canActivate: [adminLoginGuard] },
       {
         path: '',
         component: AdminLayoutComponent,
@@ -79,7 +93,13 @@ export const routes: Routes = [
           { path: 'dashboard', component: AdminDashboardComponent },
           { path: 'clients', component: AdminClientsComponent },
           { path: 'candidates', component: AdminCandidatesComponent },
-          { path: 'demandes', component: AdminDemandesComponent }
+          { path: 'candidates/detail/:id', component: CandidateDetailPageComponent },
+          { path: 'candidates/edit/:id', component: EditCandidatePageComponent },
+          { path: 'demandes', component: AdminDemandesComponent },
+          { path: 'demandes/:id', component: DemandeDetailDialogComponent },
+          { path: 'offers', component: AdminOffersComponent },
+          { path: 'contracts', component: AdminContractsComponent },
+          { path: 'account-requests', component: AdminAccountRequestsComponent }
         ]
       }
     ]

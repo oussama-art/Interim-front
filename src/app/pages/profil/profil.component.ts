@@ -13,7 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { map, startWith, timeout, catchError, finalize } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { ClientService } from '../../core/services/client.service';
 import { CandidateService } from '../../core/services/candidate.service';
@@ -527,7 +527,7 @@ export class ProfilComponent implements OnInit, AfterViewInit {
     const baseFields = {
       firstName: [''],
       lastName: [''],
-      phoneNumber: ['', Validators.pattern(/^[0-9]{10}$/)]
+      phoneNumber: ['', Validators.pattern(/^\+[1-9]\d{1,2}\d{6,12}$/)]
     };
 
     // Ajouter les champs spécifiques selon le type d'utilisateur
@@ -536,8 +536,8 @@ export class ProfilComponent implements OnInit, AfterViewInit {
         ...baseFields,
         title: ['', Validators.required],
         description: [''],
-        sector: ['', Validators.required],
-        nbEmployee: [0, [Validators.required, Validators.min(1)]]
+        sector: [''],
+        nbEmployee: [0, Validators.min(0)]
       });
     } else if (this.isCandidate) {
       this.profileForm = this.fb.group({
@@ -562,45 +562,97 @@ export class ProfilComponent implements OnInit, AfterViewInit {
 
   loadClientProfile(): void {
     this.isLoading = true;
-    this.clientService.getMe().subscribe({
+    this.clientService.getMe().pipe(
+      timeout(10000), // Timeout de 10 secondes pour laisser le temps au refresh token
+      finalize(() => {
+        // Toujours arrêter le loading, même en cas d'erreur
+        this.isLoading = false;
+      }),
+      catchError((error) => {
+        console.error('Erreur lors du chargement du profil:', error);
+
+        // Si c'est un timeout ou une erreur réseau
+        if (error.name === 'TimeoutError') {
+          this.snackBar.open('La requête a pris trop de temps. Veuillez réessayer.', 'Fermer', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['error-snackbar']
+          });
+        } else if (error.status === 401) {
+          // L'intercepteur va rediriger, pas besoin de snackbar
+          console.log('Token expiré, redirection en cours...');
+        } else {
+          this.snackBar.open('Erreur lors du chargement du profil', 'Fermer', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['error-snackbar']
+          });
+        }
+        throw error;
+      })
+    ).subscribe({
       next: (client) => {
         this.client = client;
         this.populateClientForm(client);
         this.checkMissingFieldsClient(client);
-        this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement du profil:', error);
-        this.snackBar.open('Erreur lors du chargement du profil', 'Fermer', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top',
-          panelClass: ['error-snackbar']
-        });
-        this.isLoading = false;
+      error: () => {
+        // Erreur déjà gérée dans catchError, finalize arrête le loading
       }
     });
   }
 
+  /**
+   * DÉSACTIVÉ - Keycloak retiré pour les candidats
+   * La gestion du profil candidat doit être revue
+   */
   loadCandidateProfile(): void {
+    /*
     this.isLoading = true;
-    this.candidateService.getMe().subscribe({
+    this.candidateService.getMe().pipe(
+      timeout(10000),
+      finalize(() => {
+        this.isLoading = false;
+      }),
+      catchError((error) => {
+        console.error('Erreur lors du chargement du profil candidat:', error);
+
+        if (error.name === 'TimeoutError') {
+          this.snackBar.open('La requête a pris trop de temps. Veuillez réessayer.', 'Fermer', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['error-snackbar']
+          });
+        } else if (error.status === 401) {
+          console.log('Token expiré, redirection en cours...');
+        } else {
+          this.snackBar.open('Erreur lors du chargement du profil', 'Fermer', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['error-snackbar']
+          });
+        }
+        throw error;
+      })
+    ).subscribe({
       next: (candidate) => {
         this.candidate = candidate;
         this.populateCandidateForm(candidate);
         this.checkMissingFieldsCandidate(candidate);
-        this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement du profil candidat:', error);
-        this.snackBar.open('Erreur lors du chargement du profil', 'Fermer', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top',
-          panelClass: ['error-snackbar']
-        });
-        this.isLoading = false;
+      error: () => {
+        // Erreur déjà gérée dans catchError, finalize arrête le loading
       }
+    });
+    */
+    console.warn('⚠️ Profil candidat désactivé - Keycloak retiré pour les candidats');
+    this.snackBar.open('Fonctionnalité temporairement désactivée', 'Fermer', {
+      duration: 3000,
+      panelClass: ['warning-snackbar']
     });
   }
 
@@ -688,6 +740,21 @@ export class ProfilComponent implements OnInit, AfterViewInit {
 
   get hasIncompleteProfile(): boolean {
     return this.missingFields.length > 0;
+  }
+
+  isFieldMissing(fieldName: string): boolean {
+    const fieldLabels: { [key: string]: string } = {
+      phoneNumber: 'Téléphone',
+      title: 'Titre de l\'entreprise',
+      sector: 'Secteur d\'activité',
+      nbEmployee: 'Nombre d\'employés',
+      experienceYear: 'Années d\'expérience',
+      skills: 'Compétences',
+      professional: 'Profession',
+      cin: 'CIN',
+      cssNumber: 'Numéro CSS'
+    };
+    return this.missingFields.includes(fieldLabels[fieldName]);
   }
 
   enableEditMode(): void {
@@ -791,6 +858,11 @@ export class ProfilComponent implements OnInit, AfterViewInit {
         }
       });
     } else if (this.isCandidate) {
+      /**
+       * DÉSACTIVÉ - Keycloak retiré pour les candidats
+       * La mise à jour du profil candidat doit être revue
+       */
+      /*
       const patchData: CandidatePatchRequest = this.profileForm.value;
       this.candidateService.patchMe(patchData).subscribe({
         next: (updatedCandidate) => {
@@ -814,6 +886,12 @@ export class ProfilComponent implements OnInit, AfterViewInit {
             panelClass: ['error-snackbar']
           });
         }
+      });
+      */
+      this.isSaving = false;
+      this.snackBar.open('Fonctionnalité temporairement désactivée', 'Fermer', {
+        duration: 3000,
+        panelClass: ['warning-snackbar']
       });
     }
   }

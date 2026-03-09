@@ -1,0 +1,112 @@
+<div class="page-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Chargement des détails...</p>
+  </div>
+
+  <!-- Candidate Details -->
+  <div *ngIf="!loading && candidate" class="detail-content">
+    <!-- Simple Header -->
+    <div class="detail-header">
+      <div class="header-top">
+        <button mat-icon-button (click)="goBack()" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="header-actions">
+          <button mat-stroked-button (click)="contactCandidate()">
+            <mat-icon>email</mat-icon>
+            Email
+          </button>
+          <button mat-stroked-button (click)="callCandidate()">
+            <mat-icon>phone</mat-icon>
+            Téléphone
+          </button>
+        </div>
+      </div>
+
+      <div class="candidate-header-info">
+        <h1>{{ candidate.firstName }} {{ candidate.lastName }}</h1>
+        <p class="role" *ngIf="candidate.professional">{{ candidate.professional }}</p>
+        <div class="meta-info" *ngIf="candidate.experienceYear">
+          <span class="experience-badge">
+            <mat-icon>verified</mat-icon>
+            {{ candidate.experienceYear }} ans d'expérience
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="detail-grid">
+      <!-- Mission Section -->
+      <section class="section" *ngIf="candidate.demandeReference">
+        <div class="section-header">
+          <h2>Mission actuelle</h2>
+        </div>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="label">Référence</span>
+            <span class="value reference-tag">{{ candidate.demandeReference }}</span>
+          </div>
+          <div class="info-row" *ngIf="candidate.position">
+            <span class="label">Poste</span>
+            <span class="value">{{ candidate.position }}</span>
+          </div>
+          <div class="info-row" *ngIf="candidate.status">
+            <span class="label">Statut</span>
+            <span class="value status-tag">{{ candidate.status }}</span>
+          </div>
+          <div class="info-row" *ngIf="candidate.startDate && candidate.endDate">
+            <span class="label">Période</span>
+            <span class="value">{{ formatDate(candidate.startDate) }} → {{ formatDate(candidate.endDate) }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Contact</h2>
+        </div>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="label">Email</span>
+            <span class="value">
+              <a [href]="'mailto:' + candidate.emailAddress" class="link">{{ candidate.emailAddress }}</a>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="label">Téléphone</span>
+            <span class="value">
+              <a [href]="'tel:' + candidate.phoneNumber" class="link">{{ candidate.phoneNumber }}</a>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Skills Section -->
+      <section class="section full-width" *ngIf="getSkillsArray().length > 0">
+        <div class="section-header">
+          <h2>Compétences</h2>
+        </div>
+        <div class="section-content">
+          <div class="skills-list">
+            <span class="skill-tag" *ngFor="let skill of getSkillsArray()">{{ skill }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !candidate" class="empty-state">
+    <mat-icon>person_off</mat-icon>
+    <h3>Candidat non trouvé</h3>
+    <p>Les informations du candidat ne sont pas disponibles.</p>
+    <button mat-stroked-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Retour
+    </button>
+  </div>
+</div>

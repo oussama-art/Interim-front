@@ -1,0 +1,1406 @@
+// =====================================
+// VARIABLES DESIGN SYSTEM - TIMESHEET PROFESSIONNEL
+// =====================================
+$primary-color: #4f46e5;
+$primary-light: #6366f1;
+$primary-dark: #4338ca;
+$secondary-color: #06b6d4;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+
+// Backgrounds
+$bg-secondary: #f8fafc;
+$bg-tertiary: #f1f5f9;
+$bg-quaternary: #e2e8f0;
+
+// Text colors
+$text-primary: #0f172a;
+$text-secondary: #475569;
+$text-tertiary: #94a3b8;
+
+// Borders
+$border-color: #cbd5e1;
+$border-light: #e2e8f0;
+
+// Grille Timesheet colors
+$grid-header-bg: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
+$grid-row-label-bg: #f8fafc;
+$grid-cell-bg: #ffffff;
+$grid-cell-hover: #fafbfc;
+$grid-border: #e2e8f0;
+$grid-border-thick: #cbd5e1;
+
+// =====================================
+// CONTAINER PRINCIPAL
+// =====================================
+.timesheets-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 2rem 3rem;
+  max-width: 1800px;
+  margin: 0 auto;
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 1.5rem;
+
+    mat-spinner {
+      ::ng-deep circle {
+        stroke: $primary-color;
+      }
+    }
+
+    p {
+      color: $text-secondary;
+      font-size: 1.125rem;
+      font-weight: 500;
+    }
+  }
+
+  .no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: $text-tertiary;
+
+    mat-icon {
+      font-size: 5rem;
+      width: 5rem;
+      height: 5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    p {
+      font-size: 1.125rem;
+    }
+  }
+}
+
+// =====================================
+// LISTE DES CONTRATS
+// =====================================
+.contracts-list {
+  // Dashboard de statistiques
+  .stats-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      border: 2px solid $border-light;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15);
+        border-color: $primary-light;
+      }
+
+      mat-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        color: white;
+        background: $grid-header-bg;
+        border-radius: 12px;
+        padding: 0.5rem;
+      }
+
+      .stat-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .stat-value {
+          font-size: 2rem;
+          font-weight: 900;
+          color: $text-primary;
+          letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          color: $text-secondary;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  // Barre de recherche et filtres
+  .filters-bar {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    border: 2px solid $border-light;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .search-field {
+      flex: 1;
+      min-width: 300px;
+
+      ::ng-deep .mat-form-field-wrapper {
+        padding-bottom: 0;
+      }
+
+      ::ng-deep .mat-form-field-outline {
+        border-radius: 12px;
+      }
+
+      ::ng-deep .mat-form-field-prefix mat-icon {
+        color: $primary-color;
+        margin-right: 0.5rem;
+      }
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+
+      mat-checkbox {
+        ::ng-deep .mat-checkbox-label {
+          font-weight: 600;
+          color: $text-secondary;
+        }
+      }
+
+      button {
+        height: 40px;
+        border-radius: 10px;
+        font-weight: 600;
+
+        mat-icon {
+          margin-right: 0.5rem;
+        }
+      }
+    }
+  }
+
+  .page-header {
+    background: $grid-header-bg;
+    padding: 2.5rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    color: white;
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0 0 0.75rem 0;
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+
+      mat-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 0.5rem;
+      }
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 1.125rem;
+      opacity: 0.95;
+      font-weight: 500;
+    }
+  }
+
+  .contracts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2rem;
+
+    .contract-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 16px;
+      border: 2px solid $border-light;
+      overflow: hidden;
+      position: relative;
+      background: white;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, $primary-color 0%, $secondary-color 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(79, 70, 229, 0.15);
+        border-color: $primary-light;
+
+        &::before {
+          opacity: 1;
+        }
+      }
+
+      mat-card-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        padding: 1.5rem !important;
+
+        mat-card-title {
+          font-size: 1.375rem;
+          font-weight: 700;
+          color: $text-primary;
+          margin: 0;
+        }
+
+        mat-card-subtitle {
+          font-size: 0.9375rem;
+          color: $text-secondary;
+          margin-top: 0.5rem;
+        }
+      }
+
+      mat-card-content {
+        padding: 1.5rem !important;
+
+        .contract-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+
+          .info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: $bg-tertiary;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            color: $text-secondary;
+
+            mat-icon {
+              color: $primary-color;
+              background: white;
+              border-radius: 8px;
+              padding: 0.25rem;
+              font-size: 1.25rem;
+              width: 1.25rem;
+              height: 1.25rem;
+            }
+
+            &.hours-total {
+              background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+              border: 2px solid #bfdbfe;
+              padding: 1rem;
+
+              strong {
+                font-size: 2rem;
+                font-weight: 800;
+                color: $primary-color;
+                margin-right: 0.5rem;
+              }
+
+              span {
+                color: $text-secondary;
+              }
+            }
+          }
+        }
+      }
+
+      mat-card-actions {
+        padding: 1rem 1.5rem !important;
+        background: $bg-secondary;
+
+        button {
+          width: 100%;
+          height: 48px;
+          font-weight: 600;
+          box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+          transition: all 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+          }
+
+          mat-icon {
+            margin-right: 0.5rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// =====================================
+// DÉTAIL TIMESHEET
+// =====================================
+.timesheet-detail {
+  // En-tête avec navigation
+  .timesheet-header {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid $border-light;
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid $border-light;
+
+      .back-button {
+        background: $bg-tertiary;
+        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: $primary-color;
+
+          mat-icon {
+            color: white;
+          }
+        }
+      }
+
+      .candidate-info {
+        flex: 1;
+
+        h2 {
+          margin: 0 0 0.75rem 0;
+          font-size: 1.875rem;
+          font-weight: 800;
+          color: $text-primary;
+          letter-spacing: -0.01em;
+        }
+
+        span {
+          display: inline-block;
+          padding: 0.375rem 0.875rem;
+          background: $bg-tertiary;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: $text-secondary;
+          margin-right: 0.5rem;
+
+          &.reference {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: $primary-color;
+            border: 1px solid #bfdbfe;
+          }
+        }
+      }
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+
+      .week-nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        padding: 0.75rem 1.25rem;
+        border-radius: 16px;
+        border: 2px solid $border-color;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+        button {
+          background: white;
+          border-radius: 10px;
+          width: 44px;
+          height: 44px;
+          border: 2px solid $border-light;
+          transition: all 0.2s ease;
+
+          mat-icon {
+            color: $primary-color;
+            font-weight: 700;
+            font-size: 1.5rem;
+          }
+
+          &:hover:not(:disabled) {
+            background: $primary-color;
+            border-color: $primary-color;
+
+            mat-icon {
+              color: white;
+            }
+          }
+
+          &:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+
+            mat-icon {
+              color: $text-tertiary;
+            }
+          }
+        }
+
+        .week-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          padding: 0 1rem;
+
+          .week-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: $text-tertiary;
+            letter-spacing: 0.05em;
+          }
+
+          .week-dates {
+            font-size: 1rem;
+            font-weight: 700;
+            color: $text-primary;
+          }
+        }
+
+        .today-btn {
+          margin-left: 0.75rem;
+          height: 44px;
+          border: 2px solid $border-color;
+          border-radius: 12px;
+          font-weight: 600;
+
+          &:hover {
+            border-color: $secondary-color;
+            background: rgba(6, 182, 212, 0.05);
+          }
+
+          mat-icon {
+            margin-right: 0.5rem;
+          }
+        }
+      }
+
+      // Barre de progression
+      .week-progress {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 200px;
+
+        .progress-bar {
+          height: 12px;
+          background: $bg-tertiary;
+          border-radius: 20px;
+          overflow: hidden;
+          border: 2px solid $border-light;
+
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+            transition: width 0.3s ease;
+            border-radius: 20px;
+
+            &.partial {
+              background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+            }
+
+            &.complete {
+              background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+            }
+          }
+        }
+
+        .progress-label {
+          font-size: 0.8125rem;
+          font-weight: 700;
+          color: $text-secondary;
+          text-align: center;
+        }
+      }
+
+      .action-buttons,
+      .edit-actions {
+        display: flex;
+        gap: 0.75rem;
+
+        button {
+          height: 44px;
+          padding: 0 1.5rem;
+          font-weight: 600;
+          border-radius: 12px;
+          transition: all 0.2s ease;
+
+          mat-icon,
+          mat-spinner {
+            margin-right: 0.5rem;
+            font-size: 1.125rem;
+          }
+
+          &[mat-stroked-button] {
+            border: 2px solid $border-color;
+
+            &:hover {
+              border-color: $primary-color;
+              background: rgba(79, 70, 229, 0.05);
+            }
+          }
+
+          &[mat-raised-button] {
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+
+            &:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+            }
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+
+    // Actions rapides en mode édition
+    .quick-actions {
+      display: flex;
+      gap: 1rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+      border-radius: 16px;
+      border: 2px solid #fde68a;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+
+      button {
+        height: 44px;
+        padding: 0 1.5rem;
+        font-weight: 600;
+        border-radius: 12px;
+        border: 2px solid $border-color;
+        background: white;
+        transition: all 0.2s ease;
+
+        mat-icon {
+          margin-right: 0.5rem;
+        }
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        &[color="warn"] {
+          border-color: $danger-color;
+          color: $danger-color;
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.1);
+          }
+        }
+      }
+    }
+  }
+
+  // =====================================
+  // GRILLE TIMESHEET PROFESSIONNELLE
+  // =====================================
+  .timesheet-grid-container {
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid $border-light;
+    overflow: hidden;
+  }
+
+  .timesheet-grid {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    // En-têtes jours
+    .grid-header {
+      display: grid;
+      grid-template-columns: 160px repeat(7, 1fr) 140px;
+      background: $grid-header-bg;
+      border-bottom: 3px solid $primary-dark;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+
+      .row-label-cell {
+        padding: 1.25rem;
+        background: rgba(0, 0, 0, 0.1);
+        border-right: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .day-header-cell {
+        padding: 1.25rem 1rem;
+        text-align: center;
+        color: white;
+        border-right: 2px solid rgba(255, 255, 255, 0.2);
+        transition: background 0.2s ease;
+
+        .day-name {
+          font-size: 1rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.375rem;
+        }
+
+        .day-date {
+          font-size: 0.875rem;
+          font-weight: 500;
+          opacity: 0.9;
+        }
+
+        &.weekend {
+          background: rgba(0, 0, 0, 0.15);
+        }
+
+        &.rest-day {
+          background: rgba(0, 0, 0, 0.2);
+          opacity: 0.7;
+        }
+      }
+
+      .total-header-cell {
+        padding: 1.25rem 1rem;
+        text-align: center;
+        color: white;
+        background: rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+
+        mat-icon {
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+
+        span {
+          font-size: 0.875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      }
+    }
+
+    // Lignes de données
+    .grid-row {
+      display: grid;
+      grid-template-columns: 160px repeat(7, 1fr) 140px;
+      border-bottom: 1px solid $grid-border;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: $grid-cell-hover;
+      }
+
+      &.hours-row {
+        background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+        border-bottom: 2px solid $warning-color;
+        border-top: 2px solid $warning-color;
+
+        &:hover {
+          background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+        }
+      }
+
+      &.notes-row {
+        border-bottom: 2px solid $grid-border-thick;
+      }
+
+      &.edit-row {
+        background: #fafbfc;
+
+        &:hover {
+          background: #f4f6f8;
+        }
+      }
+
+      // Label de ligne
+      .row-label {
+        padding: 1rem 1.25rem;
+        background: $grid-row-label-bg;
+        border-right: 2px solid $grid-border;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        color: $text-secondary;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+
+        mat-icon {
+          color: $primary-color;
+          font-size: 1.25rem;
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+
+        &.hours-label {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          color: #92400e;
+
+          mat-icon {
+            color: $warning-color;
+          }
+        }
+      }
+
+      // Cellules de données
+      .data-cell {
+        padding: 1rem;
+        text-align: center;
+        border-right: 1px solid $grid-border;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9375rem;
+        color: $text-primary;
+        font-weight: 500;
+        min-height: 60px;
+
+        &.empty {
+          color: $text-tertiary;
+          font-style: italic;
+        }
+
+        &.rest-day {
+          background: repeating-linear-gradient(
+            45deg,
+            #f8fafc,
+            #f8fafc 10px,
+            #f1f5f9 10px,
+            #f1f5f9 20px
+          );
+        }
+
+        &.pause-cell {
+          color: #92400e;
+        }
+
+        &.hours-cell {
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+
+          .hours-value {
+            font-size: 1.375rem;
+            font-weight: 800;
+            color: #92400e;
+          }
+        }
+
+        &.note-cell {
+          font-size: 0.8125rem;
+          text-align: left;
+          padding: 0.75rem;
+          color: $text-secondary;
+
+          &.has-note {
+            background: #fef3c7;
+            border-left: 3px solid $warning-color;
+          }
+        }
+
+        .rest-indicator {
+          color: $text-tertiary;
+          font-style: italic;
+          font-size: 0.875rem;
+        }
+
+        .empty-indicator {
+          color: $text-tertiary;
+          opacity: 0.5;
+        }
+
+        // Cellules d'édition
+        &.edit-cell {
+          padding: 0.5rem;
+
+          &.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+          }
+
+          &.note-edit-cell {
+            padding: 0.75rem 0.5rem;
+          }
+
+          input,
+          textarea {
+            width: 100%;
+            border: 2px solid $border-color;
+            border-radius: 8px;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+            background: white;
+            color: $text-primary;
+
+            &:focus {
+              outline: none;
+              border-color: $primary-color;
+              box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            }
+
+            &:disabled {
+              background: $bg-tertiary;
+              cursor: not-allowed;
+            }
+
+            &::placeholder {
+              color: $text-tertiary;
+              font-weight: 400;
+            }
+          }
+
+          .time-input {
+            font-family: 'Roboto Mono', monospace;
+            letter-spacing: 0.05em;
+          }
+
+          .number-input {
+            appearance: textfield;
+            -moz-appearance: textfield;
+
+            &::-webkit-outer-spin-button,
+            &::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+          }
+
+          .hours-input {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #92400e;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+          }
+
+          .note-input {
+            text-align: left;
+            font-size: 0.8125rem;
+            resize: vertical;
+            min-height: 40px;
+            max-height: 100px;
+          }
+
+          ::ng-deep mat-checkbox {
+            .mat-checkbox-frame {
+              border-color: $border-color;
+              border-width: 2px;
+            }
+
+            .mat-checkbox-checked .mat-checkbox-background {
+              background-color: $primary-color;
+            }
+          }
+        }
+      }
+
+      // Cellule total
+      .total-cell {
+        padding: 1rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: $text-secondary;
+        border-left: 2px solid $grid-border-thick;
+        position: sticky;
+        right: 0;
+        z-index: 5;
+
+        &.empty {
+          color: $text-tertiary;
+          font-style: italic;
+        }
+
+        &.hours-total {
+          background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
+
+          .total-value {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: #78350f;
+            letter-spacing: -0.02em;
+          }
+        }
+      }
+    }
+  }
+
+  // =====================================
+  // MODE SAISIE RAPIDE
+  // =====================================
+  .period-entry-view {
+    .period-card {
+      background: white;
+      border-radius: 20px;
+      border: 2px solid $border-light;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+
+      mat-card-header {
+        padding: 2rem !important;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-bottom: 2px solid #bfdbfe;
+        display: flex;
+        gap: 1.5rem;
+
+        .card-icon {
+          font-size: 3rem;
+          width: 3rem;
+          height: 3rem;
+          color: $primary-color;
+          background: white;
+          border-radius: 12px;
+          padding: 0.5rem;
+        }
+
+        mat-card-title {
+          font-size: 1.75rem;
+          font-weight: 800;
+          color: $primary-dark;
+          margin: 0;
+        }
+
+        mat-card-subtitle {
+          color: $text-secondary;
+          font-size: 1rem;
+          margin-top: 0.5rem;
+        }
+      }
+
+      mat-card-content {
+        padding: 2.5rem !important;
+      }
+
+      .period-form {
+        .form-group {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 1.5rem;
+          margin-bottom: 1.5rem;
+
+          .highlight-field {
+            ::ng-deep .mat-form-field-wrapper {
+              padding-bottom: 0;
+            }
+
+            ::ng-deep .mat-form-field-outline {
+              background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+              border-radius: 12px;
+            }
+
+            ::ng-deep .mat-form-field-outline-thick {
+              color: $warning-color;
+            }
+
+            ::ng-deep input {
+              font-size: 1.5rem;
+              font-weight: 800;
+              color: #92400e;
+            }
+          }
+
+          ::ng-deep .mat-form-field {
+            .mat-form-field-wrapper {
+              padding-bottom: 0;
+            }
+
+            .mat-form-field-outline {
+              border-radius: 12px;
+              color: $border-color;
+            }
+
+            &.mat-focused .mat-form-field-outline-thick {
+              color: $primary-color;
+            }
+
+            .mat-form-field-prefix mat-icon {
+              color: $primary-color;
+              margin-right: 0.5rem;
+            }
+          }
+        }
+
+        .contract-info-box {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem 1.5rem;
+          background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+          border-radius: 12px;
+          border: 2px solid #bfdbfe;
+          margin-top: 1rem;
+
+          mat-icon {
+            color: $primary-color;
+            font-size: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+
+          span {
+            color: $text-secondary;
+            font-weight: 600;
+            font-size: 0.9375rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// =====================================
+// RESPONSIVE
+// =====================================
+@media (max-width: 1400px) {
+  .timesheet-grid {
+    .grid-header,
+    .grid-row {
+      grid-template-columns: 140px repeat(7, minmax(100px, 1fr)) 120px;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .timesheets-container {
+    padding: 1.5rem;
+  }
+
+  .contracts-list {
+    .stats-dashboard {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+
+      .search-field {
+        min-width: 100%;
+      }
+
+      .filter-chips {
+        flex-wrap: wrap;
+      }
+    }
+
+    .contracts-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+  }
+
+  .timesheet-detail {
+    .timesheet-header {
+      padding: 1.5rem;
+
+      .header-controls {
+        flex-wrap: wrap;
+
+        .week-nav {
+          flex: 1;
+          min-width: 300px;
+
+          .today-btn {
+            margin-left: auto;
+          }
+        }
+
+        .week-progress {
+          width: 100%;
+        }
+      }
+    }
+
+    .quick-actions {
+      flex-wrap: wrap;
+
+      button {
+        flex: 1;
+        min-width: 150px;
+      }
+    }
+
+    .timesheet-grid {
+      .grid-header,
+      .grid-row {
+        grid-template-columns: 120px repeat(7, minmax(90px, 1fr)) 100px;
+      }
+
+      .row-label {
+        font-size: 0.8125rem;
+        padding: 0.75rem 1rem;
+
+        mat-icon {
+          font-size: 1rem;
+          width: 1rem;
+          height: 1rem;
+        }
+      }
+
+      .data-cell {
+        font-size: 0.875rem;
+        padding: 0.75rem 0.5rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .timesheets-container {
+    padding: 1rem;
+  }
+
+  .contracts-list {
+    .stats-dashboard {
+      grid-template-columns: 1fr;
+
+      .stat-card {
+        mat-icon {
+          font-size: 2.5rem;
+          width: 2.5rem;
+          height: 2.5rem;
+        }
+
+        .stat-content .stat-value {
+          font-size: 1.75rem;
+        }
+      }
+    }
+
+    .filters-bar {
+      padding: 1rem;
+
+      .search-field {
+        ::ng-deep .mat-form-field-label {
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .page-header {
+      padding: 1.5rem;
+
+      h1 {
+        font-size: 2rem;
+
+        mat-icon {
+          font-size: 2.5rem;
+          width: 2.5rem;
+          height: 2.5rem;
+        }
+      }
+    }
+
+    .contracts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .timesheet-detail {
+    .timesheet-header {
+      padding: 1rem;
+
+      .header-top {
+        flex-direction: column;
+        gap: 1rem;
+
+        .candidate-info h2 {
+          font-size: 1.5rem;
+        }
+      }
+
+      .header-controls {
+        flex-direction: column;
+        align-items: stretch;
+
+        .week-nav {
+          width: 100%;
+          min-width: unset;
+          flex-wrap: wrap;
+
+          .today-btn {
+            width: 100%;
+            margin: 0.5rem 0 0 0;
+          }
+        }
+
+        .week-progress {
+          width: 100%;
+          min-width: unset;
+        }
+
+        .action-buttons,
+        .edit-actions {
+          width: 100%;
+          flex-direction: column;
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .quick-actions {
+      flex-direction: column;
+      padding: 1rem;
+
+      button {
+        width: 100%;
+        min-width: unset;
+      }
+    }
+
+    // Grille en mode scroll horizontal sur mobile
+    .timesheet-grid-container {
+      overflow-x: scroll;
+      -webkit-overflow-scrolling: touch;
+
+      .timesheet-grid {
+        min-width: 1000px;
+      }
+    }
+
+    .period-entry-view .period-card {
+      mat-card-header {
+        padding: 1.5rem !important;
+      }
+
+      mat-card-content {
+        padding: 1.5rem !important;
+      }
+
+      .period-form .form-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .timesheets-container {
+    padding: 0.5rem;
+  }
+
+  .contracts-list {
+    .stats-dashboard {
+      .stat-card {
+        padding: 1rem;
+
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+
+        .stat-content .stat-value {
+          font-size: 1.5rem;
+        }
+      }
+    }
+
+    .page-header {
+      padding: 1rem;
+      border-radius: 12px;
+
+      h1 {
+        font-size: 1.5rem;
+
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+
+      .subtitle {
+        font-size: 0.875rem;
+      }
+    }
+
+    .filters-bar {
+      padding: 0.75rem;
+      border-radius: 12px;
+    }
+  }
+
+  .timesheet-detail {
+    .timesheet-header {
+      border-radius: 12px;
+
+      .week-nav {
+        .week-info {
+          .week-dates {
+            font-size: 0.875rem;
+          }
+        }
+      }
+    }
+
+    .quick-actions {
+      padding: 0.75rem;
+      border-radius: 12px;
+    }
+
+    .timesheet-grid-container {
+      border-radius: 12px;
+    }
+  }
+}
+

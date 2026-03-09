@@ -4,7 +4,16 @@
     <input
       type="text"
       class="search-input"
-      placeholder="Rechercher...">
+      [(ngModel)]="searchQuery"
+      (input)="onSearch()"
+      [placeholder]="searchPlaceholder">
+    <button
+      mat-icon-button
+      class="clear-button"
+      *ngIf="searchQuery"
+      (click)="clearSearch()">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
   <div class="user-section">

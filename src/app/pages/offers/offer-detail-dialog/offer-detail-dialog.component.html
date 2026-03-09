@@ -1,0 +1,159 @@
+<div class="offer-detail-dialog">
+
+  <!-- Header -->
+  <header class="dialog-header">
+    <div class="header-content">
+      <h2 mat-dialog-title>
+        <mat-icon>description</mat-icon>
+        Offre #{{ offer.offerId }}
+      </h2>
+      <p class="header-subtitle">{{ offer.demandeReference }}</p>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <mat-dialog-content class="dialog-content">
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Chargement des profils...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <!-- Info Banner -->
+      <div class="info-banner">
+        <mat-icon>info</mat-icon>
+        <span>Vous pouvez accepter ou refuser les candidats proposés pour chaque profil.
+          Une fois le quota atteint pour un profil, vous ne pourrez plus accepter de candidats supplémentaires.</span>
+      </div>
+
+      <!-- Profils avec leurs candidats -->
+      <div class="profils-container">
+        <mat-accordion>
+          <mat-expansion-panel *ngFor="let profilGroup of profilGroups" class="profil-panel">
+
+            <!-- Panel Header -->
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <div class="panel-title-content">
+                  <mat-icon>badge</mat-icon>
+                  <span class="profil-name">{{ profilGroup.profilName }}</span>
+                  <mat-chip
+                    [color]="profilGroup.acceptedCount >= profilGroup.quantityRequested ? 'primary' : 'accent'"
+                    selected
+                    class="quota-chip">
+                    {{ profilGroup.acceptedCount }} / {{ profilGroup.quantityRequested }}
+                  </mat-chip>
+                </div>
+              </mat-panel-title>
+              <mat-panel-description>
+                <span class="candidates-count">{{ profilGroup.candidates.length }} candidat(s) proposé(s)</span>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <!-- Panel Content - Liste des candidats -->
+            <div class="candidates-list-accordion">
+        <div class="candidates-list">
+          <div
+            *ngFor="let candidate of profilGroup.candidates"
+            class="candidate-card"
+            [class.candidate-accepted]="candidate.status === 'ACCEPTED'"
+            [class.candidate-rejected]="candidate.status === 'REJECTED'">
+
+            <!-- Candidate Info -->
+            <div class="candidate-info">
+              <div class="candidate-header">
+                <div class="candidate-name">
+                  <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                  <span class="exp-badge" *ngIf="candidate.experienceYear">{{ candidate.experienceYear }} ans</span>
+                </div>
+                <mat-chip [color]="getStatusColor(candidate.status)" selected>
+                  {{ getStatusLabel(candidate.status) }}
+                </mat-chip>
+              </div>
+
+              <div class="candidate-details">
+                <div class="detail-item">
+                  <mat-icon>work</mat-icon>
+                  <span>{{ candidate.professional }}</span>
+                </div>
+                <div class="detail-item" *ngIf="candidate.emailAddress">
+                  <mat-icon>email</mat-icon>
+                  <span>{{ candidate.emailAddress }}</span>
+                </div>
+                <div class="detail-item" *ngIf="candidate.phoneNumber">
+                  <mat-icon>phone</mat-icon>
+                  <span>{{ candidate.phoneNumber }}</span>
+                </div>
+                <div class="detail-item skills" *ngIf="candidate.skills">
+                  <mat-icon>verified</mat-icon>
+                  <span>{{ candidate.skills }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="candidate-actions" *ngIf="candidate.status === 'PROPOSED'">
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="acceptCandidate(candidate, profilGroup)"
+                [disabled]="processing || !canAcceptCandidate(profilGroup)">
+                <mat-icon>check_circle</mat-icon>
+                Accepter
+              </button>
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="rejectCandidate(candidate, profilGroup)"
+                [disabled]="processing">
+                <mat-icon>cancel</mat-icon>
+                Refuser
+              </button>
+            </div>
+
+            <!-- Info message if quota reached -->
+            <div class="quota-warning" *ngIf="candidate.status === 'PROPOSED' && !canAcceptCandidate(profilGroup)">
+              <mat-icon>warning</mat-icon>
+              <span>Quota atteint pour ce profil</span>
+            </div>
+
+            <!-- Revert actions for accepted/rejected -->
+            <div class="candidate-actions" *ngIf="candidate.status === 'ACCEPTED' || candidate.status === 'REJECTED'">
+              <button
+                mat-stroked-button
+                (click)="rejectCandidate(candidate, profilGroup)"
+                [disabled]="processing"
+                *ngIf="candidate.status === 'ACCEPTED'">
+                <mat-icon>undo</mat-icon>
+                Annuler l'acceptation
+              </button>
+              <button
+                mat-stroked-button
+                (click)="acceptCandidate(candidate, profilGroup)"
+                [disabled]="processing || !canAcceptCandidate(profilGroup)"
+                *ngIf="candidate.status === 'REJECTED'">
+                <mat-icon>undo</mat-icon>
+                Reconsidérer
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      </mat-expansion-panel>
+        </mat-accordion>
+      </div>
+    </ng-container>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-raised-button (click)="close()">Fermer</button>
+  </mat-dialog-actions>
+
+</div>

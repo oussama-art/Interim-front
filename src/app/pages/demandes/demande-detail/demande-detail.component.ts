@@ -107,4 +107,8 @@ export class DemandeDetailComponent implements OnInit {
     if (!this.demande?.profils) return 0;
     return this.demande.profils.reduce((sum, profil) => sum + profil.quantity, 0);
   }
+
+  isDemandeOpen(): boolean {
+    return this.demande?.status === 'IN_PROGRESS';
+  }
 }

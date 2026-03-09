@@ -1,34 +1,8 @@
-.page-container {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
+@import '../shared-page-styles.scss';
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #333;
-    margin: 0;
-  }
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
+// Utilise les styles partagés : .page-container, .page-header, .cards-grid, .simple-card, .status-badge
 
 .simple-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 1.5rem;
 
   .card-header {
     display: flex;

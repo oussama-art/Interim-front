@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, forkJoin, of } from 'rxjs';
+import { map, switchMap, catchError } from 'rxjs/operators';
 import { API_CONFIG, getApiUrl } from '../config/api.config';
 import { ClientResponse, CandidateResponse } from '../models/user.model';
 import { DemandeResponse } from '../models/demande.model';
+import { PageResponse } from '../models/offer.model';
 
 export interface DashboardStats {
   totalClients: number;
@@ -38,14 +39,16 @@ export interface PagedResponse<T> {
 export class AdminService {
   constructor(private http: HttpClient) {}
 
-  // Dashboard
-  getDashboardStats(): Observable<DashboardStats> {
-    return this.http.get<DashboardStats>(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN.STATS));
-  }
+  // Pas de getDashboardStats() car l'endpoint n'existe pas
+  // Les statistiques seront calculées localement dans le composant
 
   // Clients Management
-  getAllClients(): Observable<ClientResponse[]> {
-    return this.http.get<ClientResponse[]>(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN.CLIENTS));
+  getAllClients(page: number = 0, size: number = 10): Observable<PageResponse<ClientResponse>> {
+    const params = { page: page.toString(), size: size.toString() };
+    return this.http.get<PageResponse<ClientResponse>>(
+      getApiUrl(API_CONFIG.ENDPOINTS.ADMIN.CLIENTS),
+      { params }
+    );
   }
 
   getClientById(id: number): Observable<ClientResponse> {
@@ -97,5 +100,37 @@ export class AdminService {
 
   deleteDemande(id: number): Observable<void> {
     return this.http.delete<void>(getApiUrl(API_CONFIG.ENDPOINTS.DEMANDES.DELETE(id)));
+  }
+
+  // Contracts Management
+  getAllContracts(): Observable<any[]> {
+    // Récupérer tous les contrats via toutes les demandes
+    return this.getAllDemandes().pipe(
+      switchMap(demandes => {
+        if (!demandes || demandes.length === 0) {
+          return of([]);
+        }
+
+        // Récupérer les contrats pour chaque demande
+        const contractRequests = demandes.map(demande =>
+          this.http.get<any[]>(`${API_CONFIG.BASE_URL}/contracts/${demande.id}/contracts`).pipe(
+            catchError(error => {
+              console.error(`Erreur chargement contrats demande ${demande.id}:`, error);
+              return of([]);
+            })
+          )
+        );
+
+        // Combiner tous les contrats
+        return forkJoin(contractRequests).pipe(
+          map(contractArrays => contractArrays.flat())
+        );
+      })
+    );
+  }
+
+  // Account Requests Management
+  getAllAccountRequests(): Observable<any[]> {
+    return this.http.get<any[]>(getApiUrl('/account-requests'));
   }
 }

@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   isLoading = false;
   hidePassword = true;
-  userType = signal<'candidate' | 'client'>('candidate');
+  userType = signal<'candidate' | 'client'>('client');
 
   constructor(
     private fb: FormBuilder,
@@ -65,8 +65,8 @@ export class LoginComponent implements OnInit {
           'Fermer',
           {
             duration: 8000,
-            panelClass: ['error-snackbar'],
-            horizontalPosition: 'center',
+            panelClass: ['custom-error-snackbar'],
+            horizontalPosition: 'right',
             verticalPosition: 'top'
           }
         );
@@ -104,15 +104,22 @@ export class LoginComponent implements OnInit {
 
           // Vérifier si l'utilisateur est un admin
           if (this.authService.isAdmin()) {
-            this.snackBar.open('Les administrateurs doivent se connecter via /admin/login', 'Fermer', {
+            this.snackBar.open('Email ou mot de passe incorrect', 'Fermer', {
               duration: 5000,
-              panelClass: ['error-snackbar']
+              panelClass: ['custom-error-snackbar'],
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
             });
             this.authService.logout('/login');
             return;
           }
 
-          this.snackBar.open('Connexion réussie!', 'OK', { duration: 3000 });
+          this.snackBar.open('Connexion réussie!', '✓', {
+            duration: 3000,
+            panelClass: ['custom-success-snackbar'],
+            horizontalPosition: 'right',
+            verticalPosition: 'top'
+          });
 
           // Rediriger vers le dashboard approprié
           this.router.navigate(['/app/dashboard']);
@@ -121,10 +128,11 @@ export class LoginComponent implements OnInit {
           this.isLoading = false;
           console.error('Erreur de connexion:', error);
 
-          const errorMessage = error.error?.message || 'Email ou mot de passe incorrect';
-          this.snackBar.open(errorMessage, 'Fermer', {
+          this.snackBar.open('Email ou mot de passe incorrect', '✕', {
             duration: 5000,
-            panelClass: ['error-snackbar']
+            panelClass: ['custom-error-snackbar'],
+            horizontalPosition: 'right',
+            verticalPosition: 'top'
           });
         }
       });
@@ -151,9 +159,15 @@ export class LoginComponent implements OnInit {
 
 
   navigateToRegister(): void {
-    this.router.navigate(['/register'], {
-      queryParams: { type: this.userType() }
-    });
+    if (this.userType() === 'client') {
+      // Rediriger vers le formulaire d'inscription entreprise
+      this.router.navigate(['/company-registration']);
+    } else {
+      // Rediriger vers le formulaire d'inscription candidat
+      this.router.navigate(['/register'], {
+        queryParams: { type: this.userType() }
+      });
+    }
   }
 
   getErrorMessage(fieldName: string): string {

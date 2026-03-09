@@ -1,91 +1,160 @@
-<div class="dashboard-container">
-  <header class="page-header">
-    <div class="header-titles">
-      <h1>Gestion des Contrats</h1>
-      <p class="subtitle">
-        Gérez et suivez les engagements contractuels de vos collaborateurs
-      </p>
-    </div>
-    <button
-      mat-flat-button
-      class="btn-primary-gradient"
-      (click)="openAddDialog()"
-    >
-      <mat-icon>add</mat-icon>
-      <span>Nouveau contrat</span>
-    </button>
-  </header>
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>description</mat-icon>
+          Contrats
+        </h1>
+        <p class="subtitle">Gestion et suivi de vos contrats clients</p>
 
-  <div class="table-wrapper">
-    <table class="modern-table">
-      <thead>
-        <tr>
-          <th>Référence</th>
-          <th>Collaborateur</th>
-          <th>Client / Entreprise</th>
-          <th>Poste Occupé</th>
-          <th>Période</th>
-          <th>Rémunération</th>
-          <th class="text-center">Statut</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let contract of contracts">
-          <td class="ref-id">{{ contract.reference }}</td>
-          <td>
-            <div class="user-cell">
-              <div class="avatar">{{ contract.candidateName[0] }}</div>
+        <!-- Filtres de date -->
+        <div class="filters-row" *ngIf="!loading && contractRows.length > 0">
+          <div class="filters-container">
+            <mat-form-field appearance="outline" class="filter-field-compact">
+              <input
+                matInput
+                [matDatepicker]="startDatePicker"
+                [(ngModel)]="filterStartDate"
+                (dateChange)="onStartDateChange()"
+                placeholder="Date de début"
+                readonly
+                (click)="startDatePicker.open()">
+              <mat-datepicker-toggle matIconPrefix [for]="startDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #startDatePicker></mat-datepicker>
+            </mat-form-field>
 
-              <div class="text">
-                <span class="name">{{ contract.candidateName }}</span>
-                <span class="role">{{ contract.email }}</span>
-              </div>
-            </div>
-          </td>
-          <td class="client-name">{{ contract.clientName }}</td>
-          <td>{{ contract.position }}</td>
-          <td class="date-range">
-            <span>{{ contract.startDate }}</span>
-            <mat-icon class="arrow-sep">arrow_right_alt</mat-icon>
-            <small>{{ contract.endDate }}</small>
-          </td>
-          <td class="salary-cell">
-            <strong>{{ contract.salary }}</strong> <small>MAD/mois</small>
-          </td>
+            <mat-form-field appearance="outline" class="filter-field-compact">
+              <input
+                matInput
+                [matDatepicker]="endDatePicker"
+                [(ngModel)]="filterEndDate"
+                [min]="filterStartDate"
+                (dateChange)="applySearchFilter()"
+                placeholder="Date de fin"
+                readonly
+                (click)="endDatePicker.open()">
+              <mat-datepicker-toggle matIconPrefix [for]="endDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #endDatePicker></mat-datepicker>
+            </mat-form-field>
 
-          <td class="text-center">
-            <span class="badge" [ngClass]="getStatusClass(contract.status)">
-              {{ getStatusLabel(contract.status) }}
-            </span>
-          </td>
-
-          <td class="text-right">
-            <button mat-icon-button [matMenuTriggerFor]="menu" class="btn-more">
-              <mat-icon>more_vert</mat-icon>
+            <button
+              mat-icon-button
+              class="clear-filters-icon-btn"
+              (click)="clearFilters()"
+              *ngIf="filterStartDate || filterEndDate"
+              matTooltip="Réinitialiser les filtres">
+              <mat-icon>clear</mat-icon>
             </button>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="loadDemandes()" [disabled]="loading">
+          <mat-icon>refresh</mat-icon>
+          Actualiser
+        </button>
+      </div>
+    </div>
+  </div>
 
-            <mat-menu #menu="matMenu" class="modern-dropdown">
-              <button mat-button (click)="openConsultDialog(contract)">
-                <mat-icon>visibility</mat-icon>
-                <span>Consulter</span>
-              </button>
-              <button mat-menu-item (click)="openEditDialog(contract)">
-                <mat-icon>edit_note</mat-icon>
-                <span>Modifier</span>
-              </button>
-              <button
-                mat-menu-item
-                (click)="openDeleteDialog(contract)"
-                class="delete-action"
-              >
-                <mat-icon>delete_sweep</mat-icon>
-                <span>Supprimer</span>
-              </button>
-            </mat-menu>
-          </td>
-        </tr>
-      </tbody>
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement des contrats...</p>
+  </div>
+
+  <!-- No data -->
+  <div *ngIf="!loading && filteredContractRows.length === 0" class="empty-state">
+    <mat-icon>inbox</mat-icon>
+    <h2>Aucun contrat pour le moment</h2>
+    <p>Vous n'avez pas encore de contrats. Les contrats signés pour vos missions d'intérim apparaîtront ici.</p>
+  </div>
+
+  <!-- Table view -->
+  <div *ngIf="!loading && filteredContractRows.length > 0" class="table-container">
+    <table mat-table [dataSource]="filteredContractRows" class="contracts-table">
+
+      <!-- Référence de la demande -->
+      <ng-container matColumnDef="reference">
+        <th mat-header-cell *matHeaderCellDef>Référence Demande</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="reference-cell">
+            <mat-icon>assignment</mat-icon>
+            <span>{{ row.demandeReference }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Nom du candidat -->
+      <ng-container matColumnDef="candidateName">
+        <th mat-header-cell *matHeaderCellDef>Candidat</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="candidate-cell">
+            <mat-icon>person</mat-icon>
+            <strong>{{ row.candidateName }}</strong>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Profession -->
+      <ng-container matColumnDef="professional">
+        <th mat-header-cell *matHeaderCellDef>Profession</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="professional-cell">
+            <mat-icon>work</mat-icon>
+            {{ row.professional }}
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Statut -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Statut</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-chip-listbox>
+            <mat-chip-option
+              disabled
+              [class.status-available]="row.candidateStatus === 'AVAILABLE'"
+              [class.status-assigned]="row.candidateStatus === 'ASSIGNED'"
+              [class.status-unavailable]="row.candidateStatus === 'UNAVAILABLE'">
+              {{ row.candidateStatus }}
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </td>
+      </ng-container>
+
+      <!-- Dates du contrat -->
+      <ng-container matColumnDef="contractDates">
+        <th mat-header-cell *matHeaderCellDef>Période Contrat</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="date-cell">
+            {{ row.startDate }} → {{ row.endDate }}
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Actions -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Téléchargement</th>
+        <td mat-cell *matCellDef="let row">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="downloadContract(row.contractId, row.originalFileName)"
+            [disabled]="isDownloading(row.contractId)"
+            class="action-button"
+            [title]="'Téléversé le ' + (row.uploadedAt | date:'dd/MM/yyyy à HH:mm')"
+          >
+            <mat-spinner *ngIf="isDownloading(row.contractId)" diameter="20"></mat-spinner>
+            <mat-icon *ngIf="!isDownloading(row.contractId)">download</mat-icon>
+            <span class="button-text">{{ row.originalFileName }}</span>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
   </div>
 </div>

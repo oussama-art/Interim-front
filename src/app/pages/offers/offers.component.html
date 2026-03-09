@@ -1,13 +1,15 @@
 <div class="page-container">
-  <header class="page-header">
-    <div class="title-group">
-      <h1>Gestion des Offres</h1>
-      <p class="subtitle">{{ offers.length }} mission(s) en cours</p>
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>work</mat-icon>
+          Offres
+        </h1>
+        <p class="subtitle">Consultez et gérez vos offres d'intérim reçues</p>
+      </div>
     </div>
-    <button class="btn-primary">
-      <mat-icon>add</mat-icon> Publier une offre
-    </button>
-  </header>
+  </div>
 
   <div class="offers-grid" *ngIf="loading">
     <div class="pro-card skeleton-card" *ngFor="let i of [1,2,3]">
@@ -22,28 +24,43 @@
     </div>
   </div>
 
-  <div class="empty-state-container" *ngIf="!loading && offers.length === 0">
-    <div class="empty-illustration">
-      <mat-icon>post_add</mat-icon>
-    </div>
-    <h2>Prêt à recruter ?</h2>
-    <p>Vous n'avez pas encore publié d'offres de mission. Commencez dès maintenant pour attirer les meilleurs talents.</p>
-    <button class="btn-primary">
-      <mat-icon>add</mat-icon> Créer ma première offre
-    </button>
+  <div class="empty-state" *ngIf="!loading && filteredOffers.length === 0">
+    <mat-icon>inbox</mat-icon>
+    <h2>Aucune offre pour le moment</h2>
+    <p>Vous n'avez pas encore reçu d'offres de mission. Les offres proposées par votre agence d'intérim apparaîtront ici.</p>
   </div>
 
-  <div class="offers-grid" *ngIf="!loading && offers.length > 0">
-    <mat-card class="pro-card" *ngFor="let offer of offers">
-      
+  <div class="offers-grid" *ngIf="!loading && filteredOffers.length > 0">
+    <mat-card class="pro-card" [class.new-offer]="offer.isNew" *ngFor="let offer of filteredOffers">
+
       <div class="pro-card-header">
         <div class="header-metadata">
-          <span class="id-pill">REF-{{ offer.offerId }}</span>
-          <span class="status-indicator">
-            <span class="dot"></span> En cours
+          <span class="id-pill">{{ offer.demandeReference || 'Demande #' + offer.demandeId }}</span>
+          <span class="new-offer-badge" *ngIf="offer.isNew && !offer.hasNewCandidates">
+            <mat-icon>fiber_new</mat-icon>
+            Nouvelle offre
+          </span>
+          <span class="new-candidates-badge" *ngIf="offer.isNew && offer.hasNewCandidates">
+            <mat-icon>person_add</mat-icon>
+            Nouveau(x) candidat(s) ajouté(s)
+          </span>
+          <span class="status-indicator"
+                [class.in-progress]="getDemandeStatus(offer.demandeId) === 'IN_PROGRESS'"
+                [class.closed]="getDemandeStatus(offer.demandeId) === 'CLOSED'"
+                [class.rejected]="getDemandeStatus(offer.demandeId) === 'REJECTED'">
+            <span class="dot"></span>
+            {{ getDemandeStatus(offer.demandeId) === 'IN_PROGRESS' ? 'En cours' :
+               getDemandeStatus(offer.demandeId) === 'CLOSED' ? 'Clôturée' :
+               getDemandeStatus(offer.demandeId) === 'REJECTED' ? 'Rejetée' : 'Inconnu' }}
+          </span>
+          <span class="employee-counter" [class.complete]="isMaxReached(offer.offerId)">
+            <mat-icon>people</mat-icon>
+            {{ getAcceptedCount(offer.offerId) }} / {{ getTotalNeeded(offer.offerId) }}
           </span>
         </div>
-        <h2 class="header-title">Projet {{ offer.demandeId }}</h2>
+        <div class="header-title-row">
+          <h2 class="header-title">Offre #{{ offer.offerId }}</h2>
+        </div>
         <div class="header-subtitle">
           <mat-icon>calendar_today</mat-icon>
           <span>Publié le {{ formatDate(offer.createdAt) }}</span>
@@ -67,47 +84,65 @@
         </div>
 
         <div class="candidate-list" [@expandCollapse]="isCandidatesExpanded(offer.offerId) ? 'expanded' : 'collapsed'">
-          
-          <div class="candidate-item" *ngFor="let candidate of offer.proposedCandidates">
-            <div class="item-main" (click)="toggleCandidateDetails(candidate.candidateId)">
-              <div class="initials-circle">
-                {{ candidate.firstName[0] }}{{ candidate.lastName[0] }}
-              </div>
-              <div class="item-info">
-                <p class="name">{{ candidate.firstName }} {{ candidate.lastName }}</p>
-                <p class="role">{{ candidate.professional }}</p>
-              </div>
-              <div class="item-status" [attr.data-status]="candidate.status">
-                {{ candidate.status }}
-              </div>
-              <mat-icon class="chevron-sm" [class.rotated]="expandedCandidates.has(candidate.candidateId)">
-                chevron_right
-              </mat-icon>
-            </div>
 
-            <div class="item-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
-              <div class="detail-pill">
-                <mat-icon>history</mat-icon> 
-                {{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans exp.
+          <!-- Message et bouton pour envoyer nouvelle offre si candidats refusés -->
+          <!-- <div class="rejected-notice" *ngIf="hasRejectedCandidates(offer.offerId) && !isMaxReached(offer.offerId)">
+            <div class="notice-content">
+              <mat-icon>info</mat-icon>
+              <div class="notice-text">
+                <p class="notice-title">{{ getRejectedCount(offer.offerId) }} candidat(s) décliné(s)</p>
+                <p class="notice-subtitle">Vous pouvez demander de nouveaux candidats pour cette offre</p>
               </div>
-              <div class="detail-pill">
-                <mat-icon>email</mat-icon> 
-                {{ getCandidateDetail(candidate.candidateId)?.email }}
-              </div>
-              <a *ngIf="getCandidateDetail(candidate.candidateId)?.cvUrl" 
-                 [href]="getCandidateDetail(candidate.candidateId)?.cvUrl" 
-                 target="_blank" class="cv-link">
-                <mat-icon>description</mat-icon> Voir CV
-              </a>
             </div>
+            <button class="btn-resend" (click)="requestNewCandidates(offer.offerId, offer.demandeId)">
+              <mat-icon>refresh</mat-icon>
+              Demander nouveaux candidats
+            </button>
+          </div> -->
 
-            <div class="item-actions" *ngIf="candidate.status === 'PROPOSED'">
-              <button class="btn-text" (click)="rejectCandidate(offer.offerId, candidate.candidateId)">
-                Décliner
-              </button>
-              <button class="btn-primary-sm" (click)="acceptCandidate(offer.offerId, candidate.candidateId)">
-                Retenir
-              </button>
+          <!-- Affichage par profils - Vue grille simplifiée -->
+          <div class="profils-grid">
+            <div *ngFor="let profilGroup of getProfilGroups(offer.offerId)"
+                 class="profil-card"
+                 [class.complete]="profilGroup.acceptedCount >= profilGroup.quantityRequested"
+                 [class.processing]="profilGroup.candidates.length === 0"
+                 (click)="openProfilDetailDialog(profilGroup, offer.offerId)">
+
+              <div class="profil-card-header">
+                <div class="profil-icon-wrapper">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <h4 class="profil-title">{{ profilGroup.profilName }}</h4>
+              </div>
+
+              <div class="profil-card-body">
+                <div class="stat-row">
+                  <span class="stat-label">Demandés</span>
+                  <span class="stat-value" [class.full]="profilGroup.acceptedCount >= profilGroup.quantityRequested">
+                    {{ profilGroup.acceptedCount }} / {{ profilGroup.quantityRequested }}
+                  </span>
+                </div>
+                <div class="stat-row" *ngIf="profilGroup.candidates.length > 0">
+                  <span class="stat-label">Candidats proposés</span>
+                  <span class="stat-value">{{ profilGroup.candidates.length }}</span>
+                </div>
+                <div class="stat-row processing-row" *ngIf="profilGroup.candidates.length === 0">
+                  <mat-icon class="processing-icon">hourglass_empty</mat-icon>
+                  <span class="processing-text">En cours de traitement</span>
+                </div>
+              </div>
+
+              <div class="profil-card-footer">
+                <span class="action-hint" *ngIf="profilGroup.candidates.length > 0">
+                  <mat-icon>visibility</mat-icon>
+                  Voir les candidats
+                </span>
+                <span class="action-hint processing-hint" *ngIf="profilGroup.candidates.length === 0">
+                  <mat-icon>schedule</mat-icon>
+                  En attente
+                </span>
+              </div>
+
             </div>
           </div>
 

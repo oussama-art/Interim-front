@@ -35,7 +35,7 @@ export class CandidateService {
       }),
       catchError(error => {
         console.error('Erreur lors de la création du candidat:', error);
-        return throwError(() => this.handleError(error));
+        return throwError(() => error);
       })
     );
   }
@@ -49,7 +49,7 @@ export class CandidateService {
     return this.http.get<CandidateResponse[]>(url).pipe(
       catchError(error => {
         console.error('Erreur lors de la récupération des candidats:', error);
-        return throwError(() => this.handleError(error));
+        return throwError(() => error);
       })
     );
   }
@@ -69,7 +69,7 @@ export class CandidateService {
     return this.http.get<PageResponse<CandidateResponse>>(url, { params }).pipe(
       catchError(error => {
         console.error('Erreur lors de la récupération des candidats paginés:', error);
-        return throwError(() => this.handleError(error));
+        return throwError(() => error);
       })
     );
   }
@@ -84,15 +84,16 @@ export class CandidateService {
     return this.http.get<CandidateResponse>(url).pipe(
       catchError(error => {
         console.error('Erreur lors de la récupération du candidat:', error);
-        return throwError(() => this.handleError(error));
+        return throwError(() => error);
       })
     );
   }
 
   /**
    * Récupérer le candidat authentifié
-   * @returns Observable<CandidateResponse>
+   * DÉSACTIVÉ - Keycloak retiré pour les candidats
    */
+  /*
   getMe(): Observable<CandidateResponse> {
     const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.ME);
     return this.http.get<CandidateResponse>(url).pipe(
@@ -102,18 +103,40 @@ export class CandidateService {
       })
     );
   }
+  */
 
   /**
    * Mettre à jour partiellement le profil du candidat authentifié
-   * @param data Données à mettre à jour
-   * @returns Observable<CandidateResponse>
+   * DÉSACTIVÉ - Keycloak retiré pour les candidats
    */
+  /*
   patchMe(data: CandidatePatchRequest): Observable<CandidateResponse> {
     const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.PATCH_ME);
     return this.http.patch<CandidateResponse>(url, data).pipe(
       catchError(error => {
         console.error('Erreur lors de la mise à jour du candidat:', error);
         return throwError(() => this.handleError(error));
+      })
+    );
+  }
+  */
+
+  /**
+   * Récupérer les candidats disponibles pour une période donnée (Admin)
+   * @param startDate Date de début
+   * @param endDate Date de fin
+   * @returns Observable<CandidateResponse[]>
+   */
+  getAvailableCandidates(startDate: string, endDate: string): Observable<CandidateResponse[]> {
+    const url = getApiUrl('/candidates/available');
+    const params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+
+    return this.http.get<CandidateResponse[]>(url, { params }).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération des candidats disponibles:', error);
+        return throwError(() => error);
       })
     );
   }
@@ -127,17 +150,51 @@ export class CandidateService {
       throw new Error('Adresse email invalide');
     }
 
-    if (!data.password || data.password.length < 6) {
-      throw new Error('Le mot de passe doit contenir au moins 6 caractères');
-    }
-
-    if (data.password !== data.confirmPassword) {
-      throw new Error('Les mots de passe ne correspondent pas');
-    }
-
     if (data.experienceYear < 0) {
       throw new Error('L\'expérience ne peut pas être négative');
     }
+  }
+
+  /**
+   * Créer un candidat à partir de l'upload de son CV
+   * @param formData FormData contenant firstName, lastName, professional et cv
+   * @returns Observable<CandidateResponse>
+   */
+  uploadCandidateWithCV(formData: FormData): Observable<CandidateResponse> {
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.UPLOAD_CV);
+
+    return this.http.post<CandidateResponse>(url, formData).pipe(
+      map(response => {
+        console.log('Candidat créé avec succès via upload CV', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('Erreur lors de l\'upload du CV:', error);
+        // Retourner directement l'erreur HTTP sans la transformer
+        // pour que le ErrorHandlerService puisse extraire le message du backend
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Mettre à jour un candidat par son ID (Admin)
+   * @param id ID du candidat
+   * @param data Données à mettre à jour
+   * @returns Observable<CandidateResponse>
+   */
+  updateCandidateById(id: number, data: CandidatePatchRequest): Observable<CandidateResponse> {
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.CANDIDATES.UPDATE(id));
+    return this.http.patch<CandidateResponse>(url, data).pipe(
+      map(response => {
+        console.log('Candidat mis à jour avec succès', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('Erreur lors de la mise à jour du candidat:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

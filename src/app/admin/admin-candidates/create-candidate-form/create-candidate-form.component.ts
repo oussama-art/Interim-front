@@ -3,12 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CandidateService } from '../../../core/services/candidate.service';
+import { ProfilService } from '../../../core/services/profil.service';
+import { ErrorHandlerService } from '../../../core/services/error-handler.service';
 import { CandidateCreateRequest } from '../../../core/models/user.model';
 
 @Component({
@@ -19,6 +22,7 @@ import { CandidateCreateRequest } from '../../../core/models/user.model';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
@@ -34,33 +38,28 @@ export class CreateCandidateFormComponent {
 
   candidateForm: FormGroup;
   loading = false;
-  hidePassword = true;
-  hideConfirmPassword = true;
+  availableProfils: string[] = [];
 
   constructor(
     private fb: FormBuilder,
     private candidateService: CandidateService,
-    private snackBar: MatSnackBar
+    private profilService: ProfilService,
+    private snackBar: MatSnackBar,
+    private errorHandler: ErrorHandlerService
   ) {
+    this.availableProfils = this.profilService.getAllProfils();
     this.candidateForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       emailAddress: ['', [Validators.required, Validators.email]],
-      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{8,15}$/)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\+[1-9]\d{1,2}\d{6,12}$/)]],
       experienceYear: [0, [Validators.required, Validators.min(0), Validators.max(50)]],
       skills: ['', [Validators.required]],
       professional: ['', [Validators.required]],
       cin: ['', [Validators.required, Validators.minLength(8)]],
-      cssNumber: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
-  }
-
-  passwordMatchValidator(form: FormGroup) {
-    const password = form.get('password')?.value;
-    const confirmPassword = form.get('confirmPassword')?.value;
-    return password === confirmPassword ? null : { passwordMismatch: true };
+      cssNumber: ['', [Validators.required]],
+      active: [true]
+    });
   }
 
   onSubmit(): void {
@@ -73,13 +72,12 @@ export class CreateCandidateFormComponent {
         lastName: formValue.lastName,
         emailAddress: formValue.emailAddress,
         phoneNumber: formValue.phoneNumber,
-        password: formValue.password,
-        confirmPassword: formValue.confirmPassword,
         experienceYear: formValue.experienceYear,
         skills: formValue.skills,
         professional: formValue.professional,
         cin: formValue.cin,
-        cssNumber: formValue.cssNumber
+        cssNumber: formValue.cssNumber,
+        active: formValue.active
       };
 
       this.candidateService.createCandidate(candidateData).subscribe({
@@ -88,17 +86,15 @@ export class CreateCandidateFormComponent {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
-          this.candidateForm.reset();
+          this.candidateForm.reset({ active: true });
           this.loading = false;
           this.candidateCreated.emit();
         },
         error: (error) => {
           console.error('Erreur lors de la création du candidat:', error);
-          const errorMessage = error?.message || 'Erreur lors de la création du candidat';
-          this.snackBar.open(errorMessage, 'Fermer', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
+          if (!this.errorHandler.isSessionExpired(error)) {
+            this.errorHandler.handleError(error);
+          }
           this.loading = false;
         }
       });
@@ -134,6 +130,9 @@ export class CreateCandidateFormComponent {
       return `Minimum ${control.errors?.['minlength'].requiredLength} caractères`;
     }
     if (control?.hasError('pattern')) {
+      if (fieldName === 'phoneNumber') {
+        return 'Format invalide (ex: +21612345678, +33612345678)';
+      }
       return 'Format invalide';
     }
     if (control?.hasError('min')) {
@@ -141,9 +140,6 @@ export class CreateCandidateFormComponent {
     }
     if (control?.hasError('max')) {
       return `Valeur maximale: ${control.errors?.['max'].max}`;
-    }
-    if (fieldName === 'confirmPassword' && this.candidateForm.hasError('passwordMismatch')) {
-      return 'Les mots de passe ne correspondent pas';
     }
     return '';
   }

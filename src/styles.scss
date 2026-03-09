@@ -25,6 +25,12 @@ html, body {
   width: 100%;
   overflow: hidden;
   position: relative;
+
+  @media (max-width: 1024px) {
+    overflow: visible;
+    height: auto;
+    min-height: 100%;
+  }
 }
 
 body {
@@ -118,7 +124,8 @@ select:-webkit-autofill:focus {
 }
 
 // Force Material outline to render properly on all pages
-.mat-mdc-form-field-type-mat-input {
+.mat-mdc-form-field-type-mat-input,
+.mat-mdc-form-field-type-mat-select {
   .mdc-notched-outline {
     opacity: 1 !important;
     visibility: visible !important;
@@ -128,13 +135,22 @@ select:-webkit-autofill:focus {
     .mdc-notched-outline__trailing {
       opacity: 1 !important;
       visibility: visible !important;
+      border-color: rgba(0, 0, 0, 0.12);
     }
 
-    // Supprimer uniquement les bordures verticales de la partie centrale (notch)
+    // Supprimer uniquement les bordures verticales du notch pour éviter les doublons
     .mdc-notched-outline__notch {
       border-left: none !important;
       border-right: none !important;
+      // Conserver la bordure supérieure et inférieure
+      border-top-width: 1px;
+      border-bottom-width: 0;
     }
+  }
+
+  // Supprimer la ligne ripple qui peut apparaître au milieu
+  .mdc-line-ripple {
+    display: none !important;
   }
 }
 
@@ -179,6 +195,131 @@ select:-webkit-autofill:focus {
   }
 }
 
+.warning-snackbar {
+  --mdc-snackbar-container-color: #ff9800 !important;
+  --mat-snack-bar-button-color: #ffffff !important;
+
+  .mdc-snackbar__surface {
+    background-color: #ff9800 !important;
+  }
+
+  .mdc-snackbar__label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffffff !important;
+  }
+}
+
+.info-snackbar {
+  --mdc-snackbar-container-color: #2196f3 !important;
+  --mat-snack-bar-button-color: #ffffff !important;
+
+  .mdc-snackbar__surface {
+    background-color: #2196f3 !important;
+  }
+
+  .mdc-snackbar__label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffffff !important;
+  }
+}
+
+/* Custom Snackbar Styles - Success */
+.custom-success-snackbar {
+  .mat-mdc-snack-bar-container {
+    --mdc-snackbar-container-color: transparent !important;
+    --mat-snack-bar-button-color: #ffffff !important;
+
+    .mdc-snackbar__surface {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+      padding: 16px 24px !important;
+      min-width: 300px !important;
+      animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .mdc-snackbar__label {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      font-size: 0.95rem !important;
+      letter-spacing: 0.3px !important;
+    }
+
+    .mat-mdc-snack-bar-action {
+      .mat-mdc-button {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 8px !important;
+        padding: 4px 12px !important;
+        margin-left: 12px !important;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3) !important;
+        }
+      }
+    }
+  }
+}
+
+/* Custom Snackbar Styles - Error */
+.custom-error-snackbar {
+  .mat-mdc-snack-bar-container {
+    --mdc-snackbar-container-color: transparent !important;
+    --mat-snack-bar-button-color: #ffffff !important;
+
+    .mdc-snackbar__surface {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+      padding: 16px 24px !important;
+      min-width: 300px !important;
+      animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .mdc-snackbar__label {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      font-size: 0.95rem !important;
+      letter-spacing: 0.3px !important;
+    }
+
+    .mat-mdc-snack-bar-action {
+      .mat-mdc-button {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 8px !important;
+        padding: 4px 12px !important;
+        margin-left: 12px !important;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3) !important;
+        }
+      }
+    }
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* Custom Dialog Styles */
 .demande-detail-dialog {
   .mat-mdc-dialog-container {
@@ -206,14 +347,20 @@ select:-webkit-autofill:focus {
 
 /* Force le repositionnement automatique de l'overlay */
 .cdk-overlay-backdrop {
+  pointer-events: auto !important;
+}
+
+/* Specific backdrop for autocomplete (no click events) */
+.cdk-overlay-transparent-backdrop {
   pointer-events: none !important;
 }
 
-/* Empêche le décalage visuel pendant le scroll */
-.mat-mdc-autocomplete-trigger {
-  cdk-overlay-origin: auto !important;
+/* Specific backdrop for mat-select (allow click events to close) */
+.cdk-overlay-backdrop.cdk-overlay-backdrop-showing {
+  pointer-events: auto !important;
 }
-// src/styles.scss
+
+/* Styles pour les dialogs et overlays */
 
 // Supprime les bordures par défaut et ajoute des coins arrondis
 .cdk-overlay-pane {
@@ -231,3 +378,45 @@ select:-webkit-autofill:focus {
   background: rgba(15, 23, 42, 0.6) !important; // Bleu-gris foncé transparent
   backdrop-filter: blur(4px); // Effet de flou sur l'arrière-plan
 }
+
+/* Styles pour le select de profession - panel fixe avec scroll */
+.profession-select-panel {
+  max-height: 350px !important;
+  overflow-y: auto !important;
+
+  .mat-mdc-option {
+    min-height: 48px !important;
+    padding: 0 16px !important;
+    line-height: 48px !important;
+    font-size: 14px !important;
+
+    &:hover:not(.mat-mdc-option-disabled) {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+    }
+
+    &.mat-mdc-option-active {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+    }
+  }
+}
+
+/* Styles pour les notifications de nouvelles offres */
+.notification-snackbar {
+  .mat-mdc-snack-bar-container {
+    background-color: #10b981 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4) !important;
+    animation: slideInRight 0.3s ease-out !important;
+
+    .mdc-snackbar__surface {
+      background-color: transparent !important;
+    }
+
+    .mat-mdc-button {
+      color: white !important;
+      font-weight: 700 !important;
+    }
+  }
+}
+

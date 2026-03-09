@@ -24,11 +24,12 @@ export const API_CONFIG = {
       CREATE: '/candidates/create',
       GET_ALL: '/candidates',
       PAGE: '/candidates/page',
-      ME: '/candidates/me',
-      PATCH_ME: '/candidates/me',
+      // ME: '/candidates/me', // DÉSACTIVÉ - Keycloak retiré
+      // PATCH_ME: '/candidates/me', // DÉSACTIVÉ - Keycloak retiré
       GET_BY_ID: (id: number) => `/candidates/${id}`,
       UPDATE: (id: number) => `/candidates/${id}`,
-      DELETE: (id: number) => `/candidates/${id}`
+      DELETE: (id: number) => `/candidates/${id}`,
+      UPLOAD_CV: '/candidates/upload-cv'
     },
     DEMANDES: {
       CREATE: '/demandes/create',
@@ -40,7 +41,7 @@ export const API_CONFIG = {
     },
     ADMIN: {
       DASHBOARD: '/admin/dashboard',
-      CLIENTS: '/admin/clients',
+      CLIENTS: '/clients/page',
       CANDIDATES: '/admin/candidates',
       DEMANDES: '/demandes',
       STATS: '/admin/stats'

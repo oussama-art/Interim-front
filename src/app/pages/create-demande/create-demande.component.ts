@@ -9,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ScrollingModule } from '@angular/cdk/scrolling';
@@ -31,6 +33,8 @@ import { DemandeRequest } from '../../core/models/demande.model';
     MatCardModule,
     MatSelectModule,
     MatAutocompleteModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
     ScrollingModule
@@ -47,6 +51,9 @@ export class CreateDemandeComponent implements OnInit {
   demandeId: number | null = null;
   pageTitle = 'Créer une nouvelle demande';
   pageSubtitle = 'Remplissez les informations ci-dessous pour créer une demande';
+  minDate = new Date();
+  formDataLoaded = false;
+
 
   // Liste complète des profils organisés par domaine
   availableProfils: string[] = [
@@ -465,18 +472,26 @@ export class CreateDemandeComponent implements OnInit {
     this.demandeForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
+      startDate: ['', [Validators.required]],
+      endDate: ['', [Validators.required]],
       totalEmployeesNeeded: [1, [Validators.required, Validators.min(1)]],
       profils: this.fb.array([this.createProfilFormGroup()])
-    });
+    }, { validators: this.dateRangeValidator });
   }
 
   loadDemandeData(id: number): void {
     this.isLoading = true;
     this.demandeService.getMyDemandeDetail(id).subscribe({
       next: (demande) => {
+        // Convertir les dates en objets Date pour assurer la compatibilité avec le datepicker
+        const startDate = demande.startDate ? new Date(demande.startDate) : null;
+        const endDate = demande.endDate ? new Date(demande.endDate) : null;
+
         this.demandeForm.patchValue({
           title: demande.title,
           description: demande.description,
+          startDate: startDate,
+          endDate: endDate,
           totalEmployeesNeeded: demande.totalEmployeesNeeded
         });
 
@@ -497,6 +512,45 @@ export class CreateDemandeComponent implements OnInit {
             this.validateTotalQuantity();
           });
         });
+
+        // Valider et mettre à jour l'état du formulaire après avoir chargé tous les profils
+        setTimeout(() => {
+          this.demandeForm.updateValueAndValidity();
+          this.validateTotalQuantity();
+          this.formDataLoaded = true;
+
+          console.log('=== État du formulaire après chargement ===');
+          console.log('Form valid:', this.demandeForm.valid);
+          console.log('Form invalid:', this.demandeForm.invalid);
+          console.log('Form pristine:', this.demandeForm.pristine);
+          console.log('Form dirty:', this.demandeForm.dirty);
+          console.log('Total employés requis:', this.demandeForm.get('totalEmployeesNeeded')?.value);
+          console.log('Profils chargés:', this.profils.length);
+          console.log('Total quantités:', this.getTotalQuantity());
+          console.log('Quantity validation error:', this.quantityValidationError);
+          console.log('Has duplicate profils:', this.hasDuplicateProfils());
+          console.log('Can save:', this.canSave());
+
+          if (this.demandeForm.invalid) {
+            console.log('=== Erreurs de validation ===');
+            Object.keys(this.demandeForm.controls).forEach(key => {
+              const control = this.demandeForm.get(key);
+              if (control?.invalid) {
+                console.log(`  ${key}:`, control.errors);
+              }
+            });
+
+            // Vérifier les erreurs dans les profils
+            this.profils.controls.forEach((profilControl, index) => {
+              if (profilControl.invalid) {
+                console.log(`  profil[${index}]:`, {
+                  profilName: profilControl.get('profilName')?.errors,
+                  quantity: profilControl.get('quantity')?.errors
+                });
+              }
+            });
+          }
+        }, 0);
 
         this.isLoading = false;
       },
@@ -548,20 +602,35 @@ export class CreateDemandeComponent implements OnInit {
     this.profils.at(index).get('quantity')?.valueChanges.subscribe(() => {
       this.validateTotalQuantity();
     });
+
+    // Valider immédiatement après l'ajout
+    this.validateTotalQuantity();
   }
 
   validateTotalQuantity(): void {
     const totalEmployeesNeeded = this.demandeForm.get('totalEmployeesNeeded')?.value || 0;
     const totalQuantity = this.profils.controls.reduce((sum, control) => {
-      const quantity = control.get('quantity')?.value || 0;
+      const quantity = parseInt(control.get('quantity')?.value) || 0;
       return sum + quantity;
     }, 0);
 
-    if (totalQuantity > totalEmployeesNeeded) {
-      this.quantityValidationError = `La somme des quantités (${totalQuantity}) dépasse le nombre total d'employés requis (${totalEmployeesNeeded})`;
+    console.log('Validation - Total employés requis:', totalEmployeesNeeded);
+    console.log('Validation - Total quantités des profils:', totalQuantity);
+    console.log('Validation - Nombre de profils:', this.profils.controls.length);
+
+    if (totalQuantity !== totalEmployeesNeeded) {
+      if (totalQuantity > totalEmployeesNeeded) {
+        this.quantityValidationError = `La somme des quantités (${totalQuantity}) dépasse le nombre total d'employés requis (${totalEmployeesNeeded})`;
+      } else {
+        this.quantityValidationError = `La somme des quantités (${totalQuantity}) doit être égale au nombre total d'employés requis (${totalEmployeesNeeded})`;
+      }
     } else {
       this.quantityValidationError = null;
     }
+
+    console.log('Quantity validation error:', this.quantityValidationError);
+    console.log('Form valid after validation:', this.demandeForm.valid);
+    console.log('Button should be enabled:', !this.quantityValidationError && this.demandeForm.valid && !this.hasDuplicateProfils());
   }
 
   getTotalQuantity(): number {
@@ -571,26 +640,113 @@ export class CreateDemandeComponent implements OnInit {
     }, 0);
   }
 
+  canSave(): boolean {
+    // En mode édition, autoriser la sauvegarde si:
+    // - Pas d'erreur de quantité
+    // - Pas de doublons
+    // - Le formulaire a des valeurs valides (ignorant la propriété valid d'Angular)
+    if (this.isEditMode && this.formDataLoaded) {
+      const hasRequiredFields =
+        this.demandeForm.get('title')?.value?.trim() &&
+        this.demandeForm.get('description')?.value?.trim() &&
+        this.demandeForm.get('startDate')?.value &&
+        this.demandeForm.get('endDate')?.value &&
+        this.demandeForm.get('totalEmployeesNeeded')?.value > 0 &&
+        this.profils.length > 0;
+
+      return hasRequiredFields && !this.quantityValidationError && !this.hasDuplicateProfils();
+    }
+
+    // En mode création, utiliser la validation normale
+    return this.demandeForm.valid && !this.quantityValidationError && !this.hasDuplicateProfils();
+  }
+
   setupProfilFilter(index: number): void {
     const profilControl = this.profils.at(index).get('profilName');
     if (profilControl) {
       this.filteredProfils[index] = profilControl.valueChanges.pipe(
         startWith(''),
-        map(value => this._filterProfils(value || ''))
+        map(value => this._filterProfils(value || '', index))
       );
+
+      // Ajouter validation des doublons au changement de valeur
+      profilControl.valueChanges.subscribe(() => {
+        this.checkDuplicateProfils();
+      });
     }
   }
 
-  private _filterProfils(value: string): string[] {
-    const filterValue = value.toLowerCase();
-    return this.availableProfils.filter(profil =>
-      profil.toLowerCase().includes(filterValue)
+  private _filterProfils(value: string, currentIndex: number): string[] {
+    // Récupérer les profils déjà sélectionnés (sauf celui de l'index actuel)
+    const selectedProfils = this.profils.controls
+      .map((control, idx) => idx !== currentIndex ? control.get('profilName')?.value : null)
+      .filter(profil => profil && typeof profil === 'string' && profil.trim() !== '');
+
+    // Filtrer les profils disponibles
+    let availableList = this.availableProfils.filter(
+      profil => !selectedProfils.includes(profil)
     );
+
+    // Si une valeur est saisie, filtrer par cette valeur
+    if (value && value.trim() !== '') {
+      const filterValue = value.toLowerCase();
+      availableList = availableList.filter(profil =>
+        profil.toLowerCase().includes(filterValue)
+      );
+    }
+
+    return availableList;
+  }
+
+  displayProfil(profil: string): string {
+    return profil;
+  }
+
+  checkDuplicateProfils(): void {
+    const profilNames: string[] = [];
+
+    this.profils.controls.forEach((control, index) => {
+      const profilName = control.get('profilName')?.value;
+      const profilControl = control.get('profilName');
+
+      // Vérifier si le profil n'est pas vide
+      if (profilName && typeof profilName === 'string' && profilName.trim() !== '') {
+        // Vérifier si ce profil existe déjà
+        if (profilNames.includes(profilName)) {
+          // Marquer comme invalide avec une erreur personnalisée
+          profilControl?.setErrors({ duplicate: true });
+        } else {
+          // Retirer l'erreur de doublon si elle existe (mais garder les autres erreurs)
+          const errors = profilControl?.errors;
+          if (errors && errors['duplicate']) {
+            delete errors['duplicate'];
+            profilControl?.setErrors(Object.keys(errors).length > 0 ? errors : null);
+          }
+          profilNames.push(profilName);
+        }
+      }
+    });
+  }
+
+  hasDuplicateProfils(): boolean {
+    return this.profils.controls.some(control =>
+      control.get('profilName')?.hasError('duplicate')
+    );
+  }
+
+  onProfilInputClick(event: Event, index: number): void {
+    // Sélectionner tout le texte pour faciliter le remplacement
+    const input = event.target as HTMLInputElement;
+    input.select();
   }
 
   removeProfil(index: number): void {
     if (this.profils.length > 1) {
       this.profils.removeAt(index);
+      // Valider immédiatement après la suppression
+      this.validateTotalQuantity();
+      // Vérifier les doublons après suppression
+      this.checkDuplicateProfils();
     } else {
       this.snackBar.open('Au moins un profil est requis', 'Fermer', {
         duration: 3000,
@@ -605,8 +761,21 @@ export class CreateDemandeComponent implements OnInit {
     // Vérifier d'abord la validation de quantité
     this.validateTotalQuantity();
 
+    // Vérifier les doublons
+    this.checkDuplicateProfils();
+
     if (this.quantityValidationError) {
       this.snackBar.open(this.quantityValidationError, 'Fermer', {
+        duration: 5000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    if (this.hasDuplicateProfils()) {
+      this.snackBar.open('Certains profils sont en double. Veuillez modifier les quantités au lieu d\'ajouter des doublons.', 'Fermer', {
         duration: 5000,
         horizontalPosition: 'end',
         verticalPosition: 'top',
@@ -690,6 +859,36 @@ export class CreateDemandeComponent implements OnInit {
     if (control?.hasError('min')) {
       return 'La valeur doit être au moins 1';
     }
+    if (control?.hasError('duplicate')) {
+      return 'Ce profil est déjà sélectionné. Modifiez la quantité existante au lieu d\'ajouter un doublon.';
+    }
     return '';
+  }
+
+  // Validateur personnalisé pour vérifier que startDate < endDate
+  dateRangeValidator(group: FormGroup): {[key: string]: any} | null {
+    const startDate = group.get('startDate')?.value;
+    const endDate = group.get('endDate')?.value;
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (start >= end) {
+        return { dateRange: true };
+      }
+    }
+    return null;
+  }
+
+  // Retourne la date minimale pour la date de fin (date de début + 1 jour)
+  getMinEndDate(): Date | null {
+    const startDate = this.demandeForm?.get('startDate')?.value;
+    if (startDate) {
+      const minEnd = new Date(startDate);
+      minEnd.setDate(minEnd.getDate() + 1);
+      return minEnd;
+    }
+    return this.minDate;
   }
 }

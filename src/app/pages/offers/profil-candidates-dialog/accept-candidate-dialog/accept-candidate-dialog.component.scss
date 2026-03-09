@@ -1,0 +1,63 @@
+.accept-dialog {
+  padding: 4px;
+
+  h2 {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+    font-weight: 500;
+    color: #1f2937;
+  }
+
+  .dialog-content {
+    padding: 8px 0;
+    min-width: 400px;
+
+    .candidate-info {
+      margin-bottom: 24px;
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+
+      strong {
+        color: #1f2937;
+        font-weight: 600;
+      }
+    }
+
+    .date-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+
+    .validation-message {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background-color: #fef2f2;
+      border-left: 3px solid #ef4444;
+      border-radius: 4px;
+
+      .error-text {
+        color: #dc2626;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .dialog-actions {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    button {
+      min-width: 100px;
+    }
+  }
+}

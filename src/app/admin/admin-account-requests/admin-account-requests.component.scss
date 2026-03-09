@@ -1,0 +1,266 @@
+@import '../shared-admin-styles.scss';
+
+// Styles spécifiques à la page des demandes d'inscription
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  .stat-card {
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: $shadow-sm;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: $shadow-md;
+      transform: translateY(-2px);
+    }
+
+    mat-card-content {
+      display: flex;
+      align-items: center;
+      gap: $spacing-lg;
+      padding: $spacing-lg !important;
+    }
+
+    .stat-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: $border-radius;
+
+      mat-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    .stat-info {
+      .stat-value {
+        font-size: $font-2xl;
+        font-weight: 600;
+        color: $gray-900;
+      }
+
+      .stat-label {
+        font-size: $font-sm;
+        color: $gray-500;
+        margin-top: $spacing-xs;
+      }
+    }
+
+    &.pending {
+      border-left: 4px solid #f59e0b;
+
+      .stat-icon {
+        background: #fef3c7;
+        color: #92400e;
+
+        mat-icon {
+          color: #f59e0b;
+        }
+      }
+
+      .stat-value {
+        color: #f59e0b;
+      }
+    }
+
+    &.approved {
+      border-left: 4px solid $success;
+
+      .stat-icon {
+        background: #d1fae5;
+        color: #065f46;
+
+        mat-icon {
+          color: $success;
+        }
+      }
+
+      .stat-value {
+        color: $success;
+      }
+    }
+
+    &.rejected {
+      border-left: 4px solid $danger;
+
+      .stat-icon {
+        background: #fee2e2;
+        color: #991b1b;
+
+        mat-icon {
+          color: $danger;
+        }
+      }
+
+      .stat-value {
+        color: $danger;
+      }
+    }
+
+    &.total {
+      border-left: 4px solid $accent;
+
+      .stat-icon {
+        background: #dbeafe;
+        color: #1e40af;
+
+        mat-icon {
+          color: $accent;
+        }
+      }
+
+      .stat-value {
+        color: $accent;
+      }
+    }
+  }
+}
+
+.refresh-btn {
+  mat-icon {
+    transition: transform 0.3s ease;
+
+    &.spinning {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.table-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  mat-card-content {
+    padding: 0 !important;
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    gap: 1.5rem;
+
+    p {
+      color: $text-muted;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      color: $gray-900;
+      margin: 0 0 0.5rem 0;
+    }
+
+    p {
+      color: $text-muted;
+      margin: 0;
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+
+    .requests-table {
+      width: 100%;
+
+      th {
+        background: $gray-50;
+        color: $gray-600;
+        font-weight: 600;
+        font-size: $font-sm;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-bottom: 2px solid $gray-200;
+      }
+
+      td {
+        padding: 1rem;
+        color: $gray-900;
+        font-size: 0.9375rem;
+        border-bottom: 1px solid $gray-100;
+      }
+
+      .table-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: $gray-50;
+        }
+      }
+
+      .company-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        strong {
+          color: $gray-900;
+          font-weight: 600;
+        }
+
+        .sector {
+          font-size: 0.8125rem;
+          color: $text-muted;
+        }
+      }
+
+      mat-chip {
+        font-size: 0.8125rem;
+        min-height: 24px;
+        padding: 4px 12px;
+      }
+
+      .actions-buttons {
+        display: flex;
+        gap: 0.25rem;
+
+        button {
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+}

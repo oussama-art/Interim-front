@@ -107,9 +107,9 @@
 
         <div class="cv-section" *ngIf="hasCv(); else noCv">
           <div class="cv-info">
-            <mat-icon class="cv-icon">picture_as_pdf</mat-icon>
+            <mat-icon class="cv-icon">{{ getCvIcon() }}</mat-icon>
             <div class="cv-details">
-              <span class="cv-name">CV_{{ candidate.lastName }}_{{ candidate.firstName }}.pdf</span>
+              <span class="cv-name">{{ getCvFileName() }}</span>
               <span class="cv-status">Disponible</span>
             </div>
           </div>
@@ -140,7 +140,7 @@
         <input
           #fileInput
           type="file"
-          accept=".pdf"
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
           style="display: none"
           (change)="onFileSelected($event)"
         />

@@ -31,6 +31,24 @@
       </mat-card>
     </div>
 
+    <!-- Additional Stats (Contrats et Offres) -->
+    <div class="stats-grid additional-stats">
+      <mat-card
+        *ngFor="let card of additionalStatsCards"
+        class="stat-card"
+        [routerLink]="card.route"
+      >
+        <div class="stat-icon" [style.background]="card.bgColor">
+          <mat-icon [style.color]="card.color">{{ card.icon }}</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ card.title }}</h3>
+          <p class="stat-value">{{ getStatValue(card.key) }}</p>
+        </div>
+        <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+      </mat-card>
+    </div>
+
     <!-- Recent Activities -->
     <div class="activities-section">
       <h2>Activités Récentes</h2>
@@ -49,7 +67,7 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions-section">
-      <h2>Actions Rapides</h2>
+      <h2>Actions Rapidesss</h2>
       <div class="actions-grid">
         <button mat-raised-button color="primary" routerLink="/admin/clients">
           <mat-icon>add_business</mat-icon>

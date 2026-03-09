@@ -110,27 +110,35 @@
           </div>
 
           <div class="form-row">
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('phoneNumber')">
               <mat-label>Téléphone</mat-label>
-              <input matInput formControlName="phoneNumber" placeholder="0612345678">
+              <input matInput formControlName="phoneNumber" placeholder="+33612345678">
               <mat-icon matPrefix>phone</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('phoneNumber')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
               <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('pattern')">
-                Format invalide (10 chiffres)
+                Format invalide (ex: +33612345678)
               </mat-error>
             </mat-form-field>
 
             <!-- Champs spécifiques CLIENT -->
-            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isClient">
+            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isClient" [class.field-missing]="isFieldMissing('title')">
               <mat-label>Titre de l'entreprise</mat-label>
-              <input matInput formControlName="title" placeholder="Ex: SARL MonEntreprise">
+              <input matInput formControlName="title" placeholder="Ex: SARL MonEntreprise" required>
               <mat-icon matPrefix>business</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('title')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
               <mat-error *ngIf="profileForm.get('title')?.hasError('required')">
                 Le titre est requis
               </mat-error>
             </mat-form-field>
 
             <!-- Champs spécifiques CANDIDAT -->
-            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isCandidate">
+            <mat-form-field appearance="outline" floatLabel="always" *ngIf="isCandidate" [class.field-missing]="isFieldMissing('professional')">
               <mat-label>Profession</mat-label>
               <input
                 matInput
@@ -138,6 +146,10 @@
                 placeholder="Ex: Développeur, Électricien..."
                 [matAutocomplete]="autoProfession">
               <mat-icon matPrefix>work</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('professional')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
               <mat-autocomplete #autoProfession="matAutocomplete">
                 <mat-option *ngFor="let profession of filteredProfessions | async" [value]="profession">
                   {{ profession }}
@@ -148,54 +160,72 @@
 
           <!-- Champs CLIENT -->
           <div class="form-row" *ngIf="isClient">
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('sector')">
               <mat-label>Secteur d'activité</mat-label>
               <input matInput formControlName="sector" placeholder="Ex: Informatique, BTP, Commerce...">
               <mat-icon matPrefix>category</mat-icon>
-              <mat-error *ngIf="profileForm.get('sector')?.hasError('required')">
-                Le secteur est requis
-              </mat-error>
+              <mat-hint *ngIf="isFieldMissing('sector')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('nbEmployee')">
               <mat-label>Nombre d'employés</mat-label>
               <input matInput type="number" formControlName="nbEmployee" placeholder="Ex: 50">
               <mat-icon matPrefix>groups</mat-icon>
-              <mat-error *ngIf="profileForm.get('nbEmployee')?.hasError('required')">
-                Le nombre d'employés est requis
-              </mat-error>
+              <mat-hint *ngIf="isFieldMissing('nbEmployee')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
               <mat-error *ngIf="profileForm.get('nbEmployee')?.hasError('min')">
-                Doit être supérieur à 0
+                Doit être supérieur ou égal à 0
               </mat-error>
             </mat-form-field>
           </div>
 
           <!-- Champs CANDIDAT -->
           <div class="form-row" *ngIf="isCandidate">
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('experienceYear')">
               <mat-label>Années d'expérience</mat-label>
               <input matInput type="number" formControlName="experienceYear" placeholder="Ex: 5">
               <mat-icon matPrefix>schedule</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('experienceYear')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('cin')">
               <mat-label>CIN</mat-label>
               <input matInput formControlName="cin" placeholder="Ex: AB123456">
               <mat-icon matPrefix>badge</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('cin')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
             </mat-form-field>
           </div>
 
           <div class="form-row" *ngIf="isCandidate">
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('cssNumber')">
               <mat-label>Numéro CSS</mat-label>
               <input matInput formControlName="cssNumber" placeholder="Ex: 123456789">
               <mat-icon matPrefix>credit_card</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('cssNumber')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" floatLabel="always">
+            <mat-form-field appearance="outline" floatLabel="always" [class.field-missing]="isFieldMissing('skills')">
               <mat-label>Compétences</mat-label>
               <input matInput formControlName="skills" placeholder="Ex: Java, Python, Électricité...">
               <mat-icon matPrefix>star</mat-icon>
+              <mat-hint *ngIf="isFieldMissing('skills')" class="missing-hint">
+                <mat-icon class="hint-icon">info</mat-icon>
+                Ce champ doit être complété
+              </mat-hint>
             </mat-form-field>
           </div>
 

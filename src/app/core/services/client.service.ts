@@ -104,6 +104,21 @@ export class ClientService {
     );
   }
 
+  /**
+   * Récupérer les clients créés pour une demande de création de compte approuvée
+   * @param accountRequestId ID de la demande de création de compte
+   * @returns Observable<ClientResponse[]>
+   */
+  getClientsByAccountRequest(accountRequestId: number): Observable<ClientResponse[]> {
+    const url = getApiUrl(`/clients/by-account-request/${accountRequestId}`);
+    return this.http.get<ClientResponse[]>(url).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération des clients liés:', error);
+        return throwError(() => this.handleError(error));
+      })
+    );
+  }
+
   /**   * Validation des données du client
    * @param data Données à valider
    */

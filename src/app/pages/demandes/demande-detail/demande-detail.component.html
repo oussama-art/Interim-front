@@ -1,140 +1,98 @@
 <div class="detail-container">
   <!-- Loading spinner -->
-  <div *ngIf="isLoading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Chargement des détails...</p>
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Chargement...</p>
   </div>
 
   <!-- Détails de la demande -->
-  <div *ngIf="!isLoading && demande" class="detail-content">
-    <mat-card class="detail-card">
-      <mat-card-header>
-        <div class="header-content">
-          <button mat-icon-button (click)="goBack()" class="back-button">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <div class="title-section">
-            <mat-card-title>{{ demande.title }}</mat-card-title>
-            <mat-card-subtitle>Demande #{{ demande.id }}</mat-card-subtitle>
-          </div>
-          <button mat-raised-button color="accent" (click)="editDemande()">
-            <mat-icon>edit</mat-icon>
-            Modifier
-          </button>
-        </div>
-      </mat-card-header>
+  <div *ngIf="!isLoading && demande" class="detail-wrapper">
 
-      <mat-divider></mat-divider>
-
-      <mat-card-content>
-        <!-- Informations générales -->
-        <div class="section">
-          <div class="section-header">
-            <mat-icon>info</mat-icon>
-            <h3>Informations générales</h3>
-          </div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">Titre :</span>
-              <span class="value">{{ demande.title }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">Entreprise :</span>
-              <span class="value">{{ demande.clientTitle || 'Non renseigné' }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="label">Description :</span>
-              <p class="value description">{{ demande.description }}</p>
-            </div>
-            <div class="info-item">
-              <span class="label">Nombre total d'employés requis :</span>
-              <span class="value highlight">{{ demande.totalEmployeesNeeded }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">Nombre de profils :</span>
-              <span class="value highlight">{{ demande.profils.length || 0 }}</span>
-            </div>
-          </div>
-        </div>
-
-        <mat-divider></mat-divider>
-
-        <!-- Profils requis -->
-        <div class="section">
-          <div class="section-header">
-            <mat-icon>badge</mat-icon>
-            <h3>Profils requis</h3>
-          </div>
-
-          <div *ngIf="demande.profils && demande.profils.length > 0" class="profils-grid">
-            <mat-card *ngFor="let profil of demande.profils" class="profil-card">
-              <mat-card-content>
-                <div class="profil-info">
-                  <div class="profil-header">
-                    <mat-icon>person</mat-icon>
-                    <h4>{{ profil.profilName }}</h4>
-                  </div>
-                  <div class="profil-details">
-                    <div class="profil-item">
-                      <span class="label">Quantité requise :</span>
-                      <mat-chip class="quantity-chip">{{ profil.quantity }}</mat-chip>
-                    </div>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          </div>
-
-          <div *ngIf="!demande.profils || demande.profils.length === 0" class="empty-profils">
-            <mat-icon>info</mat-icon>
-            <p>Aucun profil défini pour cette demande</p>
-          </div>
-        </div>
-
-        <!-- Récapitulatif -->
-        <mat-divider></mat-divider>
-
-        <div class="section summary-section">
-          <div class="section-header">
-            <mat-icon>summarize</mat-icon>
-            <h3>Récapitulatif</h3>
-          </div>
-          <div class="summary-grid">
-            <div class="summary-item">
-              <mat-icon color="primary">groups</mat-icon>
-              <div class="summary-info">
-                <span class="summary-label">Total employés requis</span>
-                <span class="summary-value">{{ demande.totalEmployeesNeeded }}</span>
-              </div>
-            </div>
-            <div class="summary-item">
-              <mat-icon color="accent">badge</mat-icon>
-              <div class="summary-info">
-                <span class="summary-label">Profils différents</span>
-                <span class="summary-value">{{ demande.profils.length || 0 }}</span>
-              </div>
-            </div>
-            <div class="summary-item">
-              <mat-icon color="warn">numbers</mat-icon>
-              <div class="summary-info">
-                <span class="summary-label">Quantité totale des profils</span>
-                <span class="summary-value">{{ getTotalProfilQuantity() }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-
-      <mat-card-actions>
-        <button mat-button (click)="goBack()">
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-top">
+        <button mat-icon-button (click)="goBack()" class="back-btn">
           <mat-icon>arrow_back</mat-icon>
-          Retour
         </button>
-        <button mat-raised-button color="accent" (click)="editDemande()">
+        <div class="header-title">
+          <h1>{{ demande.title }}</h1>
+        
+        </div>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="editDemande()"
+          [disabled]="!isDemandeOpen()"
+          class="edit-btn">
           <mat-icon>edit</mat-icon>
-          Modifier la demande
+          Modifier
         </button>
-      </mat-card-actions>
-    </mat-card>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+
+      <!-- Main Column -->
+      <div class="main-column">
+
+        <!-- Description Section -->
+        <div class="info-card">
+          <div class="card-label">Description</div>
+          <p class="description-text">{{ demande.description || 'Aucune description' }}</p>
+        </div>
+
+        <!-- Profils Section -->
+        <div class="info-card">
+          <div class="card-header">
+            <div class="card-label">Profils requis</div>
+            <span class="badge-count">{{ demande.profils.length || 0 }}</span>
+          </div>
+
+          <div *ngIf="demande.profils && demande.profils.length > 0" class="profils-list">
+            <div *ngFor="let profil of demande.profils" class="profil-item">
+              <div class="profil-info">
+                <mat-icon class="profil-icon">person_outline</mat-icon>
+                <span class="profil-name">{{ profil.profilName }}</span>
+              </div>
+              <span class="profil-quantity">×{{ profil.quantity }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="!demande.profils || demande.profils.length === 0" class="empty-message">
+            <mat-icon>info_outline</mat-icon>
+            <span>Aucun profil défini</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Column -->
+      <div class="sidebar-column">
+
+        <!-- Summary Card -->
+        <div class="info-card compact">
+          <div class="card-label">Informations</div>
+
+          <div class="info-rows">
+            <div class="info-row">
+              <span class="info-label">Entreprise</span>
+              <span class="info-value">{{ demande.clientTitle || 'Non renseigné' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Employés requis</span>
+              <span class="info-value highlight">{{ demande.totalEmployeesNeeded }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Total profils</span>
+              <span class="info-value">{{ getTotalProfilQuantity() }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
 </div>

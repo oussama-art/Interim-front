@@ -1,0 +1,152 @@
+<div class="detail-page-container" *ngIf="!loading && candidate">
+  <!-- Header compact -->
+  <div class="page-header">
+    <button mat-icon-button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-info">
+      <h1>{{ candidate.firstName }} {{ candidate.lastName }}</h1>
+      <span class="candidate-id">ID #{{ candidate.id }}</span>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="editCandidate()">
+        <mat-icon>edit</mat-icon>
+        Modifier
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenu en deux colonnes -->
+  <div class="page-content">
+    <!-- Colonne gauche : Informations personnelles et professionnelles -->
+    <div class="left-column">
+      <div class="info-card">
+        <h2 class="card-title">
+          <mat-icon>account_circle</mat-icon>
+          Informations personnelles
+        </h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Prénom</label>
+            <span>{{ candidate.firstName || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Nom</label>
+            <span>{{ candidate.lastName || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email</label>
+            <span>
+              <a *ngIf="candidate.emailAddress" [href]="'mailto:' + candidate.emailAddress">
+                {{ candidate.emailAddress }}
+              </a>
+              <span *ngIf="!candidate.emailAddress">-</span>
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Téléphone</label>
+            <span>
+              <a *ngIf="candidate.phoneNumber" [href]="'tel:' + candidate.phoneNumber">
+                {{ candidate.phoneNumber }}
+              </a>
+              <span *ngIf="!candidate.phoneNumber">-</span>
+            </span>
+          </div>
+          <div class="info-item">
+            <label>CIN</label>
+            <span>{{ candidate.cin || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label>N° CSS</label>
+            <span>{{ candidate.cssNumber || '-' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h2 class="card-title">
+          <mat-icon>work</mat-icon>
+          Informations professionnelles
+        </h2>
+        <div class="info-grid">
+          <div class="info-item full-width">
+            <label>Profession</label>
+            <span class="highlight">{{ candidate.professional || '-' }}</span>
+          </div>
+          <div class="info-item full-width">
+            <label>Compétences</label>
+            <span>{{ candidate.skills || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Expérience</label>
+            <span class="highlight">
+              {{ candidate.experienceYear != null ? candidate.experienceYear + ' ans' : '-' }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Date d'inscription</label>
+            <span>{{ formatDate(candidate.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colonne droite : CV -->
+    <div class="right-column">
+      <div class="info-card cv-card">
+        <h2 class="card-title">
+          <mat-icon>description</mat-icon>
+          Curriculum Vitae
+        </h2>
+
+        <!-- CV disponible -->
+        <div class="cv-content" *ngIf="hasCv(); else noCv">
+          <div class="cv-info">
+            <mat-icon class="cv-icon">{{ getCvIcon() }}</mat-icon>
+            <div class="cv-details">
+              <span class="cv-name">{{ getCvFileName() }}</span>
+              <span class="cv-status">Disponible</span>
+            </div>
+          </div>
+          <div class="cv-actions">
+            <button mat-flat-button color="primary" (click)="downloadCV()" [disabled]="uploading">
+              <mat-icon>download</mat-icon>
+              Télécharger
+            </button>
+            <button mat-stroked-button color="primary" (click)="fileInput.click()" [disabled]="uploading">
+              <mat-icon>upload</mat-icon>
+              {{ uploading ? 'Upload...' : 'Remplacer' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Aucun CV -->
+        <ng-template #noCv>
+          <div class="no-cv">
+            <mat-icon>cloud_upload</mat-icon>
+            <p>Aucun CV disponible</p>
+            <button mat-flat-button color="primary" (click)="fileInput.click()" [disabled]="uploading">
+              <mat-icon>upload</mat-icon>
+              {{ uploading ? 'Upload...' : 'Uploader un CV' }}
+            </button>
+          </div>
+        </ng-template>
+
+        <!-- Hidden file input -->
+        <input
+          #fileInput
+          type="file"
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+          style="display: none"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading spinner -->
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner></mat-spinner>
+  <p>Chargement des informations...</p>
+</div>

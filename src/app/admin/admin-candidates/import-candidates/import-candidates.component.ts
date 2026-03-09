@@ -9,6 +9,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { CandidateService } from '../../../core/services/candidate.service';
+import { ProfilService } from '../../../core/services/profil.service';
 import { CandidateCreateRequest } from '../../../core/models/user.model';
 import * as XLSX from 'xlsx';
 
@@ -58,11 +59,15 @@ export class ImportCandidatesComponent {
   importResults: ImportResult[] = [];
   previewCandidates: CandidateImportRow[] = [];
   displayedColumns: string[] = ['firstName', 'lastName', 'emailAddress', 'professional', 'status'];
+  availableProfils: string[] = [];
 
   constructor(
     private candidateService: CandidateService,
+    private profilService: ProfilService,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    this.availableProfils = this.profilService.getAllProfils();
+  }
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
@@ -145,10 +150,21 @@ export class ImportCandidatesComponent {
       try {
         // Validate candidate data
         if (!this.validateCandidate(candidate)) {
+          let errorMessage = 'Données invalides';
+
+          // Fournir un message d'erreur spécifique si la profession n'est pas valide
+          if (candidate.professional && !this.availableProfils.includes(candidate.professional)) {
+            errorMessage = `Profession invalide: "${candidate.professional}". Utilisez une profession de la liste.`;
+          }
+          // Vérifier le format du téléphone
+          else if (candidate.phoneNumber && !this.isValidPhoneNumber(candidate.phoneNumber)) {
+            errorMessage = `Téléphone: Format invalide "${candidate.phoneNumber}". Utilisez le format avec indicatif (ex: +33612345678, +21612345678).`;
+          }
+
           this.importResults.push({
             candidate,
             status: 'error',
-            message: 'Données invalides'
+            message: errorMessage
           });
           errorCount++;
           continue;
@@ -160,13 +176,12 @@ export class ImportCandidatesComponent {
           lastName: candidate.lastName,
           emailAddress: candidate.emailAddress,
           phoneNumber: candidate.phoneNumber,
-          password: candidate.password,
-          confirmPassword: candidate.password,
           experienceYear: candidate.experienceYear,
           skills: candidate.skills,
           professional: candidate.professional,
           cin: candidate.cin,
-          cssNumber: candidate.cssNumber
+          cssNumber: candidate.cssNumber,
+          active: true
         };
 
         // Create candidate via API
@@ -180,10 +195,39 @@ export class ImportCandidatesComponent {
         successCount++;
       } catch (error: any) {
         console.error('Erreur lors de la création du candidat:', error);
+
+        // Extraire les messages d'erreur du backend
+        let errorMessage = 'Erreur lors de la création';
+
+        if (error?.error?.errors) {
+          // Format: {"errors":{"phoneNumber":"Numéro invalide (format invalide)"}}
+          const errors = error.error.errors;
+          const errorMessages = Object.entries(errors)
+            .map(([field, msg]) => {
+              const fieldNames: { [key: string]: string } = {
+                'phoneNumber': 'Téléphone',
+                'emailAddress': 'Email',
+                'firstName': 'Prénom',
+                'lastName': 'Nom',
+                'cin': 'CIN',
+                'cssNumber': 'Numéro CSS',
+                'professional': 'Profession'
+              };
+              const fieldName = fieldNames[field] || field;
+              return `${fieldName}: ${msg}`;
+            })
+            .join(', ');
+          errorMessage = errorMessages;
+        } else if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+
         this.importResults.push({
           candidate,
           status: 'error',
-          message: error?.message || 'Erreur lors de la création'
+          message: errorMessage
         });
         errorCount++;
       }
@@ -204,7 +248,8 @@ export class ImportCandidatesComponent {
   }
 
   private validateCandidate(candidate: CandidateImportRow): boolean {
-    return !!(
+    // Vérifier que tous les champs requis sont présents
+    const hasRequiredFields = !!(
       candidate.firstName &&
       candidate.lastName &&
       candidate.emailAddress &&
@@ -214,6 +259,20 @@ export class ImportCandidatesComponent {
       candidate.cin &&
       candidate.cssNumber
     );
+
+    // Vérifier que la profession fait partie de la liste des professions disponibles
+    const hasValidProfession = this.availableProfils.includes(candidate.professional);
+
+    // Vérifier que le numéro de téléphone a le bon format avec indicatif
+    const hasValidPhoneFormat = this.isValidPhoneNumber(candidate.phoneNumber);
+
+    return hasRequiredFields && hasValidProfession && hasValidPhoneFormat;
+  }
+
+  private isValidPhoneNumber(phone: string): boolean {
+    // Format: +33612345678, +1234567890, etc.
+    const phoneRegex = /^\+[1-9]\d{1,2}\d{6,12}$/;
+    return phoneRegex.test(phone);
   }
 
   private isValidEmail(email: string): boolean {
@@ -222,16 +281,20 @@ export class ImportCandidatesComponent {
   }
 
   downloadTemplate(): void {
+    // Utiliser des professions valides de la liste
+    const exampleProfession1 = this.availableProfils[0] || 'Développeur Full Stack';
+    const exampleProfession2 = this.availableProfils[1] || 'Électricien';
+
     const template = [
       {
         firstName: 'Mohamed',
         lastName: 'Ben Ahmed',
         emailAddress: 'mohamed.benahmed@example.com',
-        phoneNumber: '12345678',
+        phoneNumber: '+21612345678',
         password: 'Password@123',
         experienceYear: 5,
         skills: 'Java, Spring Boot, Angular',
-        professional: 'Développeur Full Stack',
+        professional: exampleProfession1,
         cin: '12345678',
         cssNumber: 'CSS123456'
       },
@@ -239,11 +302,11 @@ export class ImportCandidatesComponent {
         firstName: 'Fatma',
         lastName: 'Trabelsi',
         emailAddress: 'fatma.trabelsi@example.com',
-        phoneNumber: '87654321',
+        phoneNumber: '+33687654321',
         password: 'Password@123',
         experienceYear: 3,
         skills: 'Électricité, Plomberie',
-        professional: 'Électricien',
+        professional: exampleProfession2,
         cin: '87654321',
         cssNumber: 'CSS654321'
       }
@@ -252,6 +315,13 @@ export class ImportCandidatesComponent {
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Candidats');
+
+    // Ajouter une feuille avec la liste des professions valides
+    const professionsSheet = XLSX.utils.json_to_sheet(
+      this.availableProfils.map(p => ({ 'Professions Valides': p }))
+    );
+    XLSX.utils.book_append_sheet(wb, professionsSheet, 'Professions');
+
     XLSX.writeFile(wb, 'template_candidats.xlsx');
 
     this.snackBar.open('Modèle téléchargé avec succès', 'Fermer', { duration: 2000 });

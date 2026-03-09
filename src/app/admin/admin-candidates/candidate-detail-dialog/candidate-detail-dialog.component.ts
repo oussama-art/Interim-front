@@ -50,25 +50,45 @@ export class CandidateDetailDialogComponent {
     return !!this.candidate.cvPath && this.candidate.cvPath.trim() !== '';
   }
 
-  getCvUrl(): string | null {
-    if (!this.candidate.cvPath) {
-      return null;
+  getCvIcon(): string {
+    if (!this.candidate.cvPath) return 'description';
+
+    const extension = this.candidate.cvPath.toLowerCase().split('.').pop();
+    switch(extension) {
+      case 'pdf':
+        return 'picture_as_pdf';
+      case 'doc':
+      case 'docx':
+        return 'description';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return 'image';
+      default:
+        return 'description';
     }
-    // Si le cvPath commence par http, c'est déjà une URL complète
-    if (this.candidate.cvPath.startsWith('http')) {
-      return this.candidate.cvPath;
-    }
-    // Sinon, construire l'URL complète
-    // Enlever /api de apiUrl et ajouter le cvPath
-    const baseUrl = environment.apiUrl.replace('/api', '');
-    return `${baseUrl}${this.candidate.cvPath}`;
+  }
+
+  getCvFileName(): string {
+    if (!this.candidate.cvPath) return '';
+
+    const extension = this.candidate.cvPath.toLowerCase().split('.').pop();
+    return `CV_${this.candidate.lastName}_${this.candidate.firstName}.${extension}`;
   }
 
   downloadCV(): void {
-    const cvUrl = this.getCvUrl();
-    if (cvUrl) {
-      window.open(cvUrl, '_blank');
-    }
+    const url = `${environment.apiUrl}/candidates/${this.candidate.id}/cv`;
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      },
+      error: () => {
+        this.snackBar.open('Erreur lors du chargement du CV', 'Fermer', {
+          duration: 3000
+        });
+      }
+    });
   }
 
   formatDate(dateString: string): string {
@@ -87,10 +107,19 @@ export class CandidateDetailDialogComponent {
 
     const file = input.files[0];
 
+    // Types de fichiers autorisés
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png'
+    ];
+
     // Validate file type
-    if (file.type !== 'application/pdf') {
-      this.snackBar.open('Veuillez sélectionner un fichier PDF', 'Fermer', {
-        duration: 3000
+    if (!allowedTypes.includes(file.type)) {
+      this.snackBar.open('Format non autorisé. Acceptés: PDF, Word (DOC/DOCX), JPG, PNG', 'Fermer', {
+        duration: 4000
       });
       return;
     }

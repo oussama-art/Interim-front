@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { GlobalSearchService } from '../../core/services/global-search.service';
+import { Subject, takeUntil } from 'rxjs';
 
 interface Invoice {
   id: number;
@@ -29,7 +31,10 @@ interface Invoice {
   templateUrl: './invoices.component.html',
   styleUrl: './invoices.component.scss'
 })
-export class InvoicesComponent {
+export class InvoicesComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  searchQuery: string = '';
+
   invoices: Invoice[] = [
     {
       id: 1,
@@ -83,6 +88,46 @@ export class InvoicesComponent {
     }
   ];
 
+  filteredInvoices: Invoice[] = [];
+
+  constructor(private globalSearchService: GlobalSearchService) {}
+
+  ngOnInit(): void {
+    this.filteredInvoices = [...this.invoices];
+
+    // Écouter les changements de recherche globale
+    this.globalSearchService.searchQuery$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(query => {
+        this.searchQuery = query;
+        this.applySearchFilter();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.globalSearchService.clearSearch();
+  }
+
+  private applySearchFilter(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredInvoices = [...this.invoices];
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase();
+    this.filteredInvoices = this.invoices.filter(invoice => {
+      const invoiceNumber = invoice.invoiceNumber?.toLowerCase() || '';
+      const clientName = invoice.clientName?.toLowerCase() || '';
+      const contractRef = invoice.contractRef?.toLowerCase() || '';
+
+      return invoiceNumber.includes(query) ||
+             clientName.includes(query) ||
+             contractRef.includes(query);
+    });
+  }
+
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
       'paid': 'Payée',
@@ -97,11 +142,11 @@ export class InvoicesComponent {
   }
 
   getTotalAmount(): number {
-    return this.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    return this.filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0);
   }
 
   getPendingAmount(): number {
-    return this.invoices
+    return this.filteredInvoices
       .filter(inv => inv.status === 'pending' || inv.status === 'overdue')
       .reduce((sum, inv) => sum + inv.amount, 0);
   }

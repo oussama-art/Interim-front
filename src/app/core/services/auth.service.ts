@@ -31,6 +31,11 @@ export class AuthService {
   public readonly context$ = this.contextSubject.asObservable();
 
   /**
+   * Interval pour le rafraîchissement automatique du token
+   */
+  private tokenRefreshInterval: any = null;
+
+  /**
    * Obtenir le contexte actuel de manière synchrone
    */
   getCurrentContext(): AppContext {
@@ -62,6 +67,49 @@ export class AuthService {
   ) {
     // Restaurer le contexte depuis le storage au démarrage
     this.restoreContext();
+
+    // Écouter les événements de storage pour synchroniser les sessions entre onglets
+    this.setupStorageSync();
+  }
+
+  /**
+   * Configuration de la synchronisation entre onglets
+   * Détecte les déconnexions ou changements de contexte dans d'autres onglets
+   */
+  private setupStorageSync(): void {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event: StorageEvent) => {
+        // Détecter la suppression du contexte (déconnexion dans un autre onglet)
+        if (event.key === this.CONTEXT_STORAGE_KEY && event.newValue === null) {
+          this.secureLog('🔄 Déconnexion détectée dans un autre onglet');
+          this.contextSubject.next('user');
+
+          // Si on est sur une route admin, rediriger vers login admin
+          if (this.router.url.includes('/admin/')) {
+            this.router.navigate(['/admin/login']);
+          } else if (this.router.url.includes('/app/')) {
+            this.router.navigate(['/login']);
+          }
+        }
+
+        // Détecter le changement de contexte dans un autre onglet
+        if (event.key === this.CONTEXT_STORAGE_KEY && event.newValue) {
+          const newContext = event.newValue as AppContext;
+          if (newContext === 'admin' || newContext === 'user') {
+            this.secureLog(`🔄 Changement de contexte détecté: ${newContext}`);
+            this.contextSubject.next(newContext);
+          }
+        }
+
+        // Détecter la suppression du token admin (déconnexion admin dans un autre onglet)
+        if (event.key === 'admin_access_token' && event.newValue === null) {
+          this.secureLog('🔄 Déconnexion admin détectée dans un autre onglet');
+          if (this.router.url.includes('/admin/')) {
+            this.router.navigate(['/admin/login']);
+          }
+        }
+      });
+    }
   }
 
   /**
@@ -70,9 +118,17 @@ export class AuthService {
    */
   private restoreContext(): void {
     const savedContext = this.secureStorage.getItem(this.CONTEXT_STORAGE_KEY) as AppContext | null;
+
     if (savedContext && (savedContext === 'admin' || savedContext === 'user')) {
       this.contextSubject.next(savedContext);
       this.secureLog(`Contexte restauré: ${savedContext}`);
+
+      // ⚠️ NE PAS démarrer le refresh automatique ici pour éviter la dépendance circulaire
+      // L'intercepteur HTTP se chargera du refresh lors de la première requête
+      // Le refresh est démarré plus tard via startTokenRefreshDelayed()
+      if (this.isAuthenticated(savedContext)) {
+        this.secureLog('Session active détectée, le token sera rafraîchi lors de la première requête');
+      }
     } else {
       // Par défaut, utiliser le contexte 'user'
       this.setContext('user');
@@ -80,22 +136,25 @@ export class AuthService {
   }
 
   /**
-   * Stockage sécurisé - utilise sessionStorage au lieu de localStorage
+   * Stockage sécurisé - utilise localStorage pour partager la session entre les onglets
+   * Permet une expérience utilisateur cohérente sur toute l'application
    */
-  private secureStorage = sessionStorage;
+  private secureStorage = localStorage;
 
   /**
    * Logger sécurisé - ne log que en développement
    */
   private secureLog(message: string, ...args: any[]): void {
-    if (!environment.production) {
-      console.log(message, ...args);
-    }
+    // Logs désactivés pour réduire le bruit en console
+    // if (!environment.production) {
+    //   console.log(message, ...args);
+    // }
   }
 
   /**
    * Connexion avec email/password via le backend
    * IMPORTANT: Définit également le contexte de l'application
+   * Les tokens Keycloak sont récupérés via le backend puis injectés dans Keycloak
    */
   loginWithCredentials(credentials: LoginRequest, context?: AppContext): Observable<TokenResponse> {
     const loginUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`;
@@ -107,20 +166,46 @@ export class AuthService {
     }
 
     return this.http.post<TokenResponse>(loginUrl, credentials).pipe(
-      tap(response => {
-        // Sauvegarder les tokens dans sessionStorage avec préfixe
+      tap((response) => {
+        // Injecter les tokens DANS l'instance Keycloak
+        const keycloakInstance = this.keycloak.getKeycloakInstance();
+        keycloakInstance.token = response.access_token;
+        keycloakInstance.refreshToken = response.refresh_token;
+        keycloakInstance.tokenParsed = this.parseJwt(response.access_token);
+        keycloakInstance.refreshTokenParsed = this.parseJwt(response.refresh_token);
+
+        if (response.expires_in) {
+          keycloakInstance.timeSkew = 0;
+          const exp = Math.floor(Date.now() / 1000) + response.expires_in;
+          if (keycloakInstance.tokenParsed) {
+            keycloakInstance.tokenParsed.exp = exp;
+          }
+        }
+
+        // Sauvegarder aussi dans sessionStorage pour backup
         this.secureStorage.setItem(this.getKey('access_token', ctx), response.access_token);
         this.secureStorage.setItem(this.getKey('refresh_token', ctx), response.refresh_token);
+        this.secureStorage.setItem(this.getKey('backend_auth', ctx), 'true'); // Marquer comme auth backend
 
-        // Calculer et sauvegarder l'heure d'expiration
         if (response.expires_in) {
           const expiryTime = Date.now() + (response.expires_in * 1000);
           this.secureStorage.setItem(this.getKey('token_expiry', ctx), expiryTime.toString());
         }
 
-        this.secureLog(`Tokens ${ctx} sauvegardés de manière sécurisée`);
+        this.secureLog(`✅ Tokens Keycloak injectés depuis backend pour ${ctx}`);
+
+        // Démarrer le rafraîchissement automatique du token
+        this.startTokenRefresh();
       })
     );
+  }
+
+  /**
+   * Vérifier si l'utilisateur est authentifié via le backend (password grant)
+   */
+  isBackendAuthenticated(context?: AppContext): boolean {
+    const ctx = context || this.getCurrentContext();
+    return this.secureStorage.getItem(this.getKey('backend_auth', ctx)) === 'true';
   }
 
   /**
@@ -136,36 +221,29 @@ export class AuthService {
 
   /**
    * Vérifier si l'utilisateur est authentifié dans le contexte spécifié
-   * IMPORTANT: Vérifie le token backend OU le marqueur Keycloak du contexte
-   * Si aucun contexte n'est fourni, utilise le contexte actuel
+   * Vérifie : token backend OU Keycloak actif
    */
   isAuthenticated(context?: AppContext): boolean {
     const ctx = context || this.getCurrentContext();
     const hasBackendToken = !!this.secureStorage.getItem(this.getKey('access_token', ctx));
-    const hasKeycloakMarker = this.secureStorage.getItem(this.getKey('keycloak_authenticated', ctx)) === 'true';
+    const isKeycloakActive = this.isLoggedIn();
 
-    if (hasBackendToken && this.isTokenExpired(ctx)) {
-      // Token expiré, nettoyer
-      this.clearBackendTokens(ctx);
-      return hasKeycloakMarker && this.isLoggedIn();
-    }
-
-    // Vérifier le token backend OU (Keycloak actif ET marqueur pour ce contexte)
-    return hasBackendToken || (hasKeycloakMarker && this.isLoggedIn());
+    return hasBackendToken || isKeycloakActive;
   }
 
   /**
    * Récupérer le token d'authentification (backend)
+   * ⚠️ Ne nettoie PAS les tokens expirés - laisse l'intercepteur gérer le refresh
    */
   getAuthToken(context?: AppContext): string | null {
     const ctx = context || this.getCurrentContext();
     const token = this.secureStorage.getItem(this.getKey('access_token', ctx));
 
-    // Vérifier l'expiration avant de retourner le token
-    if (token && this.isTokenExpired(ctx)) {
-      this.clearBackendTokens(ctx);
-      return null;
-    }
+    // ⚠️ Ne PAS nettoyer les tokens ici, l'intercepteur gère le refresh en cas de 401
+    // if (token && this.isTokenExpired(ctx)) {
+    //   this.clearBackendTokens(ctx);
+    //   return null;
+    // }
 
     return token;
   }
@@ -179,67 +257,126 @@ export class AuthService {
   }
 
   /**
-   * Rafraîchir le token d'authentification backend
+   * Rafraîchir le token d'authentification
+   * - Via Backend si authentification password grant
+   * - Via Keycloak directement si authentification OAuth (Google)
    */
   refreshBackendToken(context?: AppContext): Observable<TokenResponse> {
     const ctx = context || this.getCurrentContext();
-    const refreshToken = this.getAuthRefreshToken(ctx);
+    const isBackendAuth = this.isBackendAuthenticated(ctx);
 
-    console.log('🔄 [REFRESH TOKEN] Début du refresh');
-    console.log('🔄 [REFRESH TOKEN] Contexte:', ctx);
-    console.log('🔄 [REFRESH TOKEN] Refresh token présent:', !!refreshToken);
+    if (isBackendAuth) {
+      // ✅ Authentification via backend → Refresh via backend
+      const refreshToken = this.getAuthRefreshToken(ctx);
+      if (!refreshToken) {
+        console.error('❌ [REFRESH TOKEN] Aucun refresh token disponible');
+        return throwError(() => new Error('Aucun refresh token disponible'));
+      }
 
-    if (!refreshToken) {
-      console.error('❌ [REFRESH TOKEN] Aucun refresh token disponible');
-      throw new Error('Aucun refresh token disponible');
+      const refreshUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`;
+
+      return this.http.post<TokenResponse>(refreshUrl, { refresh_token: refreshToken }).pipe(
+        tap((response) => {
+          // Injecter les nouveaux tokens dans Keycloak
+          const keycloakInstance = this.keycloak.getKeycloakInstance();
+          keycloakInstance.token = response.access_token;
+          keycloakInstance.refreshToken = response.refresh_token;
+          keycloakInstance.tokenParsed = this.parseJwt(response.access_token);
+          keycloakInstance.refreshTokenParsed = this.parseJwt(response.refresh_token);
+
+          if (response.expires_in) {
+            keycloakInstance.timeSkew = 0;
+            const exp = Math.floor(Date.now() / 1000) + response.expires_in;
+            if (keycloakInstance.tokenParsed) {
+              keycloakInstance.tokenParsed.exp = exp;
+            }
+          }
+
+          // Mettre à jour sessionStorage
+          this.secureStorage.setItem(this.getKey('access_token', ctx), response.access_token);
+          this.secureStorage.setItem(this.getKey('refresh_token', ctx), response.refresh_token);
+
+          if (response.expires_in) {
+            const expiryTime = Date.now() + (response.expires_in * 1000);
+            this.secureStorage.setItem(this.getKey('token_expiry', ctx), expiryTime.toString());
+          }
+        }),
+        catchError(error => {
+          console.error('❌ [REFRESH TOKEN] Erreur refresh Backend:', error);
+          this.clearBackendTokens(ctx);
+          return throwError(() => error);
+        })
+      );
+    } else {
+      // ✅ Authentification via OAuth → Refresh via Keycloak
+      return new Observable<TokenResponse>(observer => {
+        this.keycloak.getKeycloakInstance().updateToken(30)
+          .then((refreshed) => {
+            if (refreshed) {
+              const keycloakInstance = this.keycloak.getKeycloakInstance();
+              const accessToken = keycloakInstance.token;
+              const refreshToken = keycloakInstance.refreshToken;
+
+              if (accessToken && refreshToken) {
+                // Mettre à jour sessionStorage
+                this.secureStorage.setItem(this.getKey('access_token', ctx), accessToken);
+                this.secureStorage.setItem(this.getKey('refresh_token', ctx), refreshToken);
+
+                const tokenParsed = keycloakInstance.tokenParsed;
+                if (tokenParsed && tokenParsed.exp) {
+                  const expiryTime = tokenParsed.exp * 1000;
+                  this.secureStorage.setItem(this.getKey('token_expiry', ctx), expiryTime.toString());
+                }
+
+                observer.next({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                  expires_in: tokenParsed?.exp ? tokenParsed.exp - Math.floor(Date.now() / 1000) : 300
+                });
+                observer.complete();
+              } else {
+                console.error('❌ [REFRESH TOKEN] Tokens manquants après refresh');
+                this.clearBackendTokens(ctx);
+                observer.error(new Error('Tokens manquants après refresh'));
+              }
+            } else {
+              // Token toujours valide
+              const keycloakInstance = this.keycloak.getKeycloakInstance();
+              const accessToken = keycloakInstance.token;
+              const refreshToken = keycloakInstance.refreshToken;
+
+              if (accessToken && refreshToken) {
+                observer.next({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                  expires_in: 300
+                });
+                observer.complete();
+              } else {
+                observer.error(new Error('Tokens non disponibles'));
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('❌ [REFRESH TOKEN] Erreur refresh Keycloak:', error);
+            this.clearBackendTokens(ctx);
+            observer.error(error);
+          });
+      });
     }
-
-    const refreshUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`;
-    const fullUrl = `${refreshUrl}?refresh_token=${encodeURIComponent(refreshToken)}`;
-
-    console.log('🔄 [REFRESH TOKEN] URL complète:', fullUrl);
-    console.log('🔄 [REFRESH TOKEN] Refresh token (10 premiers chars):', refreshToken.substring(0, 10) + '...');
-
-    // Envoyer le refresh_token en tant que query parameter
-    return this.http.post<TokenResponse>(fullUrl, null).pipe(
-      tap(response => {
-        console.log('✅ [REFRESH TOKEN] Succès! Nouveau token reçu');
-        console.log('✅ [REFRESH TOKEN] Access token présent:', !!response.access_token);
-        console.log('✅ [REFRESH TOKEN] Refresh token présent:', !!response.refresh_token);
-        console.log('✅ [REFRESH TOKEN] Expires in:', response.expires_in);
-
-        // Mettre à jour les tokens
-        this.secureStorage.setItem(this.getKey('access_token', ctx), response.access_token);
-        this.secureStorage.setItem(this.getKey('refresh_token', ctx), response.refresh_token);
-
-        // Mettre à jour l'heure d'expiration
-        if (response.expires_in) {
-          const expiryTime = Date.now() + (response.expires_in * 1000);
-          this.secureStorage.setItem(this.getKey('token_expiry', ctx), expiryTime.toString());
-        }
-
-        this.secureLog(`Token ${ctx} rafraîchi avec succès`);
-      }),
-      catchError(error => {
-        console.error('❌ [REFRESH TOKEN] Erreur lors du refresh:', error);
-        console.error('❌ [REFRESH TOKEN] Status:', error.status);
-        console.error('❌ [REFRESH TOKEN] Message:', error.message);
-        console.error('❌ [REFRESH TOKEN] Error body:', error.error);
-        throw error;
-      })
-    );
   }
 
   /**
-   * Nettoyer les tokens backend du storage pour un contexte spécifique
+   * Supprimer les tokens backend
    */
-  private clearBackendTokens(context?: AppContext): void {
+  clearBackendTokens(context?: AppContext): void {
     const ctx = context || this.getCurrentContext();
     this.secureStorage.removeItem(this.getKey('access_token', ctx));
     this.secureStorage.removeItem(this.getKey('refresh_token', ctx));
     this.secureStorage.removeItem(this.getKey('token_expiry', ctx));
+    this.secureStorage.removeItem(this.getKey('backend_auth', ctx));
     this.secureStorage.removeItem(this.getKey('login_context', ctx));
-    this.secureStorage.removeItem(this.getKey('keycloak_authenticated', ctx));
+    this.secureLog('Tokens backend supprimés');
   }
 
   /**
@@ -296,10 +433,77 @@ export class AuthService {
   }
 
   /**
+   * Démarrer le rafraîchissement automatique du token
+   * Rafraîchit le token toutes les 4 minutes (avant expiration de 5 min)
+   */
+  startTokenRefresh(): void {
+    // Arrêter tout interval existant
+    this.stopTokenRefresh();
+
+    // Rafraîchir immédiatement au démarrage
+    this.refreshToken(30).catch(err => {
+      console.error('❌ [AUTO-REFRESH] Erreur lors du refresh initial:', err);
+    });
+
+    // Rafraîchir toutes les 4 minutes (240000 ms)
+    // Les tokens Keycloak expirent généralement après 5 minutes
+    this.tokenRefreshInterval = setInterval(() => {
+      this.refreshToken(30).then(refreshed => {
+      }).catch(err => {
+        console.error('❌ [AUTO-REFRESH] Erreur lors du refresh automatique:', err);
+        console.error('❌ [AUTO-REFRESH] Session expirée, déconnexion nécessaire');
+
+        // Si le refresh échoue, arrêter les tentatives et déconnecter
+        this.stopTokenRefresh();
+        this.logout();
+      });
+    }, 4 * 60 * 1000); // 4 minutes
+  }
+
+  /**
+   * Arrêter le rafraîchissement automatique du token
+   */
+  stopTokenRefresh(): void {
+    if (this.tokenRefreshInterval) {
+      clearInterval(this.tokenRefreshInterval);
+      this.tokenRefreshInterval = null;
+    }
+  }
+
+  /**
    * Déconnexion
+   * Appelle l'endpoint backend pour invalider le refresh token
    */
   logout(redirectTo?: string): void {
     const ctx = this.getCurrentContext();
+    const refreshToken = this.getAuthRefreshToken(ctx);
+
+    // Appeler l'endpoint backend pour invalider le refresh token
+    if (refreshToken) {
+      const logoutUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.LOGOUT}`;
+      this.http.post<{ message: string }>(logoutUrl, { refresh_token: refreshToken })
+        .subscribe({
+          next: (response) => {
+            this.completeLogout(ctx, redirectTo);
+          },
+          error: (error) => {
+            console.error('❌ [LOGOUT] Erreur lors de l\'invalidation du token:', error);
+            // Même en cas d'erreur, on continue la déconnexion côté client
+            this.completeLogout(ctx, redirectTo);
+          }
+        });
+    } else {
+      // Pas de refresh token, déconnexion directe
+      this.completeLogout(ctx, redirectTo);
+    }
+  }
+
+  /**
+   * Compléter la déconnexion côté client
+   */
+  private completeLogout(ctx: AppContext, redirectTo?: string): void {
+    // Arrêter le rafraîchissement automatique du token
+    this.stopTokenRefresh();
 
     // Nettoyer les tokens backend de manière sécurisée
     this.clearBackendTokens(ctx);
@@ -307,8 +511,11 @@ export class AuthService {
     const lastUrlKey = this.getKey('last_url', ctx);
     localStorage.removeItem(lastUrlKey);
 
-    // Réinitialiser le contexte à 'user' par défaut
-    this.setContext('user');
+    // Supprimer le contexte pour notifier les autres onglets via storage event
+    this.secureStorage.removeItem(this.CONTEXT_STORAGE_KEY);
+
+    // Réinitialiser le contexte à 'user' par défaut (sans le sauvegarder dans storage)
+    this.contextSubject.next('user');
 
     // Si l'utilisateur est connecté via Keycloak
     if (this.keycloak.isLoggedIn()) {
@@ -333,117 +540,20 @@ export class AuthService {
    * Récupérer le token
    */
   async getToken(): Promise<string> {
-    return this.keycloak.getToken();
-  }
+    const keycloakToken = await this.keycloak.getToken();
+    const backendToken = this.getAuthToken();
 
-  /**
-   * Récupérer le refresh token Keycloak de manière asynchrone
-   */
-  async getKeycloakRefreshToken(): Promise<string | undefined> {
-    const refreshToken = this.keycloak.getKeycloakInstance().refreshToken;
-    console.log('🔍 [AUTH SERVICE] Récupération refresh token Keycloak:', !!refreshToken);
-
-    if (refreshToken) {
-      // Parser et afficher les informations du refresh token
-      const parsed = this.parseJwt(refreshToken);
-      if (parsed) {
-        const now = Math.floor(Date.now() / 1000);
-        const expiresAt = parsed.exp;
-        const issuedAt = parsed.iat;
-        const timeUntilExpiry = expiresAt - now;
-
-        console.log('📅 [REFRESH TOKEN INFO] ==================');
-        console.log('📅 Date actuelle:', new Date().toLocaleString());
-        console.log('📅 Token émis le (iat):', new Date(issuedAt * 1000).toLocaleString());
-        console.log('📅 Token expire le (exp):', new Date(expiresAt * 1000).toLocaleString());
-        console.log('📅 Temps restant:', Math.floor(timeUntilExpiry / 60), 'minutes', timeUntilExpiry % 60, 'secondes');
-        console.log('📅 Token expiré?', timeUntilExpiry <= 0 ? '❌ OUI' : '✅ NON');
-        console.log('📅 ==================');
-
-        if (timeUntilExpiry <= 0) {
-          console.error('❌ [REFRESH TOKEN] Le refresh token est déjà EXPIRÉ!');
-          console.error('❌ Expiré depuis:', Math.abs(Math.floor(timeUntilExpiry / 60)), 'minutes');
-        } else if (timeUntilExpiry < 300) { // Moins de 5 minutes
-          console.warn('⚠️ [REFRESH TOKEN] Le refresh token expire bientôt!');
-        }
-      }
+    // Priorité 1: Token Keycloak (injecté ou OAuth)
+    if (keycloakToken) {
+      return keycloakToken;
     }
 
-    return refreshToken;
-  }
-
-  /**
-   * Rafraîchir le token Keycloak via le backend
-   * Le backend communique avec Keycloak pour obtenir un nouveau token
-   */
-  refreshKeycloakTokenViaBackend(keycloakRefreshToken: string): Observable<TokenResponse> {
-    console.log('🔄 [AUTH SERVICE] Refresh Keycloak via backend');
-    console.log('🔄 [AUTH SERVICE] Refresh token présent:', !!keycloakRefreshToken);
-
-    // Afficher les infos du refresh token AVANT l'envoi
-    const refreshTokenParsed = this.parseJwt(keycloakRefreshToken);
-    if (refreshTokenParsed) {
-      const now = Math.floor(Date.now() / 1000);
-      const refreshExpiresAt = refreshTokenParsed.exp;
-      const refreshTimeRemaining = refreshExpiresAt - now;
-
-      console.log('📤 [ENVOI REFRESH TOKEN] ==================');
-      console.log('📤 Refresh token expire le:', new Date(refreshExpiresAt * 1000).toLocaleString());
-      console.log('📤 Temps restant:', Math.floor(refreshTimeRemaining / 60), 'minutes', refreshTimeRemaining % 60, 'secondes');
-      console.log('📤 Est expiré?', refreshTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
-      console.log('📤 ==================');
+    // Priorité 2: Token backend stocké
+    if (backendToken) {
+      return backendToken;
     }
 
-    const refreshUrl = `${environment.apiUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`;
-    const fullUrl = `${refreshUrl}?refresh_token=${encodeURIComponent(keycloakRefreshToken)}`;
-
-    console.log('🔄 [AUTH SERVICE] URL complète:', fullUrl);
-
-    return this.http.post<TokenResponse>(fullUrl, null).pipe(
-      tap(async response => {
-        console.log('✅ [AUTH SERVICE] Nouveau token Keycloak reçu via backend');
-        console.log('✅ [AUTH SERVICE] Access token présent:', !!response.access_token);
-        console.log('✅ [AUTH SERVICE] Refresh token présent:', !!response.refresh_token);
-
-        // Mettre à jour les tokens dans Keycloak
-        try {
-          const keycloakInstance = this.keycloak.getKeycloakInstance();
-          keycloakInstance.token = response.access_token;
-          keycloakInstance.refreshToken = response.refresh_token;
-
-          if (response.expires_in) {
-            // Calculer le temps d'expiration
-            const expiresAt = Math.floor(Date.now() / 1000) + response.expires_in;
-            keycloakInstance.tokenParsed = this.parseJwt(response.access_token);
-            keycloakInstance.refreshTokenParsed = this.parseJwt(response.refresh_token);
-          }
-
-          console.log('✅ [AUTH SERVICE] Tokens Keycloak mis à jour');
-        } catch (error) {
-          console.error('❌ [AUTH SERVICE] Erreur mise à jour tokens Keycloak:', error);
-        }
-      }),
-      catchError(error => {
-        console.error('❌ [AUTH SERVICE] Erreur refresh Keycloak via backend:', error);
-        console.error('❌ [AUTH SERVICE] Status:', error.status);
-        console.error('❌ [AUTH SERVICE] StatusText:', error.statusText);
-        console.error('❌ [AUTH SERVICE] Message:', error.message);
-        console.error('❌ [AUTH SERVICE] Error response body:', error.error);
-
-        // Afficher l'URL complète qui a échoué
-        console.error('❌ [AUTH SERVICE] URL qui a échoué:', error.url);
-
-        // Afficher tous les headers de la réponse
-        if (error.headers) {
-          console.error('❌ [AUTH SERVICE] Response headers:');
-          error.headers.keys().forEach((key: string) => {
-            console.error(`   ${key}: ${error.headers.get(key)}`);
-          });
-        }
-
-        throw error;
-      })
-    );
+    return '';
   }
 
   /**
@@ -461,53 +571,6 @@ export class AuthService {
       console.error('Erreur parsing JWT:', e);
       return null;
     }
-  }
-
-  /**
-   * Afficher les informations détaillées sur les tokens Keycloak
-   */
-  displayTokensInfo(): void {
-    const keycloakInstance = this.keycloak.getKeycloakInstance();
-    const accessToken = keycloakInstance.token;
-    const refreshToken = keycloakInstance.refreshToken;
-
-    console.log('🔐 [TOKENS INFO] ==================');
-
-    if (accessToken) {
-      const accessParsed = this.parseJwt(accessToken);
-      if (accessParsed) {
-        const now = Math.floor(Date.now() / 1000);
-        const accessExpiresAt = accessParsed.exp;
-        const accessTimeRemaining = accessExpiresAt - now;
-
-        console.log('🎫 ACCESS TOKEN:');
-        console.log('   Expire le:', new Date(accessExpiresAt * 1000).toLocaleString());
-        console.log('   Temps restant:', Math.floor(accessTimeRemaining / 60), 'min', accessTimeRemaining % 60, 'sec');
-        console.log('   Expiré?', accessTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
-      }
-    } else {
-      console.log('🎫 ACCESS TOKEN: ❌ Absent');
-    }
-
-    console.log('');
-
-    if (refreshToken) {
-      const refreshParsed = this.parseJwt(refreshToken);
-      if (refreshParsed) {
-        const now = Math.floor(Date.now() / 1000);
-        const refreshExpiresAt = refreshParsed.exp;
-        const refreshTimeRemaining = refreshExpiresAt - now;
-
-        console.log('🔄 REFRESH TOKEN:');
-        console.log('   Expire le:', new Date(refreshExpiresAt * 1000).toLocaleString());
-        console.log('   Temps restant:', Math.floor(refreshTimeRemaining / 60), 'min', refreshTimeRemaining % 60, 'sec');
-        console.log('   Expiré?', refreshTimeRemaining <= 0 ? '❌ OUI' : '✅ NON');
-      }
-    } else {
-      console.log('🔄 REFRESH TOKEN: ❌ Absent');
-    }
-
-    console.log('🔐 ==================');
   }
 
   /**
@@ -548,10 +611,21 @@ export class AuthService {
 
   /**
    * Forcer le rafraîchissement du token
+   * Utilise la bonne méthode selon le type d'authentification
    */
   async refreshToken(minValidity: number = 5): Promise<boolean> {
     try {
-      return await this.keycloak.getKeycloakInstance().updateToken(minValidity);
+      const ctx = this.getCurrentContext();
+      const isBackendAuth = this.isBackendAuthenticated(ctx);
+
+      if (isBackendAuth) {
+        // ✅ Authentification backend → Refresh via backend endpoint
+        const result = await firstValueFrom(this.refreshBackendToken(ctx));
+        return !!result.access_token;
+      } else {
+        // ✅ Authentification OAuth → Refresh via Keycloak direct
+        return await this.keycloak.getKeycloakInstance().updateToken(minValidity);
+      }
     } catch (error) {
       console.error('Erreur lors du refresh du token:', error);
       return false;
@@ -560,6 +634,8 @@ export class AuthService {
 
   /**
    * Décoder un JWT token de manière sécurisée
+   * ⚠️ Ne vérifie PAS l'expiration - permet d'extraire les rôles même d'un token expiré
+   * Le refresh sera géré par l'intercepteur lors de la première requête
    */
   private decodeToken(token: string): any {
     try {
@@ -577,11 +653,9 @@ export class AuthService {
 
       const decoded = JSON.parse(jsonPayload);
 
-      // Vérifier l'expiration du token
-      if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-        this.secureLog('Token expiré');
-        return null;
-      }
+      // ⚠️ NE PAS vérifier l'expiration ici !
+      // Cela permet au guard de vérifier les rôles même avec un token expiré
+      // L'intercepteur HTTP se chargera du refresh automatique lors de la première requête
 
       return decoded;
     } catch (error) {
@@ -593,8 +667,8 @@ export class AuthService {
   /**
    * Récupérer les rôles depuis le token backend
    */
-  private getRolesFromBackendToken(): string[] {
-    const token = this.getAuthToken();
+  private getRolesFromBackendToken(context?: AppContext): string[] {
+    const token = this.getAuthToken(context);
     if (!token) return [];
 
     const decoded = this.decodeToken(token);
@@ -607,11 +681,11 @@ export class AuthService {
   /**
    * Récupérer tous les rôles de l'utilisateur (Keycloak ou Backend)
    */
-  getUserRoles(): string[] {
+  getUserRoles(context?: AppContext): string[] {
     // Priorité 1: Token backend
-    const backendToken = this.getAuthToken();
+    const backendToken = this.getAuthToken(context);
     if (backendToken) {
-      return this.getRolesFromBackendToken();
+      return this.getRolesFromBackendToken(context);
     }
 
     // Priorité 2: Token Keycloak
@@ -624,17 +698,30 @@ export class AuthService {
 
   /**
    * Vérifier si l'utilisateur a un rôle spécifique
+   * @param role Le rôle à vérifier
+   * @param context Le contexte dans lequel vérifier (optionnel, utilise le contexte actuel si non spécifié)
    */
-  hasRole(role: string): boolean {
-    // Priorité 1: Token backend
-    const backendToken = this.getAuthToken();
+  hasRole(role: string, context?: AppContext): boolean {
+    const ctx = context || this.getCurrentContext();
+
+    // Priorité 1: Token backend depuis localStorage
+    const backendToken = this.getAuthToken(ctx);
     if (backendToken) {
-      const roles = this.getRolesFromBackendToken();
+      const roles = this.getRolesFromBackendToken(ctx);
       return roles.includes(role) || roles.includes(`ROLE_${role}`);
     }
 
-    // Priorité 2: Token Keycloak
+    // Priorité 2: Token Keycloak injecté (depuis localStorage aussi)
     if (this.isLoggedIn()) {
+      const keycloakInstance = this.keycloak.getKeycloakInstance();
+
+      // Extraire les rôles du token JWT directement
+      if (keycloakInstance.tokenParsed) {
+        const tokenRoles = keycloakInstance.tokenParsed.realm_access?.roles || [];
+        return tokenRoles.includes(role) || tokenRoles.includes(`ROLE_${role}`);
+      }
+
+      // Fallback: utiliser isUserInRole de Keycloak
       return this.keycloak.isUserInRole(role);
     }
 
@@ -643,16 +730,18 @@ export class AuthService {
 
   /**
    * Vérifier si l'utilisateur est un admin
+   * @param context Le contexte dans lequel vérifier (optionnel, utilise le contexte actuel si non spécifié)
    */
-  isAdmin(): boolean {
-    return this.hasRole('ADMIN') || this.hasRole('ROLE_ADMIN');
+  isAdmin(context?: AppContext): boolean {
+    return this.hasRole('ADMIN', context) || this.hasRole('ROLE_ADMIN', context);
   }
 
   /**
    * Vérifier si l'utilisateur est un client
+   * @param context Le contexte dans lequel vérifier (optionnel, utilise le contexte actuel si non spécifié)
    */
-  isClient(): boolean {
-    return this.hasRole('CLIENT_COMPANY') || this.hasRole('CLIENT') || this.hasRole('ROLE_CLIENT');
+  isClient(context?: AppContext): boolean {
+    return this.hasRole('CLIENT_COMPANY', context) || this.hasRole('CLIENT', context) || this.hasRole('ROLE_CLIENT', context);
   }
 
   /**
@@ -797,10 +886,6 @@ export class AuthService {
           // Si c'est le même rôle, l'utilisateur est déjà configuré
           this.secureLog(`Utilisateur déjà configuré avec le rôle ${existingRoleType}`);
 
-          // Marquer que Keycloak est authentifié pour ce contexte
-          const ctx = oauthContext || (existingRoleType === 'ADMIN' ? 'admin' : 'user');
-          this.secureStorage.setItem(this.getKey('keycloak_authenticated', ctx), 'true');
-
           sessionStorage.removeItem('selectedRole');
           sessionStorage.removeItem('oauth_context');
 
@@ -868,13 +953,10 @@ export class AuthService {
 
       this.secureLog('Réponse API reçue');
 
-      // Récupérer le contexte pour sauvegarder le marqueur Keycloak
+      // Récupérer le contexte
       const oauthContext = sessionStorage.getItem('oauth_context') as 'admin' | 'user' | null;
       const context = oauthContext || (role === 'ADMIN' ? 'admin' : 'user');
-
-      // Marquer que Keycloak est authentifié pour ce contexte
-      this.secureStorage.setItem(this.getKey('keycloak_authenticated', context), 'true');
-      this.secureLog(`Marqueur Keycloak défini pour contexte: ${context}`);
+      this.secureLog(`Contexte: ${context}`);
 
       // Nettoyer le sessionStorage
       sessionStorage.removeItem('selectedRole');

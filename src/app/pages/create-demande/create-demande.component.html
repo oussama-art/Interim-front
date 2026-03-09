@@ -1,177 +1,221 @@
-<div class="create-demande-container">
-  <!-- Loading spinner pour le chargement en mode édition -->
-  <div *ngIf="isLoading && isEditMode" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Chargement de la demande...</p>
+<div class="create-container">
+  <!-- Loading state -->
+  <div *ngIf="isLoading && isEditMode" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Chargement...</p>
   </div>
 
+  <!-- Form content -->
   <div class="form-wrapper" *ngIf="!isLoading || !isEditMode">
-    <mat-card class="demande-card">
-      <mat-card-header>
-        <div class="header-content">
-          <button mat-icon-button routerLink="/app/demandes" class="back-button">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <div class="title-section">
-            <mat-card-title>{{ pageTitle }}</mat-card-title>
-            <mat-card-subtitle>{{ pageSubtitle }}</mat-card-subtitle>
-          </div>
-        </div>
-      </mat-card-header>
 
-      <mat-card-content>
-        <form [formGroup]="demandeForm" (ngSubmit)="onSubmit()">
+    <!-- Page header -->
+    <div class="page-header">
+      <button mat-icon-button routerLink="/app/demandes" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-title">
+        <h1>{{ pageTitle }}</h1>
+        <p class="subtitle">{{ pageSubtitle }}</p>
+      </div>
+    </div>
 
-          <!-- Informations générales -->
-          <div class="section-title">
-            <mat-icon>info</mat-icon>
-            <h3>Informations générales</h3>
-          </div>
+    <!-- Two Column Layout -->
+    <div class="form-layout">
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Titre de la demande</mat-label>
-              <input matInput
-                     formControlName="title"
-                     placeholder="Ex: Recrutement développeurs web">
-              <mat-icon matPrefix>text_fields</mat-icon>
-              <mat-error *ngIf="demandeForm.get('title')?.invalid">
-                {{ getErrorMessage('title') }}
-              </mat-error>
-            </mat-form-field>
-          </div>
+      <!-- Left Column: Form Fields -->
+      <div class="form-column">
+        <form [formGroup]="demandeForm" (ngSubmit)="onSubmit()" class="demande-form">
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput
-                        formControlName="description"
-                        rows="4"
-                        placeholder="Décrivez les détails de votre demande..."></textarea>
-              <mat-icon matPrefix>description</mat-icon>
-              <mat-error *ngIf="demandeForm.get('description')?.invalid">
-                {{ getErrorMessage('description') }}
-              </mat-error>
-            </mat-form-field>
-          </div>
+          <!-- General Information -->
+          <section class="form-section">
+            <h2 class="section-label">Informations générales</h2>
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Nombre total d'employés requis</mat-label>
-              <input matInput
-                     type="number"
-                     formControlName="totalEmployeesNeeded"
-                     min="1">
-              <mat-icon matPrefix>groups</mat-icon>
-              <mat-error *ngIf="demandeForm.get('totalEmployeesNeeded')?.invalid">
-                {{ getErrorMessage('totalEmployeesNeeded') }}
-              </mat-error>
-            </mat-form-field>
-          </div>
+            <div class="compact-grid">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Titre</mat-label>
+                <input matInput formControlName="title" placeholder="Ex: Recrutement développeurs web">
+                <mat-error *ngIf="demandeForm.get('title')?.invalid">
+                  {{ getErrorMessage('title') }}
+                </mat-error>
+              </mat-form-field>
 
-          <!-- Alert de validation de quantité -->
-          <div *ngIf="quantityValidationError" class="quantity-alert">
-            <mat-icon>warning</mat-icon>
-            <span>{{ quantityValidationError }}</span>
-          </div>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="3"
+                          placeholder="Décrivez les détails..."></textarea>
+                <mat-error *ngIf="demandeForm.get('description')?.invalid">
+                  {{ getErrorMessage('description') }}
+                </mat-error>
+              </mat-form-field>
 
-          <!-- Récapitulatif des quantités -->
-          <div class="quantity-summary">
-            <span class="summary-label">Total des quantités :</span>
-            <span class="summary-value" [class.error]="quantityValidationError">
-              {{ getTotalQuantity() }} / {{ demandeForm.get('totalEmployeesNeeded')?.value || 0 }}
-            </span>
-          </div>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Date de début</mat-label>
+                <input matInput [matDatepicker]="startPicker" [min]="minDate"
+                       formControlName="startDate" placeholder="JJ/MM/AAAA"
+                       (click)="startPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+                <mat-error *ngIf="demandeForm.get('startDate')?.invalid">
+                  {{ getErrorMessage('startDate') }}
+                </mat-error>
+              </mat-form-field>
 
-          <!-- Profils requis -->
-          <div class="section-title">
-            <mat-icon>badge</mat-icon>
-            <h3>Profils requis</h3>
-          </div>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Date de fin</mat-label>
+                <input matInput [matDatepicker]="endPicker" [min]="getMinEndDate()"
+                       formControlName="endDate" placeholder="JJ/MM/AAAA"
+                       (click)="endPicker.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+                <mat-datepicker #endPicker></mat-datepicker>
+                <mat-error *ngIf="demandeForm.get('endDate')?.invalid">
+                  {{ getErrorMessage('endDate') }}
+                </mat-error>
+              </mat-form-field>
 
-          <div formArrayName="profils" class="profils-section">
-            <div *ngFor="let profil of profils.controls; let i = index"
-                 [formGroupName]="i"
-                 class="profil-card">
-
-              <div class="profil-header">
-                <h4>Profil {{ i + 1 }}</h4>
-                <button mat-icon-button
-                        type="button"
-                        (click)="removeProfil(i)"
-                        [disabled]="profils.length === 1"
-                        class="remove-button">
-                  <mat-icon>delete</mat-icon>
-                </button>
+              <div *ngIf="demandeForm.hasError('dateRange')" class="alert-message">
+                <mat-icon>error_outline</mat-icon>
+                <span>La date de fin doit être postérieure à la date de début</span>
               </div>
 
-              <div class="profil-content">
-                <mat-form-field appearance="outline" class="profil-field">
-                  <mat-label>Nom du profil</mat-label>
-                  <input matInput
-                         formControlName="profilName"
-                         placeholder="Ex: Développeur Frontend"
-                         [matAutocomplete]="auto">
-                  <mat-icon matPrefix>person</mat-icon>
-                  <mat-autocomplete #auto="matAutocomplete">
-                    <mat-option *ngFor="let profil of filteredProfils[i] | async" [value]="profil">
-                      {{ profil }}
-                    </mat-option>
-                  </mat-autocomplete>
-                  <mat-error *ngIf="profils.at(i).get('profilName')?.invalid">
-                    {{ getErrorMessage('profilName', i) }}
-                  </mat-error>
-                </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Nombre total requis</mat-label>
+                <input matInput type="number" formControlName="totalEmployeesNeeded" min="1">
+                <mat-error *ngIf="demandeForm.get('totalEmployeesNeeded')?.invalid">
+                  {{ getErrorMessage('totalEmployeesNeeded') }}
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
 
-                <mat-form-field appearance="outline" class="quantity-field">
-                  <mat-label>Quantité</mat-label>
-                  <input matInput
-                         type="number"
-                         formControlName="quantity"
-                         min="1">
-                  <mat-icon matPrefix>numbers</mat-icon>
-                  <mat-error *ngIf="profils.at(i).get('quantity')?.invalid">
-                    {{ getErrorMessage('quantity', i) }}
-                  </mat-error>
-                </mat-form-field>
+          <!-- Profils Section -->
+          <section class="form-section">
+            <div class="section-header">
+              <h2 class="section-label">Profils requis</h2>
+              <span class="badge-count">{{ profils.length }}</span>
+            </div>
+
+            <div formArrayName="profils" class="profils-list compact">
+              <div *ngFor="let profil of profils.controls; let i = index"
+                   [formGroupName]="i" class="profil-item compact">
+
+                <div class="profil-item-header">
+                  <span class="profil-number">{{ i + 1 }}</span>
+                  <button mat-icon-button type="button" (click)="removeProfil(i)"
+                          [disabled]="profils.length === 1" class="delete-btn">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+
+                <div class="profil-fields">
+                  <mat-form-field appearance="outline" class="profil-name-field">
+                    <mat-label>Profil</mat-label>
+                    <input matInput formControlName="profilName"
+                           placeholder="Ex: Développeur Frontend"
+                           [matAutocomplete]="auto"
+                           (click)="onProfilInputClick($event, i)">
+                    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayProfil">
+                      <mat-option *ngFor="let profil of filteredProfils[i] | async" [value]="profil">
+                        {{ profil }}
+                      </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="profils.at(i).get('profilName')?.invalid">
+                      {{ getErrorMessage('profilName', i) }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="profil-quantity-field">
+                    <mat-label>Qté</mat-label>
+                    <input matInput type="number" formControlName="quantity" min="1">
+                    <mat-error *ngIf="profils.at(i).get('quantity')?.invalid">
+                      {{ getErrorMessage('quantity', i) }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <button mat-stroked-button type="button" (click)="addProfil()"
+                    [disabled]="getTotalQuantity() >= (demandeForm.get('totalEmployeesNeeded')?.value || 0)"
+                    class="add-profil-btn">
+              <mat-icon>add</mat-icon>
+              Ajouter un profil
+            </button>
+
+            <div *ngIf="quantityValidationError" class="alert-message">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ quantityValidationError }}</span>
+            </div>
+          </section>
+
+        </form>
+      </div>
+
+      <!-- Right Column: Summary Panel -->
+      <div class="summary-column">
+        <div class="summary-panel">
+          <h3 class="summary-title">Résumé</h3>
+
+          <!-- Title Preview -->
+          <div class="summary-section">
+            <span class="summary-label">Titre</span>
+            <p class="summary-text">{{ demandeForm.get('title')?.value || 'Non défini' }}</p>
+          </div>
+
+          <!-- Dates -->
+          <div class="summary-section">
+            <span class="summary-label">Période</span>
+            <div class="date-range">
+              <div class="date-item">
+                <span class="date-label">Début</span>
+                <span class="date-value">{{ demandeForm.get('startDate')?.value ? (demandeForm.get('startDate')?.value | date:'dd/MM/yyyy') : '-' }}</span>
+              </div>
+              <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+              <div class="date-item">
+                <span class="date-label">Fin</span>
+                <span class="date-value">{{ demandeForm.get('endDate')?.value ? (demandeForm.get('endDate')?.value | date:'dd/MM/yyyy') : '-' }}</span>
               </div>
             </div>
           </div>
 
-          <button mat-stroked-button
-                  type="button"
-                  (click)="addProfil()"
-                  [disabled]="getTotalQuantity() >= (demandeForm.get('totalEmployeesNeeded')?.value || 0)"
-                  class="add-profil-button">
-            <mat-icon>add</mat-icon>
-            Ajouter un profil
-          </button>
-
-          <p *ngIf="getTotalQuantity() >= (demandeForm.get('totalEmployeesNeeded')?.value || 0)" class="add-profil-disabled-message">
-            <mat-icon>info</mat-icon>
-            Vous avez atteint le nombre maximum d'employés requis. Augmentez le total ou réduisez les quantités pour ajouter un profil.
-          </p>
-
-          <!-- Actions -->
-          <div class="form-actions">
-            <button mat-stroked-button
-                    type="button"
-                    routerLink="/app/demandes"
-                    [disabled]="isLoading">
-              Annuler
-            </button>
-            <button mat-raised-button
-                    color="primary"
-                    type="submit"
-                    [disabled]="isLoading">
-              <mat-icon *ngIf="!isLoading">{{ isEditMode ? 'save' : 'send' }}</mat-icon>
-              <mat-icon *ngIf="isLoading" class="spinner">refresh</mat-icon>
-              {{ isLoading ? (isEditMode ? 'Modification en cours...' : 'Création en cours...') : (isEditMode ? 'Enregistrer les modifications' : 'Créer la demande') }}
-            </button>
+          <!-- Total Employees -->
+          <div class="summary-section">
+            <span class="summary-label">Employés requis</span>
+            <div class="quantity-display">
+              <span class="summary-large" [class.error]="quantityValidationError">{{ getTotalQuantity() }}</span>
+              <span class="divider">/</span>
+              <span class="summary-large total">{{ demandeForm.get('totalEmployeesNeeded')?.value || 0 }}</span>
+            </div>
           </div>
 
-        </form>
-      </mat-card-content>
-    </mat-card>
+          <!-- Profils List -->
+          <div class="summary-section" *ngIf="profils.length > 0">
+            <span class="summary-label">Profils ({{ profils.length }})</span>
+            <div class="profils-summary">
+              <div *ngFor="let profil of profils.controls; let i = index" class="profil-summary-item">
+                <mat-icon class="profil-icon">person</mat-icon>
+                <span class="profil-summary-name">{{ profil.get('profilName')?.value || 'Profil ' + (i + 1) }}</span>
+                <span class="profil-summary-qty">×{{ profil.get('quantity')?.value || 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="summary-actions">
+            <button mat-stroked-button type="button" routerLink="/app/demandes"
+                    [disabled]="isLoading" class="cancel-btn">
+              Annuler
+            </button>
+            <button mat-raised-button color="primary" type="submit"
+                    (click)="onSubmit()"
+                    [disabled]="isLoading || !canSave()" class="submit-btn">
+              <mat-icon *ngIf="!isLoading">{{ isEditMode ? 'check' : 'send' }}</mat-icon>
+              <mat-icon *ngIf="isLoading" class="spinning">refresh</mat-icon>
+              <span>{{ isEditMode ? 'Enregistrer' : 'Créer' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>

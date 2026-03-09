@@ -1,48 +1,284 @@
-<div class="home-container">
-  <div class="welcome-section">
-    <h1>Bienvenue sur HireUp</h1>
-    <p>Votre plateforme de gestion d'intérim</p>
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>dashboard</mat-icon>
+          Tableau de bord
+        </h1>
+        <p class="subtitle">Vue d'ensemble de votre activité et de vos performances</p>
+      </div>
+    </div>
   </div>
 
-  <div class="dashboard-grid">
-    <div class="stat-card">
-      <div class="stat-icon">
-        <mat-icon>description</mat-icon>
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Chargement du tableau de bord...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading" class="dashboard-content">
+
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+      <div class="kpi-card primary">
+        <div class="kpi-icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value">{{ stats.totalDemandes }}</div>
+          <div class="kpi-label">Demandes totales</div>
+          <div class="kpi-sublabel">{{ stats.demandesActives }} actives</div>
+        </div>
+        <div class="kpi-decoration kpi-decoration-1"></div>
       </div>
-      <div class="stat-content">
-        <h3>42</h3>
-        <p>Contrats actifs</p>
+
+      <div class="kpi-card secondary">
+        <div class="kpi-icon">
+          <mat-icon>work_outline</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value">{{ stats.totalOffres }}</div>
+          <div class="kpi-label">Offres reçues</div>
+          <div class="kpi-sublabel" *ngIf="stats.offresNouvelles > 0">
+            <span class="badge-new">{{ stats.offresNouvelles }} nouvelles</span>
+          </div>
+        </div>
+        <div class="kpi-decoration kpi-decoration-2"></div>
+      </div>
+
+      <div class="kpi-card tertiary">
+        <div class="kpi-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value">{{ stats.candidatsAcceptes }}</div>
+          <div class="kpi-label">Candidats acceptés</div>
+          <div class="kpi-sublabel">{{ stats.candidatsEnAttente }} en attente</div>
+        </div>
+        <div class="kpi-decoration kpi-decoration-3"></div>
+      </div>
+
+      <div class="kpi-card quaternary">
+        <div class="kpi-icon">
+          <mat-icon>description</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-value">{{ stats.totalContrats }}</div>
+          <div class="kpi-label">Contrats</div>
+          <div class="kpi-sublabel">{{ stats.contratsActifs }} actifs</div>
+        </div>
+        <div class="kpi-decoration kpi-decoration-4"></div>
       </div>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-icon">
-        <mat-icon>schedule</mat-icon>
+    <!-- Charts and Stats Section -->
+    <div class="charts-section">
+      <!-- Demandes Status Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>
+            <mat-icon>pie_chart</mat-icon>
+            Statut des demandes
+          </h3>
+        </div>
+        <div class="chart-content">
+          <div class="stats-bars">
+            <div *ngFor="let stat of demandesStatus" class="stat-bar-item">
+              <div class="stat-bar-header">
+                <div class="stat-bar-label">
+                  <mat-icon [style.color]="stat.color">{{ stat.icon }}</mat-icon>
+                  <span>{{ stat.label }}</span>
+                </div>
+                <span class="stat-bar-value">{{ stat.value }}</span>
+              </div>
+              <div class="stat-bar-track">
+                <div
+                  class="stat-bar-fill"
+                  [style.width]="stats.totalDemandes > 0 ? (stat.value / stats.totalDemandes * 100) + '%' : '0%'"
+                  [style.background]="stat.color">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat-content">
-        <h3>128</h3>
-        <p>Feuilles de temps</p>
+
+      <!-- Offres Status Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>
+            <mat-icon>analytics</mat-icon>
+            Répartition des offres
+          </h3>
+        </div>
+        <div class="chart-content">
+          <div class="donut-chart">
+            <div class="donut-chart-circle">
+              <div class="donut-center">
+                <div class="donut-value">{{ stats.totalOffres }}</div>
+                <div class="donut-label">Offres</div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div *ngFor="let stat of offresStatus" class="legend-item">
+                <span class="legend-dot" [style.background]="stat.color"></span>
+                <span class="legend-label">{{ stat.label }}</span>
+                <span class="legend-value">{{ stat.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidates Overview -->
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <h3>
+            <mat-icon>groups</mat-icon>
+            Vue d'ensemble des candidats
+          </h3>
+        </div>
+        <div class="chart-content">
+          <div class="candidates-overview">
+            <div class="candidate-metric">
+              <div class="metric-icon accepted">
+                <mat-icon>check_circle</mat-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ stats.candidatsAcceptes }}</div>
+                <div class="metric-label">Candidats acceptés</div>
+              </div>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="candidate-metric">
+              <div class="metric-icon pending">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ stats.candidatsEnAttente }}</div>
+                <div class="metric-label">En attente de validation</div>
+              </div>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="candidate-metric">
+              <div class="metric-icon total">
+                <mat-icon>people_outline</mat-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ stats.candidatsAcceptes + stats.candidatsEnAttente }}</div>
+                <div class="metric-label">Total proposés</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-icon">
-        <mat-icon>receipt_long</mat-icon>
+    <!-- Recent Activity Section -->
+    <div class="activity-section">
+      <!-- Recent Demandes -->
+      <div class="activity-card">
+        <div class="activity-header">
+          <h3>
+            <mat-icon>assignment</mat-icon>
+            Demandes récentes
+          </h3>
+          <a routerLink="/app/demandes" class="view-all-link">
+            Voir tout
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+        <div class="activity-content">
+          <div *ngIf="recentDemandes.length === 0" class="empty-activity">
+            <mat-icon>inbox</mat-icon>
+            <p>Aucune demande récente</p>
+          </div>
+          <div *ngFor="let item of recentDemandes" class="activity-item">
+            <div class="activity-icon-wrapper">
+              <div class="activity-icon" [style.background]="getStatusColor(item.status)">
+                <mat-icon>assignment</mat-icon>
+              </div>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">{{ item.title }}</div>
+              <div class="activity-subtitle">{{ item.subtitle }}</div>
+            </div>
+            <div class="activity-meta">
+              <span class="activity-status" [style.color]="getStatusColor(item.status)">
+                {{ getStatusLabel(item.status) }}
+              </span>
+              <span class="activity-date">{{ item.date | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat-content">
-        <h3>15</h3>
-        <p>Factures en attente</p>
+
+      <!-- Recent Offers -->
+      <div class="activity-card">
+        <div class="activity-header">
+          <h3>
+            <mat-icon>work_outline</mat-icon>
+            Offres récentes
+          </h3>
+          <a routerLink="/app/offers" class="view-all-link">
+            Voir tout
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+        <div class="activity-content">
+          <div *ngIf="recentOffers.length === 0" class="empty-activity">
+            <mat-icon>inbox</mat-icon>
+            <p>Aucune offre récente</p>
+          </div>
+          <div *ngFor="let item of recentOffers" class="activity-item">
+            <div class="activity-icon-wrapper">
+              <div class="activity-icon" [style.background]="getStatusColor(item.status)">
+                <mat-icon>work_outline</mat-icon>
+              </div>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">{{ item.title }}</div>
+              <div class="activity-subtitle">{{ item.subtitle }}</div>
+            </div>
+            <div class="activity-meta">
+              <span class="activity-status" [style.color]="getStatusColor(item.status)">
+                {{ getStatusLabel(item.status) }}
+              </span>
+              <span class="activity-date">{{ item.date | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-icon">
-        <mat-icon>work</mat-icon>
+    <!-- Quick Actions -->
+    <!-- <div class="quick-actions">
+      <h3 class="quick-actions-title">Actions rapides</h3>
+      <div class="quick-actions-grid">
+        <button mat-raised-button class="action-btn primary" routerLink="/app/demandes/create">
+          <mat-icon>add_circle</mat-icon>
+          <span>Nouvelle demande</span>
+        </button>
+        <button mat-raised-button class="action-btn secondary" routerLink="/app/offers">
+          <mat-icon>visibility</mat-icon>
+          <span>Voir les offres</span>
+        </button>
+        <button mat-raised-button class="action-btn tertiary" routerLink="/app/contracts">
+          <mat-icon>description</mat-icon>
+          <span>Mes contrats</span>
+        </button>
+        <button mat-raised-button class="action-btn quaternary" routerLink="/app/timesheets">
+          <mat-icon>schedule</mat-icon>
+          <span>Feuilles de temps</span>
+        </button>
       </div>
-      <div class="stat-content">
-        <h3>89</h3>
-        <p>Intérimaires actifs</p>
-      </div>
-    </div>
+    </div> -->
   </div>
 </div>

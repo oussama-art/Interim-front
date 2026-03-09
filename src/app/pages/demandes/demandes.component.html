@@ -1,13 +1,76 @@
-<div class="demandes-container">
-  <div class="header-section">
-    <div>
-      <h1>Mes Demandes</h1>
-      <p>Gérez vos demandes et suivez leur statut</p>
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>assignment</mat-icon>
+          Demandes
+        </h1>
+        <div class="subtitle-with-filters">
+          <p class="subtitle">Gérez vos demandes et suivez leur statut</p>
+          <div class="date-filters" *ngIf="!isLoading && demandes.length > 0">
+            <!-- <mat-form-field appearance="outline" class="filter-field-compact">
+              <mat-icon matIconPrefix>tag</mat-icon>
+              <input
+                matInput
+                [(ngModel)]="filterReference"
+                (input)="applyFilters()"
+                placeholder="Référence">
+              <button
+                mat-icon-button
+                matIconSuffix
+                *ngIf="filterReference"
+                (click)="filterReference = ''; applyFilters()"
+                aria-label="Effacer">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-form-field> -->
+
+            <mat-form-field appearance="outline" class="filter-field-compact">
+              <input
+                matInput
+                [matDatepicker]="startDatePicker"
+                [(ngModel)]="filterStartDate"
+                (dateChange)="onStartDateChange()"
+                placeholder="Date de début"
+                readonly
+                (click)="startDatePicker.open()">
+              <mat-datepicker-toggle matIconPrefix [for]="startDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #startDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="filter-field-compact">
+              <input
+                matInput
+                [matDatepicker]="endDatePicker"
+                [(ngModel)]="filterEndDate"
+                [min]="filterStartDate"
+                (dateChange)="applyFilters()"
+                placeholder="Date de fin"
+                readonly
+                (click)="endDatePicker.open()">
+              <mat-datepicker-toggle matIconPrefix [for]="endDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #endDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <button
+              mat-icon-button
+              class="clear-filters-icon-btn"
+              (click)="clearFilters()"
+              *ngIf="filterReference || filterStartDate || filterEndDate"
+              matTooltip="Réinitialiser les filtres">
+              <mat-icon>clear</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" routerLink="/app/demandes/create">
+          <mat-icon>add</mat-icon>
+          Nouvelle demande
+        </button>
+      </div>
     </div>
-    <button mat-raised-button color="primary" routerLink="/app/demandes/create">
-      <mat-icon>add</mat-icon>
-      Nouvelle demande
-    </button>
   </div>
 
   <!-- Loading spinner -->
@@ -17,7 +80,7 @@
   </div>
 
   <!-- Empty state -->
-  <div *ngIf="!isLoading && demandes.length === 0" class="empty-state">
+  <div *ngIf="!isLoading && filteredDemandes.length === 0 && demandes.length === 0" class="empty-state">
     <mat-icon class="empty-icon">assignment</mat-icon>
     <h2>Aucune demande pour le moment</h2>
     <p>Vous n'avez pas encore créé de demande. Commencez par créer votre première demande.</p>
@@ -27,43 +90,91 @@
     </button>
   </div>
 
+  <!-- No results state -->
+  <div *ngIf="!isLoading && filteredDemandes.length === 0 && demandes.length > 0" class="empty-state">
+    <mat-icon class="empty-icon">search_off</mat-icon>
+    <h2>Aucun résultat trouvé</h2>
+    <p>Aucune demande ne correspond à vos critères de recherche.</p>
+  </div>
+
   <!-- Demandes list -->
-  <div *ngIf="!isLoading && demandes.length > 0" class="demandes-grid">
-    <mat-card *ngFor="let demande of demandes" class="demande-card">
-      <mat-card-header>
-        <mat-card-title>{{ demande.title }}</mat-card-title>
-        <mat-card-subtitle>
-          Demande #{{ demande.id }}
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="demande-description">{{ demande.description }}</p>
-        <div class="demande-info">
-          <div class="info-item">
-            <mat-icon>groups</mat-icon>
-            <span>{{ demande.totalEmployeesNeeded }} employé(s)</span>
-          </div>
-          <div class="info-item">
-            <mat-icon>badge</mat-icon>
+  <div *ngIf="!isLoading && filteredDemandes.length > 0" class="demandes-grid">
+    <mat-card class="demande-card" *ngFor="let demande of filteredDemandes">
+
+      <div class="card-header">
+        <div class="header-metadata">
+          <span class="reference-pill">{{ demande.reference || 'REF-' + demande.id }}</span>
+          <span class="status-badge" *ngIf="isDemandeOpen(demande)">Active</span>
+          <button
+            mat-raised-button
+            color="warn"
+            class="close-demande-btn"
+            *ngIf="isDemandeOpen(demande)"
+            (click)="closeDemande(demande.id)"
+            title="Clôturer la demande">
+            <mat-icon>lock</mat-icon>
+            <span>Clôturer</span>
+          </button>
+          <span
+            class="closed-badge"
+            *ngIf="!isDemandeOpen(demande)">
+            <mat-icon>lock</mat-icon>
+            Demande clôturée
+          </span>
+        </div>
+        <h2 class="card-title">{{ demande.title }}</h2>
+        <p class="card-description" *ngIf="demande.description">{{ demande.description }}</p>
+      </div>
+
+      <mat-card-content class="card-body">
+        <!-- Metadata row -->
+        <div class="metadata-row">
+          <span class="metadata-item">
+            <mat-icon>event</mat-icon>
+            <span>{{ demande.startDate | date:'dd/MM/yy' }} - {{ demande.endDate | date:'dd/MM/yy' }}</span>
+          </span>
+          <span class="metadata-item">
+            <mat-icon>people</mat-icon>
+            <span>{{ demande.totalEmployeesNeeded }} postes</span>
+          </span>
+          <span class="metadata-item">
+            <mat-icon>work_outline</mat-icon>
             <span>{{ demande.profils.length || 0 }} profil(s)</span>
+          </span>
+        </div>
+
+        <!-- Profils -->
+        <div class="profils-section" *ngIf="demande.profils && demande.profils.length > 0">
+          <span class="profils-label">Profils recherchés :</span>
+          <div class="profils-chips">
+            <span *ngFor="let profil of demande.profils.slice(0, 3)" class="profil-chip">
+              {{ profil.profilName }}
+            </span>
+            <span *ngIf="demande.profils.length > 3" class="profil-chip more">
+              +{{ demande.profils.length - 3 }}
+            </span>
           </div>
         </div>
-        <div class="profils-list" *ngIf="demande.profils && demande.profils.length > 0">
-          <mat-chip *ngFor="let profil of demande.profils" class="profil-chip">
-            {{ profil.profilName }} ({{ profil.quantity }})
-          </mat-chip>
+
+        <!-- Footer -->
+        <div class="card-footer">
+          <button mat-stroked-button type="button" (click)="viewDemandeDetail(demande)" class="detail-btn">
+            <mat-icon>visibility</mat-icon>
+            Détails
+          </button>
+          <button
+            mat-stroked-button
+            color="primary"
+            type="button"
+            (click)="editDemande(demande)"
+            [disabled]="!isDemandeOpen(demande)"
+            class="edit-btn">
+            <mat-icon>edit</mat-icon>
+            Modifier
+          </button>
         </div>
       </mat-card-content>
-      <mat-card-actions>
-        <button mat-button color="primary" (click)="viewDemandeDetail(demande)">
-          <mat-icon>visibility</mat-icon>
-          Voir détails
-        </button>
-        <button mat-button color="accent" (click)="editDemande(demande)">
-          <mat-icon>edit</mat-icon>
-          Modifier
-        </button>
-      </mat-card-actions>
+
     </mat-card>
   </div>
 </div>

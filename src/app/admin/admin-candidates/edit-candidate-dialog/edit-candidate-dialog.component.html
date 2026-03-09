@@ -1,0 +1,171 @@
+<h2 mat-dialog-title>
+  <mat-icon>edit</mat-icon>
+  Modifier le candidat
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="candidateForm" class="candidate-form">
+    <!-- Informations personnelles -->
+    <div class="form-section">
+      <h3 class="section-title">Informations personnelles</h3>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Prénom</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="firstName" placeholder="Prénom" />
+          @if (candidateForm.get('firstName')?.hasError('required')) {
+            <mat-error>Le prénom est requis</mat-error>
+          }
+          @if (candidateForm.get('firstName')?.hasError('minlength')) {
+            <mat-error>Le prénom doit contenir au moins 2 caractères</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Nom</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="lastName" placeholder="Nom" />
+          @if (candidateForm.get('lastName')?.hasError('required')) {
+            <mat-error>Le nom est requis</mat-error>
+          }
+          @if (candidateForm.get('lastName')?.hasError('minlength')) {
+            <mat-error>Le nom doit contenir au moins 2 caractères</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <mat-icon matPrefix>email</mat-icon>
+        <input matInput formControlName="emailAddress" type="email" placeholder="exemple@email.com" />
+        @if (candidateForm.get('emailAddress')?.hasError('required')) {
+          <mat-error>L'email est requis</mat-error>
+        }
+        @if (candidateForm.get('emailAddress')?.hasError('email')) {
+          <mat-error>Email invalide</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Téléphone</mat-label>
+        <mat-icon matPrefix>phone</mat-icon>
+        <input matInput formControlName="phoneNumber" placeholder="+33612345678" />
+        @if (candidateForm.get('phoneNumber')?.hasError('required')) {
+          <mat-error>Le téléphone est requis</mat-error>
+        }
+        @if (candidateForm.get('phoneNumber')?.hasError('pattern')) {
+          <mat-error>Format: +33612345678</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Informations professionnelles -->
+    <div class="form-section">
+      <h3 class="section-title">Informations professionnelles</h3>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Profession</mat-label>
+        <mat-icon matPrefix>work</mat-icon>
+        <input
+          matInput
+          formControlName="professional"
+          placeholder="Profession"
+          [matAutocomplete]="auto"
+          (focus)="onProfessionalFocus()"
+        />
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (profil of filteredProfils; track profil) {
+            <mat-option [value]="profil">{{ profil }}</mat-option>
+          }
+        </mat-autocomplete>
+        @if (candidateForm.get('professional')?.hasError('required')) {
+          <mat-error>La profession est requise</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Années d'expérience</mat-label>
+        <mat-icon matPrefix>trending_up</mat-icon>
+        <input matInput formControlName="experienceYear" type="number" placeholder="0" />
+        @if (candidateForm.get('experienceYear')?.hasError('required')) {
+          <mat-error>L'expérience est requise</mat-error>
+        }
+        @if (candidateForm.get('experienceYear')?.hasError('min')) {
+          <mat-error>L'expérience doit être positive</mat-error>
+        }
+        @if (candidateForm.get('experienceYear')?.hasError('max')) {
+          <mat-error>L'expérience ne peut pas dépasser 50 ans</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Compétences</mat-label>
+        <mat-icon matPrefix>star</mat-icon>
+        <textarea
+          matInput
+          formControlName="skills"
+          placeholder="Liste des compétences"
+          rows="3"
+        ></textarea>
+      </mat-form-field>
+    </div>
+
+    <!-- Documents administratifs -->
+    <div class="form-section">
+      <h3 class="section-title">Documents administratifs</h3>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>CIN</mat-label>
+        <mat-icon matPrefix>badge</mat-icon>
+        <input matInput formControlName="cin" placeholder="Numéro CIN" />
+        @if (candidateForm.get('cin')?.hasError('minlength')) {
+          <mat-error>Le CIN doit contenir au moins 8 caractères</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Numéro CSS</mat-label>
+        <mat-icon matPrefix>health_and_safety</mat-icon>
+        <input matInput formControlName="cssNumber" placeholder="Numéro CSS" />
+      </mat-form-field>
+    </div>
+
+    <!-- Statut -->
+    <div class="form-section">
+      <h3 class="section-title">Statut</h3>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Actif</mat-label>
+        <mat-select formControlName="active">
+          <mat-option [value]="true">Actif</mat-option>
+          <mat-option [value]="false">Inactif</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="loading">
+    Annuler
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="!candidateForm.valid || loading"
+  >
+    @if (loading) {
+      <ng-container>
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Modification...</span>
+      </ng-container>
+    } @else {
+      <ng-container>
+        <mat-icon>save</mat-icon>
+        <span>Enregistrer</span>
+      </ng-container>
+    }
+  </button>
+</mat-dialog-actions>

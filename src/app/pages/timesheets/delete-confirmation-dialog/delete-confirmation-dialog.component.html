@@ -1,0 +1,20 @@
+<div class="delete-confirmation-dialog">
+  <div class="dialog-header">
+    <mat-icon class="warning-icon">warning</mat-icon>
+    <h2 mat-dialog-title>{{ data.title }}</h2>
+  </div>
+
+  <div mat-dialog-content>
+    <p class="dialog-message">{{ data.message }}</p>
+  </div>
+
+  <div mat-dialog-actions>
+    <button mat-button (click)="onCancel()" class="cancel-btn">
+      Annuler
+    </button>
+    <button mat-raised-button (click)="onConfirm()" class="delete-btn">
+      <mat-icon>delete</mat-icon>
+      Supprimer
+    </button>
+  </div>
+</div>

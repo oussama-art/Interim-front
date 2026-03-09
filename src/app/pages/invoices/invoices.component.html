@@ -1,14 +1,24 @@
 <div class="page-container">
   <div class="page-header">
-    <h1>Gestion des Factures</h1>
-    <button mat-raised-button color="primary">
-      <mat-icon>add</mat-icon>
-      Nouvelle facture
-    </button>
+    <div class="header-content">
+      <div class="header-left">
+        <h1>
+          <mat-icon>receipt_long</mat-icon>
+          Factures
+        </h1>
+        <p class="subtitle">Suivi et gestion de vos factures clients</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary">
+          <mat-icon>add</mat-icon>
+          Nouvelle facture
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="cards-grid">
-    <div class="simple-card" *ngFor="let invoice of invoices">
+    <div class="simple-card" *ngFor="let invoice of filteredInvoices">
       <div class="card-header">
         <h3>{{ invoice.invoiceNumber }}</h3>
         <span class="status-badge" [ngClass]="getStatusClass(invoice.status)">

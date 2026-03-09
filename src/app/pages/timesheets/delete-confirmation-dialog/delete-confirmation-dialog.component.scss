@@ -1,0 +1,141 @@
+.delete-confirmation-dialog {
+  padding: 0;
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid #e5e7eb;
+
+    .warning-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #dc2626;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+
+  .mat-mdc-dialog-content {
+    padding: 24px;
+
+    .dialog-message {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4b5563;
+    }
+  }
+
+  .mat-mdc-dialog-actions {
+    padding: 16px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #e5e7eb;
+
+    .cancel-btn {
+      color: #6b7280;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f3f4f6;
+        color: #374151;
+      }
+    }
+
+    .delete-btn {
+      background-color: #dc2626;
+      color: white;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background-color: #b91c1c;
+        box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// Styles responsive pour le dialog
+@media screen and (max-width: 767px) {
+  .delete-confirmation-dialog {
+    .dialog-header {
+      padding: 16px 16px 12px;
+      flex-wrap: wrap;
+
+      .warning-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+
+      h2 {
+        font-size: 16px;
+        flex: 1;
+      }
+    }
+
+    .mat-mdc-dialog-content {
+      padding: 16px;
+
+      .dialog-message {
+        font-size: 13px;
+      }
+    }
+
+    .mat-mdc-dialog-actions {
+      padding: 12px 16px 16px;
+      flex-direction: column-reverse;
+      gap: 8px;
+
+      .cancel-btn,
+      .delete-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+// Adaptation tablette
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .delete-confirmation-dialog {
+    .dialog-header h2 {
+      font-size: 18px;
+    }
+  }
+}

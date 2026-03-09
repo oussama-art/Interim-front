@@ -21,29 +21,18 @@ export const authGuard: CanActivateFn = (route, state) => {
 };
 
 /**
- * Guard pour les routes publiques (login, register)
+ * Guard pour les routes publiques (login, register, company-registration)
  * Redirige vers dashboard si l'utilisateur est déjà connecté dans le bon contexte
  */
 export const publicGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Déterminer le contexte en fonction de l'URL
-  // Note: Cette détection basée sur l'URL est acceptable ICI car c'est juste pour
-  // déterminer où rediriger l'utilisateur déjà connecté, pas pour gérer l'état
-  const isAdminRoute = state.url.includes('/admin');
-  const context = isAdminRoute ? 'admin' : 'user';
-
-  // Vérifier si l'utilisateur est déjà authentifié dans CE contexte
-  if (authService.isAuthenticated(context)) {
+  // Vérifier si l'utilisateur (non-admin) est déjà authentifié
+  if (authService.isAuthenticated('user')) {
     // S'assurer que le contexte est correctement défini
-    authService.setContext(context);
-
-    if (context === 'admin') {
-      router.navigate(['/admin/dashboard']);
-    } else {
-      router.navigate(['/app/dashboard']);
-    }
+    authService.setContext('user');
+    router.navigate(['/app/dashboard']);
     return false;
   }
 

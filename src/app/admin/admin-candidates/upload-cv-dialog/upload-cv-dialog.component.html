@@ -1,0 +1,158 @@
+<div class="upload-cv-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>upload_file</mat-icon>
+      Créer un candidat avec CV
+    </h2>
+    <button mat-icon-button (click)="onCancel()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <p class="dialog-description">
+      Remplissez les informations de base et téléchargez le CV du candidat
+    </p>
+
+    <form [formGroup]="uploadForm" class="upload-form">
+      <!-- Prénom -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Prénom</mat-label>
+        <input
+          matInput
+          formControlName="firstName"
+          placeholder="Ex: Jean"
+          required>
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-error *ngIf="uploadForm.get('firstName')?.hasError('required')">
+          Le prénom est requis
+        </mat-error>
+        <mat-error *ngIf="uploadForm.get('firstName')?.hasError('minlength')">
+          Le prénom doit contenir au moins 2 caractères
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Nom -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nom</mat-label>
+        <input
+          matInput
+          formControlName="lastName"
+          placeholder="Ex: Dupont"
+          required>
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-error *ngIf="uploadForm.get('lastName')?.hasError('required')">
+          Le nom est requis
+        </mat-error>
+        <mat-error *ngIf="uploadForm.get('lastName')?.hasError('minlength')">
+          Le nom doit contenir au moins 2 caractères
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Profession -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Profession</mat-label>
+        <input
+          matInput
+          formControlName="professional"
+          placeholder="Ex: Développeur Full Stack"
+          [matAutocomplete]="auto"
+          (focus)="onProfessionalFocus()"
+          required>
+        <mat-icon matPrefix>work</mat-icon>
+        <mat-autocomplete #auto="matAutocomplete" [autoActiveFirstOption]="true">
+          <mat-option *ngFor="let professional of filteredProfessionals | async" [value]="professional">
+            <span class="profession-option">{{ professional }}</span>
+          </mat-option>
+          <mat-option *ngIf="availableProfessionals.length === 0" [disabled]="true">
+            <span class="no-profession-message">Aucune profession enregistrée</span>
+          </mat-option>
+        </mat-autocomplete>
+        <mat-hint>
+          {{ availableProfessionals.length }} profession(s) disponible(s) - Tapez pour filtrer
+        </mat-hint>
+        <mat-error *ngIf="uploadForm.get('professional')?.hasError('required')">
+          La profession est requise
+        </mat-error>
+        <mat-error *ngIf="uploadForm.get('professional')?.hasError('minlength')">
+          La profession doit contenir au moins 2 caractères
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Upload CV -->
+      <div class="file-upload-section">
+        <div class="file-upload-label">
+          <mat-icon>description</mat-icon>
+          <span>CV du candidat *</span>
+        </div>
+
+        <!-- Zone de drop ou bouton -->
+        <div class="file-upload-area" *ngIf="!selectedFile">
+          <input
+            type="file"
+            #fileInput
+            (change)="onFileSelected($event)"
+            accept=".pdf,.doc,.docx"
+            style="display: none">
+
+          <button
+            type="button"
+            mat-raised-button
+            color="primary"
+            (click)="fileInput.click()">
+            <mat-icon>cloud_upload</mat-icon>
+            Choisir un fichier
+          </button>
+
+          <p class="file-hint">PDF ou Word (max 5MB)</p>
+        </div>
+
+        <!-- Fichier sélectionné -->
+        <div class="selected-file" *ngIf="selectedFile">
+          <div class="file-info">
+            <mat-icon [class.pdf]="selectedFile.type === 'application/pdf'">
+              {{ getFileIcon() }}
+            </mat-icon>
+            <div class="file-details">
+              <span class="file-name">{{ selectedFile.name }}</span>
+              <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            mat-icon-button
+            color="warn"
+            (click)="removeFile()"
+            title="Supprimer le fichier">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
+        <!-- Erreur fichier -->
+        <div class="file-error" *ngIf="fileError">
+          <mat-icon>error</mat-icon>
+          <span>{{ fileError }}</span>
+        </div>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button
+      mat-stroked-button
+      (click)="onCancel()"
+      [disabled]="loading">
+      Annuler
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSubmit()"
+      [disabled]="loading || uploadForm.invalid || !selectedFile">
+      <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
+      <mat-icon *ngIf="!loading">check</mat-icon>
+      <span *ngIf="!loading">Créer le candidat</span>
+      <span *ngIf="loading">Création en cours...</span>
+    </button>
+  </mat-dialog-actions>
+</div>

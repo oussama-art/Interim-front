@@ -42,44 +42,11 @@
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Téléphone</mat-label>
-          <input matInput formControlName="phoneNumber" placeholder="12345678">
+          <input matInput formControlName="phoneNumber" placeholder="+21612345678">
           <mat-icon matPrefix>phone</mat-icon>
+          <mat-hint>Format: +212XXXXXXXX ou +33XXXXXXXXX</mat-hint>
           <mat-error *ngIf="candidateForm.get('phoneNumber')?.invalid">
             {{ getErrorMessage('phoneNumber') }}
-          </mat-error>
-        </mat-form-field>
-
-        <!-- Security -->
-        <div class="section-title">
-          <mat-icon>lock</mat-icon>
-          <h3>Sécurité</h3>
-        </div>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Mot de passe</mat-label>
-          <input matInput [type]="hidePassword ? 'password' : 'text'"
-                 formControlName="password" placeholder="Minimum 6 caractères">
-          <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword"
-                  type="button" [attr.aria-label]="'Hide password'">
-            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="candidateForm.get('password')?.invalid">
-            {{ getErrorMessage('password') }}
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Confirmer le mot de passe</mat-label>
-          <input matInput [type]="hideConfirmPassword ? 'password' : 'text'"
-                 formControlName="confirmPassword" placeholder="Re-entrez le mot de passe">
-          <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword"
-                  type="button" [attr.aria-label]="'Hide password'">
-            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="candidateForm.get('confirmPassword')?.invalid || candidateForm.hasError('passwordMismatch')">
-            {{ getErrorMessage('confirmPassword') }}
           </mat-error>
         </mat-form-field>
 
@@ -91,7 +58,13 @@
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Profession</mat-label>
-          <input matInput formControlName="professional" placeholder="Ex: Développeur, Électricien">
+          <mat-select formControlName="professional"
+                      placeholder="Sélectionnez une profession"
+                      panelClass="profession-select-panel">
+            <mat-option *ngFor="let profil of availableProfils" [value]="profil">
+              {{ profil }}
+            </mat-option>
+          </mat-select>
           <mat-icon matPrefix>work</mat-icon>
           <mat-error *ngIf="candidateForm.get('professional')?.invalid">
             {{ getErrorMessage('professional') }}

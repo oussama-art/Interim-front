@@ -1,0 +1,330 @@
+// Variables
+$primary: #2196F3;
+$success: #4caf50;
+$warn: #f44336;
+$accent: #ff9800;
+$gray-50: #fafafa;
+$gray-100: #f5f5f5;
+$gray-200: #eeeeee;
+$gray-300: #e0e0e0;
+$gray-600: #757575;
+$gray-700: #616161;
+$gray-800: #424242;
+$gray-900: #212121;
+$white: #ffffff;
+
+.offer-detail-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  width: 900px;
+  max-width: 95vw;
+
+  // Header
+  .dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid $gray-300;
+    background: $white;
+
+    .header-content {
+      flex: 1;
+
+      h2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: $gray-900;
+
+        mat-icon {
+          color: $primary;
+        }
+      }
+
+      .header-subtitle {
+        margin: 0;
+        color: $gray-600;
+        font-size: 14px;
+      }
+    }
+
+    .close-button {
+      color: $gray-600;
+    }
+  }
+
+  // Content
+  .dialog-content {
+    padding: 24px 32px;
+    overflow-y: auto;
+
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 20px;
+
+      p {
+        margin: 0;
+        color: $gray-600;
+        font-size: 14px;
+      }
+    }
+
+    .info-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: #E3F2FD;
+      border-left: 4px solid $primary;
+      border-radius: 8px;
+      margin-bottom: 24px;
+
+      mat-icon {
+        color: $primary;
+        flex-shrink: 0;
+      }
+
+      span {
+        color: $gray-800;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+    }
+
+    .profils-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      mat-accordion {
+        .profil-panel {
+          border-radius: 12px;
+          margin-bottom: 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          overflow: hidden;
+
+          ::ng-deep {
+            .mat-expansion-panel-header {
+              padding: 16px 24px;
+              background: $gray-100;
+              border-bottom: 3px solid $primary;
+              min-height: 64px;
+
+              &:hover {
+                background: #e8f4f8 !important;
+              }
+
+              &.mat-expanded {
+                background: #E3F2FD;
+                border-bottom-color: $primary;
+              }
+
+              .mat-expansion-panel-header-title {
+                flex: 1;
+
+                .panel-title-content {
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  width: 100%;
+
+                  mat-icon {
+                    color: $primary;
+                    font-size: 24px;
+                    width: 24px;
+                    height: 24px;
+                  }
+
+                  .profil-name {
+                    flex: 1;
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: $gray-900;
+                  }
+
+                  .quota-chip {
+                    font-size: 13px;
+                    font-weight: 700;
+                    min-height: 28px;
+                    padding: 0 12px;
+                  }
+                }
+              }
+
+              .mat-expansion-panel-header-description {
+                margin-right: 16px;
+
+                .candidates-count {
+                  color: $gray-600;
+                  font-size: 13px;
+                  font-weight: 500;
+                }
+              }
+            }
+
+            .mat-expansion-panel-body {
+              padding: 0;
+            }
+          }
+
+          .candidates-list-accordion {
+            padding: 16px;
+            background: $gray-50;
+          }
+        }
+      }
+
+      .candidates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+        background: $gray-50;
+        border-radius: 0 0 8px 8px;
+
+        .candidate-card {
+          background: $white;
+          border: 2px solid $gray-300;
+          border-radius: 12px;
+          padding: 20px;
+          transition: all 0.3s ease;
+
+          &.candidate-accepted {
+            border-color: $success;
+            background: #f1f8f4;
+          }
+
+          &.candidate-rejected {
+            border-color: $warn;
+            background: #fef2f2;
+            opacity: 0.7;
+          }
+
+          .candidate-info {
+            .candidate-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 16px;
+
+              .candidate-name {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                strong {
+                  font-size: 16px;
+                  color: $gray-900;
+                }
+
+                .exp-badge {
+                  display: inline-block;
+                  padding: 4px 12px;
+                  background: $gray-200;
+                  color: $gray-700;
+                  border-radius: 12px;
+                  font-size: 12px;
+                  font-weight: 600;
+                }
+              }
+            }
+
+            .candidate-details {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+
+              .detail-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: $gray-700;
+                font-size: 14px;
+
+                mat-icon {
+                  font-size: 18px;
+                  width: 18px;
+                  height: 18px;
+                  color: $gray-600;
+                }
+
+                &.skills {
+                  mat-icon {
+                    color: $primary;
+                  }
+                  span {
+                    font-style: italic;
+                  }
+                }
+              }
+            }
+          }
+
+          .candidate-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid $gray-300;
+
+            button {
+              flex: 1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              font-weight: 600;
+
+              mat-icon {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+              }
+            }
+          }
+
+          .quota-warning {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: #fff3e0;
+            border-left: 3px solid $accent;
+            border-radius: 4px;
+
+            mat-icon {
+              color: $accent;
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+            }
+
+            span {
+              color: #e65100;
+              font-size: 13px;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Actions
+  .dialog-actions {
+    padding: 16px 32px;
+    border-top: 1px solid $gray-300;
+    background: $white;
+    justify-content: flex-end;
+  }
+}

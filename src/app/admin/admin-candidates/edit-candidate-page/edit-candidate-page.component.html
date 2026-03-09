@@ -1,0 +1,146 @@
+<div class="edit-page">
+  <!-- En-tête minimaliste -->
+  <header class="page-header">
+    <button mat-icon-button (click)="goBack()" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Modifier le candidat</h1>
+  </header>
+
+  <!-- Loading -->
+  <div *ngIf="loadingCandidate" class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Formulaire compact 2 colonnes -->
+  <form *ngIf="!loadingCandidate" [formGroup]="candidateForm" (ngSubmit)="onSubmit()" class="compact-form">
+
+    <div class="form-grid">
+      <!-- Colonne gauche -->
+      <div class="form-col">
+
+        <!-- Identité -->
+        <div class="field-group">
+          <h3>Identité</h3>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Prénom</mat-label>
+            <input matInput formControlName="firstName" placeholder="Ex: Ahmed" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Nom</mat-label>
+            <input matInput formControlName="lastName" placeholder="Ex: Benali" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="emailAddress" type="email" placeholder="exemple@email.com" />
+          </mat-form-field>
+
+          <!-- Téléphone avec indicatif -->
+          <div class="phone-field">
+            <mat-form-field appearance="outline" floatLabel="always" class="country-select">
+              <mat-label>Indicatif</mat-label>
+              <mat-select formControlName="countryCode">
+                @for (country of countryCodes; track country.code) {
+                  <mat-option [value]="country.code">
+                    {{ country.flag }} {{ country.code }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" floatLabel="always" class="phone-input">
+              <mat-label>Numéro de téléphone</mat-label>
+              <input matInput formControlName="phoneNumber" type="tel" placeholder="612345678" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="field-group">
+          <h3>Documents</h3>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Carte d'identité (CIN)</mat-label>
+            <input matInput formControlName="cin" placeholder="Ex: AB123456" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Numéro CNSS</mat-label>
+            <input matInput formControlName="cssNumber" placeholder="Ex: 123456789" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="form-col">
+
+        <!-- Professionnel -->
+        <div class="field-group">
+          <h3>Professionnel</h3>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Profession</mat-label>
+            <input
+              matInput
+              formControlName="professional"
+              [matAutocomplete]="auto"
+              (focus)="onProfessionalFocus()"
+              placeholder="Ex: Développeur, Électricien..."
+            />
+            <mat-autocomplete #auto="matAutocomplete">
+              @for (profil of filteredProfils; track profil) {
+                <mat-option [value]="profil">{{ profil }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Années d'expérience</mat-label>
+            <input matInput formControlName="experienceYear" type="number" min="0" placeholder="Ex: 5" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Compétences</mat-label>
+            <textarea matInput formControlName="skills" rows="3" placeholder="Décrivez les compétences..."></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Statut -->
+        <div class="field-group">
+          <h3>Statut</h3>
+
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Statut du compte</mat-label>
+            <mat-select formControlName="active">
+              <mat-option [value]="true">✓ Actif</mat-option>
+              <mat-option [value]="false">✗ Inactif</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button mat-button type="button" (click)="goBack()" [disabled]="loading">
+        Annuler
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="!candidateForm.dirty || loading"
+      >
+        @if (loading) {
+          <mat-spinner diameter="18"></mat-spinner>
+          <span>Enregistrement...</span>
+        } @else {
+          <span>Enregistrer</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>
