@@ -122,6 +122,28 @@
           font-weight: 400;
         }
 
+        // Styles pour le select
+        .mat-mdc-select {
+          color: #1f2937;
+          font-weight: 500;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        .mat-mdc-select-placeholder {
+          color: #9ca3af;
+          font-weight: 400;
+        }
+
+        .mat-mdc-select-value {
+          color: #1f2937;
+          font-weight: 500;
+        }
+
+        .mat-mdc-select-arrow {
+          color: #6b7280;
+        }
+
         .mat-mdc-form-field-subscript-wrapper {
           display: none;
         }
@@ -146,6 +168,12 @@
           align-items: center;
         }
       }
+    }
+
+    // Classe spécifique pour le select de demande avec plus de largeur
+    .filter-demande-select {
+      width: 250px !important;
+      min-width: 250px;
     }
 
     .clear-filters-icon-btn {

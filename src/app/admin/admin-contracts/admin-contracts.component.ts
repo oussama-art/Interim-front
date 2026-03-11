@@ -134,12 +134,14 @@ export class AdminContractsComponent implements OnInit {
   filteredTableRows: ContractTableRow[] = [];
   displayedColumns: string[] = ['demande', 'client', 'candidate', 'contract', 'actions'];
   expandedRow: ContractTableRow | null = null;
+  uniqueDemandes: { demandeId: number; demandeReference: string }[] = [];
 
   // Filters
   filterSearchText: string = '';
   filterStartDate: Date | null = null;
   filterEndDate: Date | null = null;
   filterContractStatus: string = 'all'; // 'all', 'active', 'pending', 'none'
+  filterDemandeId: number | null = null;
 
   loading = false;
   uploadingContract: { [key: string]: boolean } = {};
@@ -314,11 +316,19 @@ export class AdminContractsComponent implements OnInit {
       });
     });
     console.log('📊 Lignes du tableau générées:', this.allTableRows.length);
+    this.updateUniqueDemandes();
     this.applyFilters();
   }
 
   applyFilters(): void {
     this.filteredTableRows = this.allTableRows.filter(row => {
+      // Filter by demande ID
+      if (this.filterDemandeId !== null) {
+        if (row.demandeId !== this.filterDemandeId) {
+          return false;
+        }
+      }
+
       // Filter by search text (demande reference, candidate name, or client name)
       if (this.filterSearchText) {
         const searchLower = this.filterSearchText.toLowerCase();
@@ -386,7 +396,20 @@ export class AdminContractsComponent implements OnInit {
     this.filterStartDate = null;
     this.filterEndDate = null;
     this.filterContractStatus = 'all';
+    this.filterDemandeId = null;
     this.applyFilters();
+  }
+
+  updateUniqueDemandes(): void {
+    const demandesMap = new Map<number, string>();
+    this.allTableRows.forEach(row => {
+      if (!demandesMap.has(row.demandeId)) {
+        demandesMap.set(row.demandeId, row.demandeReference);
+      }
+    });
+    this.uniqueDemandes = Array.from(demandesMap.entries())
+      .map(([demandeId, demandeReference]) => ({ demandeId, demandeReference }))
+      .sort((a, b) => a.demandeReference.localeCompare(b.demandeReference));
   }
 
   onStartDateChange(): void {

@@ -8,6 +8,19 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Polyfills for Node.js globals required by @stomp/stompjs and sockjs-client -->
+  <script>
+    window.global = window;
+    window.process = {
+      env: { DEBUG: undefined },
+      version: '',
+      nextTick: function(fn) { setTimeout(fn, 0); }
+    };
+    window.Buffer = window.Buffer || {
+      isBuffer: function() { return false; }
+    };
+  </script>
 </head>
 <body class="mat-typography">
   <app-root></app-root>

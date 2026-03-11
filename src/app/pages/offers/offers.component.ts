@@ -18,13 +18,13 @@ import { ClientService } from '../../core/services/client.service';
 import { DemandeService } from '../../core/services/demande.service';
 import { DemandeResponse } from '../../core/models/demande.model';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { AcceptOfferDialogComponent } from './accept-offer-dialog/accept-offer-dialog.component';
 import { ProfilCandidatesDialogComponent } from './profil-candidates-dialog/profil-candidates-dialog.component';
 import { CandidateService } from '../../core/services/candidate.service';
 import { CandidateResponse } from '../../core/models/user.model';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../core/services/notification.service';
 import { GlobalSearchService } from '../../core/services/global-search.service';
+import { NotificationMessage } from '../../core/models/notification.model';
 
 @Component({
   selector: 'app-offers',
@@ -51,9 +51,6 @@ import { GlobalSearchService } from '../../core/services/global-search.service';
   ]
 })
 export class OffersComponent implements OnInit, OnDestroy {
-  private readonly SEEN_OFFERS_KEY = 'seen_offers_';
-  private readonly OFFER_CANDIDATES_KEY = 'offer_candidates_';
-  private readonly NOTIFIED_OFFERS_KEY = 'notified_offers_';
   private destroy$ = new Subject<void>();
 
   offers: OfferResponse[] = [];
@@ -65,7 +62,7 @@ export class OffersComponent implements OnInit, OnDestroy {
   expandedOffers = new Set<number>();
   expandedCandidates: Set<number> = new Set();
   offerProfilGroups: Map<number, OfferProfilGroup[]> = new Map();
-  searchQuery: string = '';
+  searchQuery = '';
 
   constructor(
     private offerService: OfferService,
@@ -81,10 +78,17 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadClientAndOffers();
-    // Réinitialiser le compteur de nouvelles offres quand l'utilisateur visite la page
-    this.notificationService.resetNewOffers();
 
-    // Écouter les changements de recherche globale
+    this.notificationService.getUserNotifications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notification: NotificationMessage) => {
+        console.log('🔔 [OFFERS] Received notification:', notification);
+
+        if (notification.type === 'OFFER_CREATED' || notification.type === 'CANDIDATES_ADDED') {
+          this.loadOffers();
+        }
+      });
+
     this.globalSearchService.searchQuery$
       .pipe(takeUntil(this.destroy$))
       .subscribe(query => {
@@ -106,195 +110,23 @@ export class OffersComponent implements OnInit, OnDestroy {
     }
 
     const query = this.searchQuery.toLowerCase();
+
     this.filteredOffers = this.offers.filter(offer => {
       const offerId = offer.offerId?.toString() || '';
       const demandeRef = offer.demandeReference?.toLowerCase() || '';
       const demandeId = offer.demandeId?.toString() || '';
 
-      return offerId.includes(query) ||
-             demandeRef.includes(query) ||
-             demandeId.includes(query);
+      return (
+        offerId.includes(query) ||
+        demandeRef.includes(query) ||
+        demandeId.includes(query)
+      );
     });
-  }
-
-  /**
-   * Récupère les IDs des offres déjà vues depuis le localStorage
-   */
-  private getSeenOfferIds(): Set<number> {
-    if (!this.clientId) return new Set();
-    const key = this.SEEN_OFFERS_KEY + this.clientId;
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        return new Set(JSON.parse(stored));
-      } catch (e) {
-        console.error('Erreur parsing localStorage:', e);
-        return new Set();
-      }
-    }
-    return new Set();
-  }
-
-  /**
-   * Récupère le nombre de candidats par offre depuis le localStorage
-   */
-  private getOfferCandidateCounts(): Map<number, number> {
-    if (!this.clientId) return new Map();
-    const key = this.OFFER_CANDIDATES_KEY + this.clientId;
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const obj = JSON.parse(stored);
-        return new Map(Object.entries(obj).map(([k, v]) => [parseInt(k), v as number]));
-      } catch (e) {
-        console.error('Erreur parsing localStorage:', e);
-        return new Map();
-      }
-    }
-    return new Map();
-  }
-
-  /**
-   * Sauvegarde le nombre de candidats par offre dans le localStorage
-   */
-  private saveOfferCandidateCounts(counts: Map<number, number>): void {
-    if (!this.clientId) return;
-    const key = this.OFFER_CANDIDATES_KEY + this.clientId;
-    const obj = Object.fromEntries(counts);
-    localStorage.setItem(key, JSON.stringify(obj));
-  }
-
-  /**
-   * Récupère les IDs des offres pour lesquelles le son a déjà été joué
-   */
-  private getNotifiedOfferIds(): Set<number> {
-    if (!this.clientId) return new Set();
-    const key = this.NOTIFIED_OFFERS_KEY + this.clientId;
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        return new Set(JSON.parse(stored));
-      } catch (e) {
-        console.error('Erreur parsing localStorage:', e);
-        return new Set();
-      }
-    }
-    return new Set();
-  }
-
-  /**
-   * Sauvegarde les IDs des offres pour lesquelles le son a été joué
-   */
-  private saveNotifiedOfferIds(offerIds: Set<number>): void {
-    if (!this.clientId) return;
-    const key = this.NOTIFIED_OFFERS_KEY + this.clientId;
-    localStorage.setItem(key, JSON.stringify(Array.from(offerIds)));
-  }
-
-  /**
-   * Sauvegarde les IDs des offres vues dans le localStorage
-   */
-  private saveSeenOfferIds(offerIds: Set<number>): void {
-    if (!this.clientId) return;
-    const key = this.SEEN_OFFERS_KEY + this.clientId;
-    localStorage.setItem(key, JSON.stringify(Array.from(offerIds)));
-  }
-
-  /**
-   * Marque les nouvelles offres et détecte les nouveaux candidats
-   */
-  private markNewOffers(offers: OfferResponse[]): void {
-    const seenOfferIds = this.getSeenOfferIds();
-    const notifiedOfferIds = this.getNotifiedOfferIds();
-    const previousCandidateCounts = this.getOfferCandidateCounts();
-    const newOffersToNotify: number[] = [];
-
-    offers.forEach(offer => {
-      const currentCandidateCount = offer.proposedCandidates.length;
-      const previousCount = previousCandidateCounts.get(offer.offerId) || 0;
-
-      // Nouvelle offre
-      if (!seenOfferIds.has(offer.offerId)) {
-        offer.isNew = true;
-        offer.hasNewCandidates = false;
-        // Jouer le son seulement si on n'a jamais notifié cette offre
-        if (!notifiedOfferIds.has(offer.offerId)) {
-          newOffersToNotify.push(offer.offerId);
-        }
-      }
-      // Offre existante avec nouveaux candidats
-      else if (currentCandidateCount > previousCount) {
-        offer.isNew = true;
-        offer.hasNewCandidates = true;
-        const newCandidatesCount = currentCandidateCount - previousCount;
-      }
-      else {
-        offer.isNew = false;
-        offer.hasNewCandidates = false;
-      }
-    });
-
-    // Marquer les nouvelles offres comme notifiées (sans son)
-    if (newOffersToNotify.length > 0) {
-      newOffersToNotify.forEach(offerId => notifiedOfferIds.add(offerId));
-      this.saveNotifiedOfferIds(notifiedOfferIds);
-    }
-  }
-
-  /**
-   * Marque une offre comme vue et met à jour le localStorage
-   */
-  private markOfferAsSeen(offerId: number): void {
-    const offer = this.offers.find(o => o.offerId === offerId);
-    if (offer) {
-      // Retirer le flag isNew
-      offer.isNew = false;
-      offer.hasNewCandidates = false;
-
-      // Ajouter l'ID aux offres vues et sauvegarder
-      const seenOfferIds = this.getSeenOfferIds();
-      seenOfferIds.add(offerId);
-      this.saveSeenOfferIds(seenOfferIds);
-
-      // Mettre à jour le compteur de candidats
-      const candidateCounts = this.getOfferCandidateCounts();
-      candidateCounts.set(offerId, offer.proposedCandidates.length);
-      this.saveOfferCandidateCounts(candidateCounts);
-
-      // Marquer tous les candidats de cette offre comme vus dans le layout storage
-      this.markCandidatesAsSeenInLayoutStorage(offerId, offer.proposedCandidates.map(c => c.candidateId));
-    }
-  }
-
-  /**
-   * Marque les candidats comme vus dans le localStorage du layout
-   */
-  private markCandidatesAsSeenInLayoutStorage(offerId: number, candidateIds: number[]): void {
-    if (!this.clientId) return;
-
-    const LAYOUT_SEEN_CANDIDATES_KEY = 'layout_seen_candidates_';
-    const key = LAYOUT_SEEN_CANDIDATES_KEY + this.clientId;
-    const stored = localStorage.getItem(key);
-
-    let seenCandidates: {[key: number]: number[]} = {};
-    if (stored) {
-      try {
-        seenCandidates = JSON.parse(stored);
-      } catch (e) {
-        console.error('Erreur parsing localStorage candidats vus:', e);
-      }
-    }
-
-    // Fusionner les candidats existants avec les nouveaux
-    const existingIds = seenCandidates[offerId] || [];
-    const mergedIds = new Set([...existingIds, ...candidateIds]);
-    seenCandidates[offerId] = Array.from(mergedIds);
-
-    localStorage.setItem(key, JSON.stringify(seenCandidates));
   }
 
   loadClientAndOffers(): void {
     this.loading = true;
+
     this.clientService.getMe().subscribe({
       next: (client) => {
         this.clientId = client.id;
@@ -308,12 +140,19 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   loadOffers(): void {
-    if (!this.clientId) return;
+    if (!this.clientId) {
+      this.loading = false;
+      return;
+    }
+
     this.offerService.getOffersByClientId(this.clientId).subscribe({
       next: (data) => {
-        // Marquer les nouvelles offres en comparant avec localStorage
-        this.markNewOffers(data);
-        this.offers = data;
+        this.offers = data.map(offer => ({
+          ...offer,
+          isNew: false,
+          hasNewCandidates: false
+        }));
+
         this.loadDemandeReferences();
       },
       error: () => {
@@ -332,11 +171,13 @@ export class OffersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const requests = Array.from(demandeIds).map(id => this.demandeService.getMyDemandeDetail(id));
+    const requests = Array.from(demandeIds).map(id =>
+      this.demandeService.getMyDemandeDetail(id)
+    );
+
     forkJoin(requests).subscribe({
       next: (demandes) => {
         demandes.forEach((demande) => {
-          // Stocker les détails de la demande
           this.demandesDetails.set(demande.id!, demande);
 
           const offer = this.offers.find(o => o.demandeId === demande.id);
@@ -344,6 +185,7 @@ export class OffersComponent implements OnInit, OnDestroy {
             offer.demandeReference = demande.reference;
           }
         });
+
         this.loadCandidatesDetails();
       },
       error: () => {
@@ -355,17 +197,22 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   loadCandidatesDetails(): void {
     const candidateIds = new Set<number>();
+
     this.offers.forEach(offer => {
       offer.proposedCandidates.forEach(c => candidateIds.add(c.candidateId));
     });
 
     if (candidateIds.size === 0) {
+      this.organizeAllOffersByProfil();
       this.filteredOffers = [...this.offers];
       this.loading = false;
       return;
     }
 
-    const requests = Array.from(candidateIds).map(id => this.candidateService.getCandidateById(id));
+    const requests = Array.from(candidateIds).map(id =>
+      this.candidateService.getCandidateById(id)
+    );
+
     forkJoin(requests).subscribe({
       next: (candidates) => {
         candidates.forEach(c => this.candidatesDetails.set(c.id, c));
@@ -394,7 +241,6 @@ export class OffersComponent implements OnInit, OnDestroy {
     const profilMap = new Map<number, OfferProfilGroup>();
     const isDemandeClosed = demande.status === 'CLOSED' || demande.status === 'REJECTED';
 
-    // Initialiser tous les profils de la demande
     demande.profils.forEach(profil => {
       profilMap.set(profil.id, {
         profilId: profil.id,
@@ -405,11 +251,10 @@ export class OffersComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Ajouter les candidats à leurs profils respectifs
     offer.proposedCandidates.forEach(candidate => {
       const profilId = candidate.demandeProfilId;
+
       if (profilId && profilMap.has(profilId)) {
-        // Si la demande est clôturée, afficher seulement les candidats acceptés ou refusés
         if (isDemandeClosed) {
           if (candidate.status === 'ACCEPTED' || candidate.status === 'REJECTED') {
             const group = profilMap.get(profilId)!;
@@ -419,7 +264,6 @@ export class OffersComponent implements OnInit, OnDestroy {
             }
           }
         } else {
-          // Si la demande est ouverte, afficher tous les candidats
           const group = profilMap.get(profilId)!;
           group.candidates.push(candidate);
           if (candidate.status === 'ACCEPTED') {
@@ -429,11 +273,12 @@ export class OffersComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Si la demande est clôturée, ne retourner que les profils qui ont des candidats
     const allProfils = Array.from(profilMap.values());
+
     if (isDemandeClosed) {
       return allProfils.filter(profil => profil.candidates.length > 0);
     }
+
     return allProfils;
   }
 
@@ -450,8 +295,8 @@ export class OffersComponent implements OnInit, OnDestroy {
       maxWidth: '95vw',
       maxHeight: '90vh',
       data: {
-        profilGroup: profilGroup,
-        offerId: offerId,
+        profilGroup,
+        offerId,
         clientId: this.clientId,
         candidatesDetails: this.candidatesDetails,
         startDate: demande?.startDate,
@@ -463,7 +308,6 @@ export class OffersComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Recharger les offres pour mettre à jour l'UI
         this.loadOffers();
       }
     });
@@ -471,27 +315,28 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   toggleCandidates(offerId: number): void {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return;
+    if (!offer) {
+      return;
+    }
 
-    // Marquer l'offre comme vue
-    this.markOfferAsSeen(offerId);
-
-    // Si plus de 3 profils, ouvrir un dialog au lieu du dropdown
     const profilGroups = this.getProfilGroups(offerId);
+
     if (profilGroups.length > 3) {
       this.openAllProfilsDialog(offerId);
     } else {
-      // Toggle normal pour 3 profils ou moins
-      this.expandedOffers.has(offerId) ? this.expandedOffers.delete(offerId) : this.expandedOffers.add(offerId);
+      if (this.expandedOffers.has(offerId)) {
+        this.expandedOffers.delete(offerId);
+      } else {
+        this.expandedOffers.add(offerId);
+      }
     }
   }
 
-  /**
-   * Ouvre un dialog affichant tous les profils quand il y a plus de 3 profils
-   */
   openAllProfilsDialog(offerId: number): void {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return;
+    if (!offer) {
+      return;
+    }
 
     const demande = this.demandesDetails.get(offer.demandeId);
     const profilGroups = this.getProfilGroups(offerId);
@@ -502,7 +347,7 @@ export class OffersComponent implements OnInit, OnDestroy {
       maxHeight: '90vh',
       data: {
         allProfils: profilGroups,
-        offerId: offerId,
+        offerId,
         clientId: this.clientId,
         candidatesDetails: this.candidatesDetails,
         startDate: demande?.startDate,
@@ -521,19 +366,24 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   toggleCandidateDetails(candidateId: number): void {
-    this.expandedCandidates.has(candidateId) ? this.expandedCandidates.delete(candidateId) : this.expandedCandidates.add(candidateId);
+    if (this.expandedCandidates.has(candidateId)) {
+      this.expandedCandidates.delete(candidateId);
+    } else {
+      this.expandedCandidates.add(candidateId);
+    }
   }
 
   isCandidatesExpanded(offerId: number): boolean {
     return this.expandedOffers.has(offerId);
   }
 
-  getCandidateDetail(candidateId: number) {
+  getCandidateDetail(candidateId: number): CandidateResponse | undefined {
     return this.candidatesDetails.get(candidateId);
   }
 
   viewCv(candidateId: number): void {
     const url = `${environment.apiUrl}/candidates/${candidateId}/cv`;
+
     this.http.get(url, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         const blobUrl = window.URL.createObjectURL(blob);
@@ -546,10 +396,14 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   acceptCandidate(offerId: number, candidateId: number): void {
-    if (!this.clientId) return;
+    if (!this.clientId) {
+      return;
+    }
 
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return;
+    if (!offer) {
+      return;
+    }
 
     const demande = this.demandesDetails.get(offer.demandeId);
     if (!demande) {
@@ -558,9 +412,10 @@ export class OffersComponent implements OnInit, OnDestroy {
     }
 
     const candidate = offer.proposedCandidates.find(c => c.candidateId === candidateId);
-    if (!candidate) return;
+    if (!candidate) {
+      return;
+    }
 
-    // Vérifier le nombre d'employés déjà acceptés
     const acceptedCount = offer.proposedCandidates.filter(c => c.status === 'ACCEPTED').length;
 
     if (acceptedCount >= demande.totalEmployeesNeeded) {
@@ -572,9 +427,8 @@ export class OffersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Utiliser directement les dates de la demande
     const acceptRequest = {
-      candidateId: candidateId,
+      candidateId,
       startDate: demande.startDate,
       endDate: demande.endDate
     };
@@ -583,7 +437,6 @@ export class OffersComponent implements OnInit, OnDestroy {
       next: () => {
         this.snackBar.open('Candidat retenu avec succès', 'Fermer', { duration: 3000 });
 
-        // Vérifier si on a atteint le nombre requis
         const newAcceptedCount = acceptedCount + 1;
         if (newAcceptedCount >= demande.totalEmployeesNeeded) {
           this.snackBar.open(
@@ -603,7 +456,9 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   rejectCandidate(offerId: number, candidateId: number): void {
-    if (!this.clientId) return;
+    if (!this.clientId) {
+      return;
+    }
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '450px',
@@ -629,7 +484,7 @@ export class OffersComponent implements OnInit, OnDestroy {
     });
   }
 
-  private updateStatus(offerId: number, candidateId: number, status: string, message: string) {
+  private updateStatus(offerId: number, candidateId: number, status: string, message: string): void {
     this.offerService.updateCandidateStatus(offerId, candidateId, status).subscribe({
       next: () => {
         this.snackBar.open(message, 'Fermer', { duration: 3000 });
@@ -639,7 +494,7 @@ export class OffersComponent implements OnInit, OnDestroy {
     });
   }
 
-  private showError(msg: string) {
+  private showError(msg: string): void {
     this.snackBar.open(msg, 'Fermer', { duration: 3000 });
   }
 
@@ -649,13 +504,18 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   getAcceptedCount(offerId: number): number {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return 0;
+    if (!offer) {
+      return 0;
+    }
     return offer.proposedCandidates.filter(c => c.status === 'ACCEPTED').length;
   }
 
   getTotalNeeded(offerId: number): number {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return 0;
+    if (!offer) {
+      return 0;
+    }
+
     const demande = this.demandesDetails.get(offer.demandeId);
     return demande?.totalEmployeesNeeded || 0;
   }
@@ -666,13 +526,17 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   hasRejectedCandidates(offerId: number): boolean {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return false;
+    if (!offer) {
+      return false;
+    }
     return offer.proposedCandidates.some(c => c.status === 'REJECTED');
   }
 
   getRejectedCount(offerId: number): number {
     const offer = this.offers.find(o => o.offerId === offerId);
-    if (!offer) return 0;
+    if (!offer) {
+      return 0;
+    }
     return offer.proposedCandidates.filter(c => c.status === 'REJECTED').length;
   }
 
@@ -690,7 +554,6 @@ export class OffersComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result && this.clientId) {
-        // Appeler le service pour créer une nouvelle offre basée sur la même demande
         this.offerService.createOfferForDemande(this.clientId, demandeId).subscribe({
           next: () => {
             this.snackBar.open(

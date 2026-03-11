@@ -296,6 +296,33 @@
     }
   }
 
+  // Styles pour les icônes dans le select de statut
+  ::ng-deep .mat-mdc-option {
+    .status-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+
+      &.available {
+        color: #10b981;
+      }
+
+      &.on-mission {
+        color: #3b82f6;
+      }
+
+      &.unavailable {
+        color: #ef4444;
+      }
+
+      &.undefined {
+        color: #9ca3af;
+      }
+    }
+  }
+
   .date-cell {
     display: inline-flex;
     align-items: center;

@@ -20,23 +20,6 @@
   background-color: #f5f7fa;
 }
 
-// Styles SaaS professionnels pour la notification
-::ng-deep .professional-notification {
-  .mdc-snackbar__surface {
-    background: transparent !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.05) !important;
-    border-radius: 8px !important;
-    padding: 0 !important;
-    max-width: 420px !important;
-  }
-
-  .mat-mdc-snack-bar-label {
-    padding: 0 !important;
-  }
-
-  // Animation d'entrée douce
-  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 @keyframes slideInRight {
   from {

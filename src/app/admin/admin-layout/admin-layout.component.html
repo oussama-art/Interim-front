@@ -1,14 +1,15 @@
 <div class="admin-layout">
   <!-- Sidebar -->
-  <aside class="sidebar" [class.open]="sidebarOpen">
+  <aside
+    class="sidebar"
+    [class.expanded]="isExpanded()"
+    (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()">
     <div class="sidebar-header">
       <div class="header-content">
         <mat-icon class="logo-icon">admin_panel_settings</mat-icon>
-        <h1>Admin Panel</h1>
+        <h1 [class.visible]="isExpanded()">Admin Panel</h1>
       </div>
-      <button mat-icon-button class="close-btn" (click)="closeSidebar()">
-        <mat-icon>close</mat-icon>
-      </button>
     </div>
 
     <nav class="sidebar-nav">
@@ -17,32 +18,25 @@
         [routerLink]="item.route"
         routerLinkActive="active"
         class="nav-item"
-        (click)="updateActiveMenuItem(); closeSidebar()"
-      >
+        (click)="updateActiveMenuItem()">
         <mat-icon>{{ item.icon }}</mat-icon>
-        <span>{{ item.title }}</span>
+        <span [class.visible]="isExpanded()">{{ item.title }}</span>
       </a>
     </nav>
 
     <div class="sidebar-footer">
       <button mat-stroked-button class="logout-btn" (click)="logout()">
         <mat-icon>logout</mat-icon>
-        <span>Déconnexion</span>
+        <span [class.visible]="isExpanded()">Déconnexion</span>
       </button>
     </div>
   </aside>
-
-  <!-- Overlay pour fermer la sidebar en mode mobile -->
-  <div class="sidebar-overlay" [class.show]="sidebarOpen" (click)="closeSidebar()"></div>
 
   <!-- Main Content -->
   <div class="main-content">
     <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-left">
-        <button mat-icon-button class="menu-btn" (click)="toggleSidebar()">
-          <mat-icon>menu</mat-icon>
-        </button>
         <h2>Administration</h2>
       </div>
       <div class="topbar-right">

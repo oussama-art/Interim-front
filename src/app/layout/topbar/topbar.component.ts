@@ -5,11 +5,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatBadgeModule } from '@angular/material/badge';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, Observable } from 'rxjs';
+import { filter, map, takeUntil } from 'rxjs/operators';
+
 import { AuthService } from '../../core/services/auth.service';
 import { GlobalSearchService } from '../../core/services/global-search.service';
-import { Subject, filter, takeUntil } from 'rxjs';
+import { NotificationService } from '../../core/services/notification.service';
+import {
+  AppNotification,
+  NotificationContext
+} from '../../core/services/notification-store.service';
 
 @Component({
   selector: 'app-topbar',
@@ -21,7 +29,8 @@ import { Subject, filter, takeUntil } from 'rxjs';
     MatButtonModule,
     MatMenuModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatBadgeModule
   ],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
@@ -30,16 +39,51 @@ export class TopbarComponent implements OnInit, OnDestroy {
   userName = 'John Doe';
   searchQuery = '';
   searchPlaceholder = 'Rechercher...';
+
+  readonly context: NotificationContext = 'user';
+
   private destroy$ = new Subject<void>();
+
+  offerNotifications$: Observable<AppNotification[]>;
+  unreadOfferNotificationsCount$: Observable<number>;
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private globalSearchService: GlobalSearchService
-  ) {}
+    private globalSearchService: GlobalSearchService,
+    private notificationService: NotificationService
+  ) {
+    this.offerNotifications$ = this.notificationService
+      .getStoredNotifications(this.context)
+      .pipe(
+        map((notifications: AppNotification[]) =>
+          notifications
+            .filter(notification =>
+              notification.type === 'OFFER_CREATED' ||
+              notification.type === 'CANDIDATES_ADDED'
+            )
+            .sort((a, b) => {
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            })
+        )
+      );
+
+    this.unreadOfferNotificationsCount$ = this.notificationService
+      .getStoredNotifications(this.context)
+      .pipe(
+        map((notifications: AppNotification[]) =>
+          notifications.filter(notification =>
+            !notification.read &&
+            (
+              notification.type === 'OFFER_CREATED' ||
+              notification.type === 'CANDIDATES_ADDED'
+            )
+          ).length
+        )
+      );
+  }
 
   ngOnInit(): void {
-    // Détecter les changements de route
     this.router.events
       .pipe(
         filter(event => event instanceof NavigationEnd),
@@ -50,7 +94,6 @@ export class TopbarComponent implements OnInit, OnDestroy {
         this.clearSearch();
       });
 
-    // Initialiser le placeholder
     this.updateSearchPlaceholder();
   }
 
@@ -65,7 +108,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (url.includes('/app/demandes')) {
       this.searchPlaceholder = 'Rechercher une demande (titre, référence...)';
     } else if (url.includes('/app/offers')) {
-      this.searchPlaceholder = 'Rechercher une offre (ID, référence du demande...)';
+      this.searchPlaceholder = 'Rechercher une offre (ID, référence de la demande...)';
     } else if (url.includes('/app/contracts')) {
       this.searchPlaceholder = 'Rechercher un contrat...';
     } else if (url.includes('/app/timesheets')) {
@@ -93,8 +136,48 @@ export class TopbarComponent implements OnInit, OnDestroy {
   }
 
   onLogout(): void {
-    // Utiliser le service d'authentification pour déconnecter
-    // Cela supprimera automatiquement les tokens du localStorage
     this.authService.logout();
+  }
+
+  onNotificationClick(notification: AppNotification): void {
+    if (!notification.read) {
+      this.notificationService.markAsRead(this.context, notification.id);
+    }
+
+    this.router.navigate(['/app/offers']);
+  }
+
+  markAllOfferNotificationsAsRead(): void {
+    this.offerNotifications$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(notifications => {
+        notifications
+          .filter(notification => !notification.read)
+          .forEach(notification => {
+            this.notificationService.markAsRead(this.context, notification.id);
+          });
+      });
+  }
+
+  formatNotificationDate(date: string): string {
+    if (!date) return '';
+    // Remove excessive microseconds if present (e.g. 2026-03-11T01:18:51.922843089)
+    let safeDate = date;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6,}/.test(date)) {
+      safeDate = date.replace(/(\.\d{3})\d+/, '$1');
+    }
+    const d = new Date(safeDate);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  trackByNotificationId(index: number, notification: AppNotification): string {
+    return notification.id;
   }
 }

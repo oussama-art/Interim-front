@@ -74,7 +74,7 @@
           matInput
           [(ngModel)]="searchText"
           (ngModelChange)="applyFilters()"
-          placeholder="Nom, prénom ou email">
+          placeholder="Nom ou prénom">
         <mat-icon matPrefix>search</mat-icon>
         <button
           mat-icon-button
@@ -98,6 +98,32 @@
           </mat-option>
         </mat-select>
         <mat-icon matPrefix>work</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Statut</mat-label>
+        <mat-select
+          [(ngModel)]="selectedStatus"
+          (selectionChange)="applyFilters()">
+          <mat-option [value]="''">Tous les statuts</mat-option>
+          <mat-option value="AVAILABLE">
+            <mat-icon class="status-icon available">check_circle</mat-icon>
+            Disponible
+          </mat-option>
+          <mat-option value="ON_MISSION">
+            <mat-icon class="status-icon on-mission">work</mat-icon>
+            En mission
+          </mat-option>
+          <mat-option value="UNAVAILABLE">
+            <mat-icon class="status-icon unavailable">block</mat-icon>
+            Indisponible
+          </mat-option>
+          <mat-option value="UNDEFINED">
+            <mat-icon class="status-icon undefined">help_outline</mat-icon>
+            Non défini
+          </mat-option>
+        </mat-select>
+        <mat-icon matPrefix>assignment</mat-icon>
       </mat-form-field>
     </div>
 

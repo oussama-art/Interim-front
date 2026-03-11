@@ -4,150 +4,167 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 
+export interface NotificationSnackBarData {
+  message: string;
+  title?: string;
+  actionLabel?: string;
+  icon?: string;
+}
+
 @Component({
   selector: 'app-offer-notification',
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule],
   template: `
-    <div class="offer-notification">
-      <div class="notification-header">
-        <div class="header-left">
-          <div class="notification-icon-wrapper">
-            <mat-icon class="notification-icon">workspace_premium</mat-icon>
+    <div class="offer-notification-card">
+      <div class="offer-notification-row">
+        <div class="offer-notification-icon-circle">
+          <mat-icon class="offer-notification-icon">
+            {{ data.icon || 'notifications' }}
+          </mat-icon>
+        </div>
+
+        <div class="offer-notification-content">
+          <div class="offer-notification-title">
+            {{ data.title || 'Nouvelle notification' }}
           </div>
-          <div class="notification-text">
-            <span class="notification-title">Nouvelle opportunité</span>
-            <span class="notification-message">{{ data.message }}</span>
+          <div class="offer-notification-message">
+            {{ data.message }}
           </div>
         </div>
-        <button mat-icon-button (click)="dismiss()" class="btn-close" aria-label="Marquer comme lu">
-          <mat-icon>check</mat-icon>
+
+        <button
+          mat-icon-button
+          (click)="dismiss()"
+          class="offer-notification-close"
+          aria-label="Fermer"
+        >
+          <mat-icon>close</mat-icon>
         </button>
       </div>
-      <div class="notification-actions">
-        <button mat-flat-button color="primary" (click)="viewOffers()" class="btn-view">
-          Consulter les offres
-        </button>
-      </div>
+
+      <button
+        mat-stroked-button
+        color="primary"
+        (click)="handleAction()"
+        class="offer-notification-action"
+      >
+        <mat-icon>visibility</mat-icon>
+        <span>{{ data.actionLabel || 'Voir les détails' }}</span>
+      </button>
     </div>
   `,
   styles: [`
-    .offer-notification {
+    .offer-notification-card {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      padding: 1rem 1.25rem;
-      min-width: 380px;
-      max-width: 420px;
-      background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
-      border-left: 3px solid #4a90e2;
-      border-radius: 4px;
+      gap: 1.2rem;
+      padding: 1.2rem 1.5rem 1.3rem 1.5rem;
+      min-width: 340px;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 32px rgba(44, 62, 80, 0.13), 0 1.5px 6px rgba(74, 144, 226, 0.08);
+      border: 1.5px solid #e3e8f7;
+      position: relative;
     }
 
-    .notification-header {
+    .offer-notification-row {
       display: flex;
       align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
+      gap: 1.1rem;
     }
 
-    .header-left {
-      display: flex;
-      gap: 0.875rem;
-      flex: 1;
-    }
-
-    .notification-icon-wrapper {
+    .offer-notification-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6b7cff 0%, #4a90e2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(107, 124, 255, 0.18);
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.25);
     }
 
-    .notification-icon {
-      color: #ffffff;
+    .offer-notification-icon {
+      color: #fff;
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .offer-notification-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .offer-notification-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a237e;
+      letter-spacing: 0.1px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .offer-notification-message {
+      font-size: 14px;
+      color: #344054;
+      line-height: 1.5;
+      font-weight: 400;
+      word-break: break-word;
+    }
+
+    .offer-notification-close {
+      margin-left: 0.5rem;
+      color: #b0b8d1;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .offer-notification-close:hover {
+      background: #f1f5ff;
+      color: #4a90e2;
+    }
+
+    .offer-notification-action {
+      align-self: flex-end;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 0 18px;
+      height: 38px;
+      box-shadow: 0 2px 8px rgba(107, 124, 255, 0.10);
+      background: #fff;
+      border: 1.5px solid #6b7cff;
+      color: #4a90e2;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+    }
+
+    .offer-notification-action mat-icon {
       font-size: 20px;
       width: 20px;
       height: 20px;
     }
 
-    .notification-text {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      flex: 1;
-    }
-
-    .notification-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #2c3e50;
-      letter-spacing: 0.2px;
-    }
-
-    .notification-message {
-      font-size: 13px;
-      font-weight: 400;
-      color: #64748b;
-      line-height: 1.5;
-    }
-
-    .btn-close {
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-      color: #64748b;
-      transition: all 0.2s ease;
-
-      mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-      }
-    }
-
-    .btn-close:hover {
-      background: rgba(100, 116, 139, 0.1);
-      color: #2c3e50;
-    }
-
-    .notification-actions {
-      display: flex;
-      justify-content: flex-end;
-      padding-top: 0.25rem;
-    }
-
-    .btn-view {
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-      padding: 0 20px;
-      height: 36px;
-      background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-      box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
-      transition: all 0.2s ease;
-    }
-
-    .btn-view:hover {
-      background: linear-gradient(135deg, #357abd 0%, #2a6599 100%);
-      box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4);
-      transform: translateY(-1px);
-    }
-
-    .btn-view:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
+    .offer-notification-action:hover {
+      background: #f1f5ff;
+      color: #1a237e;
+      border-color: #4a90e2;
     }
   `]
 })
 export class OfferNotificationComponent {
   constructor(
-    @Inject(MAT_SNACK_BAR_DATA) public data: { message: string },
+    @Inject(MAT_SNACK_BAR_DATA) public data: NotificationSnackBarData,
     private snackBarRef: MatSnackBarRef<OfferNotificationComponent>
   ) {}
 
@@ -155,7 +172,7 @@ export class OfferNotificationComponent {
     this.snackBarRef.dismiss();
   }
 
-  viewOffers(): void {
+  handleAction(): void {
     this.snackBarRef.dismissWithAction();
   }
 }

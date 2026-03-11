@@ -1,3 +1,29 @@
+/* Supprimer tout fond du snackbar Material */
+.mat-mdc-snack-bar-container.professional-notification {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Supprimer la surface MDC */
+.mat-mdc-snack-bar-container.professional-notification .mdc-snackbar__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Supprimer le padding interne */
+.mat-mdc-snack-bar-container.professional-notification .mat-mdc-snack-bar-label {
+  padding: 0 !important;
+}
+
+/* ⚠️ CORRECTION PRINCIPALE : overlay pane */
+.cdk-overlay-pane:has(.professional-notification) {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -228,6 +254,32 @@ select:-webkit-autofill:focus {
 
   .mat-mdc-button {
     color: #ffffff !important;
+  }
+}
+
+/* Notification Snackbar Styles */
+.notification-snackbar {
+  --mdc-snackbar-container-color: #4a90e2 !important;
+  --mat-snack-bar-button-color: #ffffff !important;
+
+  .mdc-snackbar__surface {
+    background-color: #4a90e2 !important;
+    border-left: 4px solid #2563eb !important;
+  }
+
+  .mdc-snackbar__label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 4px !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25) !important;
+    }
   }
 }
 

@@ -38,11 +38,24 @@
               <mat-datepicker #endDatePicker></mat-datepicker>
             </mat-form-field>
 
+            <mat-form-field appearance="outline" class="filter-field-compact filter-demande-select">
+              <mat-icon matIconPrefix>assignment</mat-icon>
+              <mat-select
+                [(ngModel)]="filterDemandeId"
+                (selectionChange)="applySearchFilter()"
+                placeholder="Toutes les demandes">
+                <mat-option [value]="null">Toutes les demandes</mat-option>
+                <mat-option *ngFor="let demande of uniqueDemandes" [value]="demande.demandeId">
+                  {{ demande.demandeReference }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
             <button
               mat-icon-button
               class="clear-filters-icon-btn"
               (click)="clearFilters()"
-              *ngIf="filterStartDate || filterEndDate"
+              *ngIf="filterStartDate || filterEndDate || filterDemandeId !== null"
               matTooltip="Réinitialiser les filtres">
               <mat-icon>clear</mat-icon>
             </button>

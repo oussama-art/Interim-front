@@ -156,7 +156,7 @@
                   </span>
                 </div>
                 <div class="candidate-details-closed">
-                  <div class="detail-item">
+                  <div class="detail-item" *ngIf="candidate.professional">
                     <mat-icon>work</mat-icon>
                     <span>{{ candidate.professional }}</span>
                   </div>
@@ -212,7 +212,7 @@
                     <div class="initials-avatar">{{ candidate.firstName[0] }}{{ candidate.lastName[0] }}</div>
                     <div class="candidate-summary-info">
                       <p class="candidate-summary-name">{{ candidate.firstName }} {{ candidate.lastName }}</p>
-                      <p class="candidate-summary-role">{{ candidate.professional }}</p>
+                      <p class="candidate-summary-role" *ngIf="candidate.professional">{{ candidate.professional }}</p>
                     </div>
                   </div>
                   <span class="status-pill" [class]="'status-' + candidate.status?.toLowerCase()">
@@ -321,12 +321,12 @@
               <div class="candidate-main">
                 <div class="candidate-name-line">
                   <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
-                  <span class="exp-badge">{{ candidate.experienceYear }} ans</span>
+                  <span class="exp-badge" *ngIf="candidate.experienceYear">{{ candidate.experienceYear }} ans</span>
                 </div>
-                <div class="candidate-role-line">{{ candidate.professional }}</div>
+                <div class="candidate-role-line" *ngIf="candidate.professional">{{ candidate.professional }}</div>
                 <div class="candidate-contact-line">
-                  <span><mat-icon>email</mat-icon>{{ candidate.emailAddress }}</span>
-                  <span><mat-icon>phone</mat-icon>{{ candidate.phoneNumber }}</span>
+                  <span *ngIf="candidate.emailAddress"><mat-icon>email</mat-icon>{{ candidate.emailAddress }}</span>
+                  <span *ngIf="candidate.phoneNumber"><mat-icon>phone</mat-icon>{{ candidate.phoneNumber }}</span>
                 </div>
                 <div class="candidate-skills-line" *ngIf="candidate.skills">
                   <mat-icon>verified</mat-icon>

@@ -40,25 +40,25 @@
 
           <div class="card-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
             <div class="details-grid">
-              <div class="detail-item">
+              <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.experienceYear">
                 <mat-icon>history</mat-icon>
                 <div class="detail-content">
                   <span class="label">Expérience</span>
-                  <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans</span>
+                  <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear }} ans</span>
                 </div>
               </div>
-              <div class="detail-item">
+              <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.emailAddress">
                 <mat-icon>email</mat-icon>
                 <div class="detail-content">
                 <span class="label">Email</span>
-                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress || 'N/A' }}</span>
+                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress }}</span>
               </div>
             </div>
-            <div class="detail-item">
+            <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.phoneNumber">
               <mat-icon>phone</mat-icon>
               <div class="detail-content">
                 <span class="label">Téléphone</span>
-                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber || 'N/A' }}</span>
+                <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber }}</span>
               </div>
             </div>
             <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.cvPath">
@@ -141,32 +141,32 @@
 
               <div class="card-details" *ngIf="expandedCandidates.has(candidate.candidateId)">
                 <div class="details-grid">
-                  <div class="detail-item">
+                  <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.experienceYear">
                     <mat-icon>history</mat-icon>
                     <div class="detail-content">
                       <span class="label">Expérience</span>
-                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear || 'N/A' }} ans</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.experienceYear }} ans</span>
                     </div>
                   </div>
-                  <div class="detail-item">
+                  <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.emailAddress">
                     <mat-icon>email</mat-icon>
                     <div class="detail-content">
                       <span class="label">Email</span>
-                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress || 'N/A' }}</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.emailAddress }}</span>
                     </div>
                   </div>
-                  <div class="detail-item">
+                  <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.phoneNumber">
                     <mat-icon>phone</mat-icon>
                     <div class="detail-content">
                       <span class="label">Téléphone</span>
-                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber || 'N/A' }}</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.phoneNumber }}</span>
                     </div>
                   </div>
-                  <div class="detail-item">
+                  <div class="detail-item" *ngIf="getCandidateDetail(candidate.candidateId)?.skills">
                     <mat-icon>work</mat-icon>
                     <div class="detail-content">
                       <span class="label">Compétences</span>
-                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.skills || 'N/A' }}</span>
+                      <span class="value">{{ getCandidateDetail(candidate.candidateId)?.skills }}</span>
                     </div>
                   </div>
                 </div>

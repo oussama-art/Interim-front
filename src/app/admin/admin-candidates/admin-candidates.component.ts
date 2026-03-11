@@ -66,6 +66,7 @@ export class AdminCandidatesComponent implements OnInit {
   // Filtres
   searchText = '';
   selectedProfessional = '';
+  selectedStatus = '';
   availableProfessionals: string[] = [];
   displayedColumns: string[] = [
     'id',
@@ -322,23 +323,29 @@ export class AdminCandidatesComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredCandidates = this.candidates.filter(candidate => {
-      // Filtre par texte de recherche (nom, prénom, email)
+      // Filtre par texte de recherche (nom ou prénom ou nom complet)
       const searchMatch = !this.searchText ||
         candidate.firstName.toLowerCase().includes(this.searchText.toLowerCase()) ||
         candidate.lastName.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        candidate.emailAddress.toLowerCase().includes(this.searchText.toLowerCase());
+        `${candidate.firstName} ${candidate.lastName}`.toLowerCase().includes(this.searchText.toLowerCase());
 
       // Filtre par profil/profession
       const professionalMatch = !this.selectedProfessional ||
         candidate.professional === this.selectedProfessional;
 
-      return searchMatch && professionalMatch;
+      // Filtre par statut
+      const statusMatch = !this.selectedStatus ||
+        (this.selectedStatus === 'UNDEFINED' && !candidate.status) ||
+        candidate.status === this.selectedStatus;
+
+      return searchMatch && professionalMatch && statusMatch;
     });
   }
 
   clearFilters(): void {
     this.searchText = '';
     this.selectedProfessional = '';
+    this.selectedStatus = '';
     this.filteredCandidates = this.candidates;
   }
 
@@ -346,6 +353,7 @@ export class AdminCandidatesComponent implements OnInit {
     let count = 0;
     if (this.searchText) count++;
     if (this.selectedProfessional) count++;
+    if (this.selectedStatus) count++;
     return count;
   }
 }

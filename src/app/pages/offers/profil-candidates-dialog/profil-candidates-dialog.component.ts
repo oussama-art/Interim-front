@@ -11,6 +11,7 @@ import { OfferService } from '../../../core/services/offer.service';
 import { CandidateResponse } from '../../../core/models/user.model';
 import { environment } from '../../../../environments/environment';
 import { CvViewerDialogComponent } from '../cv-viewer-dialog/cv-viewer-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-profil-candidates-dialog',
@@ -112,82 +113,128 @@ export class ProfilCandidatesDialogComponent {
       return;
     }
 
-    this.processing = true;
-    this.offerService.acceptCandidate(
-      this.clientId,
-      this.offerId,
-      candidateId,
-      this.startDate,
-      this.endDate
-    ).subscribe({
-      next: () => {
-        this.snackBar.open('Candidat accepté avec succès', 'Fermer', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
+    // Afficher le dialogue de confirmation
+    const candidate = this.candidatesDetails.get(candidateId);
+    const candidateName = candidate ? `${candidate.firstName} ${candidate.lastName}` : 'ce candidat';
 
-        // Mettre à jour le statut local
-        const group = profilGroup || this.profilGroup;
-        if (group) {
-          const candidate = group.candidates.find(c => c.candidateId === candidateId);
-          if (candidate) {
-            candidate.status = 'ACCEPTED';
-            group.acceptedCount++;
+    const confirmDialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Retenir ce candidat',
+        message: `Êtes-vous sûr de vouloir retenir ${candidateName} pour ce profil ?`,
+        confirmText: 'Oui, retenir',
+        cancelText: 'Annuler',
+        type: 'accept',
+        details: [
+          `Profil : ${group.profilName}`,
+          `Places restantes : ${group.quantityRequested - group.acceptedCount}`
+        ]
+      } as ConfirmDialogData
+    });
+
+    confirmDialogRef.afterClosed().subscribe(result => {
+      if (!result) return;
+
+      this.processing = true;
+      this.offerService.acceptCandidate(
+        this.clientId,
+        this.offerId,
+        candidateId,
+        this.startDate!,
+        this.endDate!
+      ).subscribe({
+        next: () => {
+          this.snackBar.open('Candidat accepté avec succès', 'Fermer', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+
+          // Mettre à jour le statut local
+          const group = profilGroup || this.profilGroup;
+          if (group) {
+            const candidate = group.candidates.find(c => c.candidateId === candidateId);
+            if (candidate) {
+              candidate.status = 'ACCEPTED';
+              group.acceptedCount++;
+            }
           }
-        }
 
-        this.processing = false;
-        this.dialogRef.close({ action: 'accepted', candidateId });
-      },
-      error: (err) => {
-        console.error('Erreur lors de l\'acceptation:', err);
-        this.snackBar.open('Erreur lors de l\'acceptation du candidat', 'Fermer', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-        this.processing = false;
-      }
+          this.processing = false;
+          this.dialogRef.close({ action: 'accepted', candidateId });
+        },
+        error: (err) => {
+          console.error('Erreur lors de l\'acceptation:', err);
+          this.snackBar.open('Erreur lors de l\'acceptation du candidat', 'Fermer', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          this.processing = false;
+        }
+      });
     });
   }
 
   rejectCandidate(candidateId: number): void {
-    this.processing = true;
-    this.offerService.rejectCandidate(this.clientId, this.offerId, candidateId).subscribe({
-      next: () => {
-        this.snackBar.open('Candidat refusé', 'Fermer', {
-          duration: 3000,
-          panelClass: ['info-snackbar']
-        });
+    // Afficher le dialogue de confirmation
+    const candidate = this.candidatesDetails.get(candidateId);
+    const candidateName = candidate ? `${candidate.firstName} ${candidate.lastName}` : 'ce candidat';
 
-        // Mettre à jour le statut local
-        if (this.profilGroup) {
-          const candidate = this.profilGroup.candidates.find(c => c.candidateId === candidateId);
-          if (candidate) {
-            candidate.status = 'REJECTED';
-          }
-        }
-        // Mettre à jour aussi dans allProfils si nécessaire
-        if (this.allProfils) {
-          for (const profil of this.allProfils) {
-            const candidate = profil.candidates.find(c => c.candidateId === candidateId);
+    const confirmDialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Décliner le candidat',
+        message: `Êtes-vous sûr de vouloir décliner ${candidateName} ?`,
+        confirmText: 'Oui, décliner',
+        cancelText: 'Annuler',
+        type: 'reject',
+        details: [
+          'Cette action ne peut pas être annulée',
+          'Le candidat sera informé de votre décision'
+        ]
+      } as ConfirmDialogData
+    });
+
+    confirmDialogRef.afterClosed().subscribe(result => {
+      if (!result) return;
+
+      this.processing = true;
+      this.offerService.rejectCandidate(this.clientId, this.offerId, candidateId).subscribe({
+        next: () => {
+          this.snackBar.open('Candidat refusé', 'Fermer', {
+            duration: 3000,
+            panelClass: ['info-snackbar']
+          });
+
+          // Mettre à jour le statut local
+          if (this.profilGroup) {
+            const candidate = this.profilGroup.candidates.find(c => c.candidateId === candidateId);
             if (candidate) {
               candidate.status = 'REJECTED';
-              break;
             }
           }
-        }
+          // Mettre à jour aussi dans allProfils si nécessaire
+          if (this.allProfils) {
+            for (const profil of this.allProfils) {
+              const candidate = profil.candidates.find(c => c.candidateId === candidateId);
+              if (candidate) {
+                candidate.status = 'REJECTED';
+                break;
+              }
+            }
+          }
 
-        this.processing = false;
-        this.dialogRef.close({ action: 'rejected', candidateId });
-      },
-      error: (err) => {
-        console.error('Erreur lors du refus:', err);
-        this.snackBar.open('Erreur lors du refus du candidat', 'Fermer', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-        this.processing = false;
-      }
+          this.processing = false;
+          this.dialogRef.close({ action: 'rejected', candidateId });
+        },
+        error: (err) => {
+          console.error('Erreur lors du refus:', err);
+          this.snackBar.open('Erreur lors du refus du candidat', 'Fermer', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          this.processing = false;
+        }
+      });
     });
   }
 

@@ -47,6 +47,17 @@
         </button>
       </mat-form-field>
 
+      <!-- Demande Filter -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-icon matPrefix>assignment</mat-icon>
+        <mat-select [(ngModel)]="filterDemandeId" (ngModelChange)="applyFilters()" placeholder="Toutes les demandes">
+          <mat-option [value]="null">Toutes les demandes</mat-option>
+          <mat-option *ngFor="let demande of uniqueDemandes" [value]="demande.demandeId">
+            {{ demande.demandeReference }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <!-- Start Date Filter -->
       <mat-form-field appearance="outline" class="filter-field filter-date">
         <input matInput
@@ -90,7 +101,7 @@
       <button mat-stroked-button
               class="clear-filters-btn"
               (click)="clearFilters()"
-              *ngIf="filterSearchText || filterStartDate || filterEndDate || filterContractStatus !== 'all'">
+              *ngIf="filterSearchText || filterStartDate || filterEndDate || filterContractStatus !== 'all' || filterDemandeId !== null">
         Réinitialiser
       </button>
     </div>

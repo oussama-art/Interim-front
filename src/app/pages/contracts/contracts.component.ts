@@ -15,6 +15,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule } from '@angular/material/select';
 import { environment } from '../../../environments/environment';
 import { GlobalSearchService } from '../../core/services/global-search.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -42,6 +43,7 @@ interface ContractResponse {
 }
 
 interface ContractRow {
+  demandeId: number;
   demandeReference: string;
   candidateName: string;
   professional: string;
@@ -72,7 +74,8 @@ interface ContractRow {
     MatNativeDateModule,
     MatInputModule,
     MatFormFieldModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSelectModule
   ],
   templateUrl: './contracts.component.html',
   styleUrl: './contracts.component.scss',
@@ -86,10 +89,12 @@ export class ContractsComponent implements OnInit, OnDestroy {
   downloadingContract: { [contractId: number]: boolean } = {};
   displayedColumns: string[] = ['reference', 'candidateName', 'professional', 'status', 'contractDates', 'actions'];
   searchQuery: string = '';
+  uniqueDemandes: { demandeId: number; demandeReference: string }[] = [];
 
   // Filtres de date
   filterStartDate: Date | null = null;
   filterEndDate: Date | null = null;
+  filterDemandeId: number | null = null;
 
   constructor(
     private http: HttpClient,
@@ -117,6 +122,13 @@ export class ContractsComponent implements OnInit, OnDestroy {
 
   applySearchFilter(): void {
     this.filteredContractRows = this.contractRows.filter(row => {
+      // Filtre par demande
+      if (this.filterDemandeId !== null) {
+        if (row.demandeId !== this.filterDemandeId) {
+          return false;
+        }
+      }
+
       // Filtre par recherche textuelle
       let matchesSearch = true;
       if (this.searchQuery.trim()) {
@@ -170,7 +182,20 @@ export class ContractsComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.filterStartDate = null;
     this.filterEndDate = null;
+    this.filterDemandeId = null;
     this.applySearchFilter();
+  }
+
+  updateUniqueDemandes(): void {
+    const demandesMap = new Map<number, string>();
+    this.contractRows.forEach(row => {
+      if (!demandesMap.has(row.demandeId)) {
+        demandesMap.set(row.demandeId, row.demandeReference);
+      }
+    });
+    this.uniqueDemandes = Array.from(demandesMap.entries())
+      .map(([demandeId, demandeReference]) => ({ demandeId, demandeReference }))
+      .sort((a, b) => a.demandeReference.localeCompare(b.demandeReference));
   }
 
   loadDemandes(): void {
@@ -211,6 +236,7 @@ export class ContractsComponent implements OnInit, OnDestroy {
 
   createContractRows(contracts: ContractResponse[]): void {
     this.contractRows = contracts.map(contract => ({
+      demandeId: contract.demandeId,
       demandeReference: contract.demandeReference,
       candidateName: `${contract.candidate.firstName} ${contract.candidate.lastName}`,
       professional: contract.candidate.professional,
@@ -222,6 +248,7 @@ export class ContractsComponent implements OnInit, OnDestroy {
       uploadedAt: contract.uploadedAt,
       contractId: contract.id
     }));
+    this.updateUniqueDemandes();
     this.filteredContractRows = [...this.contractRows];
   }
 

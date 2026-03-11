@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,11 +17,19 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
+
 import { AdminService } from '../../core/services/admin.service';
 import { DemandeService } from '../../core/services/demande.service';
 import { ErrorHandlerService } from '../../core/services/error-handler.service';
+import { NotificationService } from '../../core/services/notification.service';
+
 import { DemandeResponse } from '../../core/models/demande.model';
+import { NotificationMessage } from '../../core/models/notification.model';
+
 import { ConfirmDialogComponent } from '../../pages/offers/confirm-dialog/confirm-dialog.component';
+
+import { DemandeStoreService } from '../../core/services/store/demande-store.service';
+import { DemandeStateService } from '../../core/services/state/demande-state.service';
 
 @Component({
   selector: 'app-admin-demandes',
@@ -44,16 +54,16 @@ import { ConfirmDialogComponent } from '../../pages/offers/confirm-dialog/confir
   templateUrl: './admin-demandes.component.html',
   styleUrls: ['./admin-demandes.component.scss']
 })
-export class AdminDemandesComponent implements OnInit {
+export class AdminDemandesComponent implements OnInit, OnDestroy {
   demandes: DemandeResponse[] = [];
   filteredDemandes: DemandeResponse[] = [];
   loading = true;
 
-  // Filtres
   startDateFilter: Date | null = null;
   endDateFilter: Date | null = null;
-  statusFilter: string = 'ALL';
-  dateRangeError: string = '';
+  statusFilter = 'ALL';
+  dateRangeError = '';
+
   displayedColumns: string[] = [
     'id',
     'title',
@@ -65,36 +75,82 @@ export class AdminDemandesComponent implements OnInit {
     'closeAction'
   ];
 
+  private subscriptions = new Subscription();
+
   constructor(
     private adminService: AdminService,
     private demandeService: DemandeService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private notificationService: NotificationService,
+    private demandeStoreService: DemandeStoreService,
+    private demandeStateService: DemandeStateService
   ) {}
 
   ngOnInit(): void {
+    this.bindStore();
+    this.subscribeToRealtimeDemandes();
     this.loadDemandes();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadDemandes(): void {
-    this.loading = true;
-    this.adminService.getAllDemandes().subscribe({
-      next: (data) => {
-        this.demandes = data;
-        this.filteredDemandes = data;
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Erreur lors du chargement des demandes:', err);
-        if (!this.errorHandler.isSessionExpired(err)) {
-          this.errorHandler.handleError(err, '❌ Erreur lors du chargement des demandes');
+    this.demandeStateService.loadAll();
+  }
+
+  private bindStore(): void {
+    this.subscriptions.add(
+      this.demandeStoreService.getDemandes().subscribe({
+        next: (demandes) => {
+          this.demandes = demandes as DemandeResponse[];
+          this.applyFilters();
+        },
+        error: (err) => {
+          console.error('Erreur store demandes:', err);
         }
-        this.loading = false;
-      }
-    });
+      })
+    );
+
+    this.subscriptions.add(
+      this.demandeStoreService.getLoading().subscribe({
+        next: (loading) => {
+          this.loading = loading;
+        },
+        error: (err) => {
+          console.error('Erreur store loading demandes:', err);
+          this.loading = false;
+        }
+      })
+    );
+  }
+
+  private subscribeToRealtimeDemandes(): void {
+    this.subscriptions.add(
+      this.notificationService.getAdminNotifications().subscribe({
+        next: (notification: NotificationMessage) => {
+          if (notification.type === 'DEMANDE_CREATED') {
+            this.demandeStateService.loadAll();
+            return;
+          }
+
+          if (notification.type === 'DEMANDE_UPDATED') {
+            if (notification.demandeId) {
+              this.demandeStateService.refreshOne(notification.demandeId);
+            } else {
+              this.demandeStateService.loadAll();
+            }
+          }
+        },
+        error: (err) => {
+          console.error('Erreur notifications realtime demandes:', err);
+        }
+      })
+    );
   }
 
   applyFilters(): void {
@@ -102,25 +158,30 @@ export class AdminDemandesComponent implements OnInit {
 
     let filtered = [...this.demandes];
 
-    // Filtre par date de début
     if (this.startDateFilter) {
-      filtered = filtered.filter(demande => {
+      const start = new Date(this.startDateFilter);
+      start.setHours(0, 0, 0, 0);
+
+      filtered = filtered.filter((demande) => {
         const demandeStartDate = new Date(demande.startDate);
-        return demandeStartDate >= this.startDateFilter!;
+        demandeStartDate.setHours(0, 0, 0, 0);
+        return demandeStartDate >= start;
       });
     }
 
-    // Filtre par date de fin
     if (this.endDateFilter) {
-      filtered = filtered.filter(demande => {
+      const end = new Date(this.endDateFilter);
+      end.setHours(23, 59, 59, 999);
+
+      filtered = filtered.filter((demande) => {
         const demandeEndDate = new Date(demande.endDate);
-        return demandeEndDate <= this.endDateFilter!;
+        demandeEndDate.setHours(23, 59, 59, 999);
+        return demandeEndDate <= end;
       });
     }
 
-    // Filtre par statut
     if (this.statusFilter && this.statusFilter !== 'ALL') {
-      filtered = filtered.filter(demande => demande.status === this.statusFilter);
+      filtered = filtered.filter((demande) => demande.status === this.statusFilter);
     }
 
     this.filteredDemandes = filtered;
@@ -148,19 +209,24 @@ export class AdminDemandesComponent implements OnInit {
 
   getActiveFiltersCount(): number {
     let count = 0;
+
     if (this.startDateFilter) count++;
     if (this.endDateFilter) count++;
     if (this.statusFilter && this.statusFilter !== 'ALL') count++;
+
     return count;
   }
 
   getTotalEmployees(): number {
-    return this.filteredDemandes.reduce((sum, demande) => sum + demande.totalEmployeesNeeded, 0);
+    return this.filteredDemandes.reduce(
+      (sum, demande) => sum + (demande.totalEmployeesNeeded || 0),
+      0
+    );
   }
 
   getTotalProfils(): number {
-    const allProfils = this.filteredDemandes.flatMap(d => d.profils);
-    return allProfils.reduce((sum, profil) => sum + profil.quantity, 0);
+    const allProfils = this.filteredDemandes.flatMap((d) => d.profils || []);
+    return allProfils.reduce((sum, profil) => sum + (profil.quantity || 0), 0);
   }
 
   viewDemande(demande: DemandeResponse): void {
@@ -190,24 +256,33 @@ export class AdminDemandesComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
+    this.subscriptions.add(
+      dialogRef.afterClosed().subscribe((result) => {
+        if (!result) {
+          return;
+        }
+
         this.adminService.deleteDemande(demande.id).subscribe({
           next: () => {
             this.snackBar.open('Demande supprimée avec succès', 'Fermer', {
               duration: 3000
             });
-            this.loadDemandes();
+
+            this.demandeStoreService.remove(demande.id);
           },
           error: (err) => {
             console.error('Erreur lors de la suppression:', err);
-            this.snackBar.open('Erreur lors de la suppression de la demande', 'Fermer', {
-              duration: 3000
-            });
+
+            if (!this.errorHandler.isSessionExpired(err)) {
+              this.errorHandler.handleError(
+                err,
+                '❌ Erreur lors de la suppression de la demande'
+              );
+            }
           }
         });
-      }
-    });
+      })
+    );
   }
 
   formatDate(dateString: string): string {
@@ -226,7 +301,7 @@ export class AdminDemandesComponent implements OnInit {
   }
 
   getDemandeStatusLabel(status?: string): string {
-    switch(status) {
+    switch (status) {
       case 'IN_PROGRESS':
         return 'En cours';
       case 'CLOSED':
@@ -239,7 +314,7 @@ export class AdminDemandesComponent implements OnInit {
   }
 
   getDemandeStatusClass(status?: string): string {
-    switch(status) {
+    switch (status) {
       case 'IN_PROGRESS':
         return 'status-in-progress';
       case 'CLOSED':
@@ -269,27 +344,36 @@ export class AdminDemandesComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
+    this.subscriptions.add(
+      dialogRef.afterClosed().subscribe((result) => {
+        if (!result) {
+          return;
+        }
+
         this.demandeService.closeDemande(demande.id).subscribe({
-          next: () => {
+          next: (updatedDemande) => {
             this.snackBar.open('Demande clôturée avec succès', 'Fermer', {
               duration: 3000,
               panelClass: ['success-snackbar']
             });
-            this.loadDemandes();
+
+            this.demandeStoreService.upsert(updatedDemande as DemandeResponse);
           },
           error: (error) => {
             console.error('Erreur lors de la clôture:', error);
+
             this.snackBar.open(
-              error.message || 'Erreur lors de la clôture de la demande',
+              error?.message || 'Erreur lors de la clôture de la demande',
               'Fermer',
-              { duration: 5000, panelClass: ['error-snackbar'] }
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
             );
           }
         });
-      }
-    });
+      })
+    );
   }
 
   isDemandeOpen(demande: DemandeResponse): boolean {

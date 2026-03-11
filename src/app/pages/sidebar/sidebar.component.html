@@ -4,7 +4,6 @@
   (mouseenter)="onMouseEnter()"
   (mouseleave)="onMouseLeave()">
 
-  <!-- Logo + Name -->
   <div class="logo-section">
     <div class="logo-icon-wrapper">
       <mat-icon class="logo-icon">business_center</mat-icon>
@@ -12,7 +11,6 @@
     <span class="logo-text" [class.visible]="isExpanded()">3N Services</span>
   </div>
 
-  <!-- Navigation Links -->
   <nav class="nav-links">
     <a
       *ngFor="let item of navItems()"
@@ -20,11 +18,16 @@
       routerLinkActive="active"
       [matTooltip]="!isExpanded() ? item.label : ''"
       matTooltipPosition="right"
-      class="nav-item">
+      class="nav-item"
+      (click)="onNavClick(item)">
       <div class="nav-icon-wrapper">
         <mat-icon
-          [matBadge]="(newOffersCount$ | async) || 0"
-          [matBadgeHidden]="item.path !== '/app/offers' || (newOffersCount$ | async) === 0 || (newOffersCount$ | async) === null"
+          [matBadge]="item.path === '/app/offers' ? ((offerNotificationsCount$ | async) || 0) : 0"
+          [matBadgeHidden]="
+            item.path !== '/app/offers' ||
+            isOffersRoute() ||
+            ((offerNotificationsCount$ | async) || 0) === 0
+          "
           matBadgeColor="warn"
           matBadgeSize="medium"
           matBadgePosition="above after">
@@ -35,7 +38,6 @@
     </a>
   </nav>
 
-  <!-- Profil Link at Bottom -->
   <div class="profil-section">
     <a
       [routerLink]="profilItem.path"
